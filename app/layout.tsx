@@ -62,13 +62,13 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
-        { url: '/favicon-package/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
-        { url: '/favicon-package/favicon.svg', type: 'image/svg+xml' },
+        { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+        { url: '/favicon.svg', type: 'image/svg+xml' },
       ],
-      apple: '/favicon-package/apple-touch-icon.png',
-      shortcut: '/favicon-package/favicon.ico',
+      apple: '/apple-touch-icon.png',
+      shortcut: '/favicon.ico',
     },
-    manifest: '/favicon-package/site.webmanifest',
+    manifest: '/site.webmanifest',
   };
 }
 

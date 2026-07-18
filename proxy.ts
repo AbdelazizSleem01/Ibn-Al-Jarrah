@@ -5,7 +5,34 @@ import { jwtVerify } from "jose";
 const COOKIE_NAME = "dar_aljarrah_token";
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_123456";
 
+// Rate limit configuration
+const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
+const MAX_REQUESTS_PER_WINDOW = 100; // Max 100 requests per IP per minute
+
 export default async function proxy(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+  const now = Date.now();
+  
+  if (ip !== "unknown") {
+    const windowData = rateLimitMap.get(ip);
+    if (!windowData || now - windowData.timestamp > RATE_LIMIT_WINDOW_MS) {
+      // New window for this IP
+      rateLimitMap.set(ip, { count: 1, timestamp: now });
+    } else {
+      // Existing window
+      windowData.count++;
+      if (windowData.count > MAX_REQUESTS_PER_WINDOW) {
+        // Exceeded rate limit
+        return NextResponse.json(
+          { success: false, message: "Too Many Requests - لقد تجاوزت الحد المسموح من الطلبات، يرجى المحاولة بعد دقيقة." },
+          { status: 429, headers: { "Retry-After": "60" } }
+        );
+      }
+    }
+  }
+
+  // 2. Authentication Logic for Admin Routes
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const { pathname } = request.nextUrl;
 
@@ -30,7 +57,6 @@ export default async function proxy(request: NextRequest) {
     try {
       const secretKey = new TextEncoder().encode(JWT_SECRET);
       await jwtVerify(token, secretKey);
-      return NextResponse.next();
     } catch (error) {
       if (isAdminApiPath) {
         return NextResponse.json(
@@ -62,5 +88,7 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/login"],
+  matcher: [
+    "/((?!_next/static|_next/image|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)).*)",
+  ],
 };
