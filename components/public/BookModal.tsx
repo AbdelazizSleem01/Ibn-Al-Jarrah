@@ -144,7 +144,7 @@ export default function BookModal({ bookSlug, onClose }: BookModalProps) {
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-4xl bg-card-bg rounded-2xl border border-border-color shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[92vh] transition-colors duration-300"
+        className="relative w-full max-w-4xl bg-card-bg rounded-2xl border border-border-color shadow-2xl flex flex-col md:flex-row overflow-y-auto overflow-x-hidden md:overflow-hidden max-h-[92vh] transition-colors duration-300 hide-scrollbar"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -186,8 +186,8 @@ export default function BookModal({ bookSlug, onClose }: BookModalProps) {
           // Book Details View
           <>
             {/* Right Column: Book Image Mockup */}
-            <div className="w-full md:w-2/5 p-6 flex flex-col items-center justify-center bg-foreground/[0.01] border-l border-border-color/50 shrink-0">
-              <div className="relative w-full max-w-[240px] aspect-[3/4] rounded-xl overflow-hidden border border-border-color shadow-2xl bg-card-bg flex items-center justify-center gold-glow group transition-all duration-300 hover:scale-[1.02]">
+            <div className="w-full md:w-2/5 p-6 pb-2 md:pb-6 flex flex-col items-center justify-center bg-foreground/[0.01] border-l border-border-color/50 shrink-0">
+              <div className="relative w-full max-w-[180px] md:max-w-[240px] aspect-[3/4] rounded-xl overflow-hidden border border-border-color shadow-2xl bg-card-bg flex items-center justify-center gold-glow group transition-all duration-300 hover:scale-[1.02]">
                 
                 {/* Book Cover Design */}
                 <img
@@ -198,7 +198,7 @@ export default function BookModal({ bookSlug, onClose }: BookModalProps) {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 w-full max-w-[240px] mt-6">
+              <div className="flex gap-4 w-full max-w-[180px] md:max-w-[240px] mt-4 md:mt-6">
                 <button
                   onClick={handleShare}
                   className="flex-grow flex items-center justify-center gap-2 bg-foreground/5 hover:bg-primary hover:text-white hover:border-primary text-foreground border border-border-color py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all duration-300 cursor-pointer active:scale-95 shadow-sm hover:shadow-md"
@@ -210,7 +210,7 @@ export default function BookModal({ bookSlug, onClose }: BookModalProps) {
             </div>
 
             {/* Left Column: Metadata Details */}
-            <div className="w-full md:w-3/5 p-6 md:p-8 flex flex-col gap-6 text-right overflow-y-auto">
+            <div className="w-full md:w-3/5 p-6 md:p-8 flex flex-col gap-6 text-right overflow-visible md:overflow-y-auto">
               
               {/* Title & Category */}
               <div className="flex flex-col gap-2 pt-4 md:pt-0">

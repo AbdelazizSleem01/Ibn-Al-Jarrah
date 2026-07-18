@@ -107,11 +107,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     // Handle Category change in booksCount
     const oldCategoryId = book.categoryId;
     const newCategoryId = bookData.categoryId;
-    if (oldCategoryId.toString() !== newCategoryId.toString() && !book.isDeleted) {
+    if (oldCategoryId?.toString() !== newCategoryId?.toString() && !book.isDeleted) {
       // Decrement old category count
-      await Category.findByIdAndUpdate(oldCategoryId, { $inc: { booksCount: -1 } });
+      if (oldCategoryId) await Category.findByIdAndUpdate(oldCategoryId, { $inc: { booksCount: -1 } });
       // Increment new category count
-      await Category.findByIdAndUpdate(newCategoryId, { $inc: { booksCount: 1 } });
+      if (newCategoryId) await Category.findByIdAndUpdate(newCategoryId, { $inc: { booksCount: 1 } });
     }
 
     // Handle Title change (re-slugify and re-normalize)
@@ -191,10 +191,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       message: "تم تحديث الكتاب بنجاح",
       data: book,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Book PATCH Error:", error);
     return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء تحديث الكتاب" },
+      { success: false, message: "حدث خطأ أثناء تحديث الكتاب: " + (error?.message || "Unknown error") },
       { status: 500 }
     );
   }

@@ -8,23 +8,69 @@ const tajawal = Tajawal({
   variable: "--font-tajawal",
 });
 
-export const metadata: Metadata = {
-  title: "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع",
-  description: "مؤسسة متخصصة في نشر وتوزيع الكتب، ونسعى إلى تيسير العلم الشرعي وتوفير الكتب بأفضل الأسعار وأعلى جودة.",
-  keywords: "دار ابن الجراح, نشر وتوزيع, كتب شرعية, طالب العلم, علم شرعي, فقه, عقيدة, تفسير",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع",
-    description: "نسعى إلى تيسير العلم الشرعي وتوفير الكتب بأفضل الأسعار وأعلى جودة.",
-    url: "/",
-    siteName: "دار ابن الجراح",
-    locale: "ar_EG",
-    type: "website",
-  },
-};
+import dbConnect from "@/lib/db/dbConnect";
+import SiteSettings from "@/models/SiteSettings";
+
+export async function generateMetadata(): Promise<Metadata> {
+  let settings = null;
+  try {
+    await dbConnect();
+    settings = await SiteSettings.findOne({ key: "main_settings" });
+  } catch (error) {
+    console.error("Failed to fetch settings for metadata:", error);
+  }
+
+  const title = settings?.seo?.title || settings?.title || "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع";
+  const description = settings?.seo?.description || settings?.description || "مؤسسة متخصصة في نشر وتوزيع الكتب، ونسعى إلى تيسير العلم الشرعي وتوفير الكتب بأفضل الأسعار وأعلى جودة.";
+  const keywords = settings?.seo?.keywords || "دار ابن الجراح, نشر وتوزيع, كتب شرعية, طالب العلم, علم شرعي, فقه, عقيدة, تفسير";
+  
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const logoUrl = "/images/logo.webp";
+
+  return {
+    title: {
+      default: title,
+      template: `%s | ${settings?.title || "دار ابن الجراح"}`
+    },
+    description,
+    keywords,
+    metadataBase: new URL(siteUrl),
+    alternates: {
+      canonical: "/",
+    },
+    openGraph: {
+      title,
+      description,
+      url: siteUrl,
+      siteName: settings?.title || "دار ابن الجراح",
+      locale: "ar_EG",
+      type: "website",
+      images: [
+        {
+          url: logoUrl,
+          width: 800,
+          height: 600,
+          alt: "شعار دار ابن الجراح",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [logoUrl],
+    },
+    icons: {
+      icon: [
+        { url: '/favicon-package/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+        { url: '/favicon-package/favicon.svg', type: 'image/svg+xml' },
+      ],
+      apple: '/favicon-package/apple-touch-icon.png',
+      shortcut: '/favicon-package/favicon.ico',
+    },
+    manifest: '/favicon-package/site.webmanifest',
+  };
+}
 
 export default function RootLayout({
   children,

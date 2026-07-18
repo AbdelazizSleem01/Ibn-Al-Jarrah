@@ -23,9 +23,14 @@ export default function CategoriesManager() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Modal States
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
 
   // Form Fields
   const [formData, setFormData] = useState({
@@ -56,6 +61,18 @@ export default function CategoriesManager() {
     fetchCategories();
   }, []);
 
+  // Prevent background scrolling when a modal is open
+  useEffect(() => {
+    if (modalOpen || isIconPickerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen, isIconPickerOpen]);
+
   // Filter list on search text change
   useEffect(() => {
     if (!search.trim()) {
@@ -69,7 +86,11 @@ export default function CategoriesManager() {
       );
       setFilteredCategories(filtered);
     }
+    setCurrentPage(1); // Reset page on search
   }, [search, categories]);
+
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const currentCategories = filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -205,18 +226,32 @@ export default function CategoriesManager() {
     }
   };
 
-  // Popular icons to show in simple dropdown
-  const popularIcons = [
-    { value: "FaBook", label: "كتاب" },
-    { value: "FaBookOpen", label: "كتاب مفتوح" },
-    { value: "FaGraduationCap", label: "قبعة تخرج / طالب علم" },
-    { value: "FaUniversity", label: "جامعة / مؤسسة" },
-    { value: "FaBalanceScale", label: "ميزان / فقه وأحكام" },
-    { value: "FaGlobe", label: "كرة أرضية / عقيدة وعالمية" },
-    { value: "FaHistory", label: "ساعة / تاريخ" },
-    { value: "FaBookmark", label: "إشارة مرجعية" },
-    { value: "FaUser", label: "مستند شخصي / تراجم" },
-    { value: "FaQuran", label: "مصحف / قرآنيات" },
+  // Large list of available icons for the icon picker
+  const availableIcons = [
+    // Education & Books
+    "FaBook", "FaBookOpen", "FaBookReader", "FaBookmark", "FaRegBookmark", "FaLayerGroup", "FaTags", "FaList", 
+    "FaGraduationCap", "FaUniversity", "FaSchool", "FaChalkboardTeacher", "FaPen", "FaPenFancy", "FaPencilAlt", 
+    "FaFileAlt", "FaFilePdf", "FaFileWord", "FaFolder", "FaFolderOpen", "FaArchive", "FaAtlas",
+    // Religion & Philosophy
+    "FaMosque", "FaQuran", "FaPray", "FaHands", "FaStarAndCrescent", "FaKaaba", "FaBalanceScale", "FaGavel",
+    "FaQuoteRight", "FaQuoteLeft",
+    // Science & Tech
+    "FaGlobe", "FaHistory", "FaMicroscope", "FaFlask", "FaBrain", "FaLightbulb", "FaRegLightbulb",
+    "FaCode", "FaTerminal", "FaDesktop", "FaLaptop", "FaMobileAlt", "FaDatabase", "FaServer", "FaCloud",
+    // Media & Audio
+    "FaMicrophone", "FaPodcast", "FaVideo", "FaCamera", "FaImage", "FaImages", "FaMusic", "FaPlayCircle",
+    // Business & People
+    "FaUser", "FaUsers", "FaUserGraduate", "FaUserTie", "FaIdCard", "FaAddressCard", "FaBriefcase",
+    "FaChartLine", "FaChartBar", "FaChartPie", "FaMoneyBillWave", "FaCoins", "FaWallet",
+    // Nature & Objects
+    "FaLeaf", "FaTree", "FaSeedling", "FaSun", "FaMoon", "FaStar", "FaRegStar", "FaHeart", "FaRegHeart",
+    "FaFire", "FaWater", "FaWind", "FaBolt", "FaUmbrella", "FaCrown", "FaMedal", "FaTrophy", "FaAward",
+    // Transport & Places
+    "FaMap", "FaMapMarkedAlt", "FaCompass", "FaLandmark", "FaBuilding", "FaHome", "FaPlane", "FaCar",
+    // UI & Symbols
+    "FaInfoCircle", "FaQuestionCircle", "FaExclamationCircle", "FaCheckCircle", "FaTimesCircle",
+    "FaSearch", "FaCog", "FaCogs", "FaWrench", "FaTools", "FaShieldAlt", "FaLock", "FaUnlock", "FaKey",
+    "FaEnvelope", "FaPaperPlane", "FaComments", "FaBug", "FaClock", "FaCalendarAlt", "FaThumbsUp"
   ];
 
   return (
@@ -229,13 +264,23 @@ export default function CategoriesManager() {
           <p className="text-xs text-foreground/60 mt-1">عرض وتعديل وحذف أقسام وتصنيفات المطبوعات</p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md gold-glow transition-all cursor-pointer self-start"
-        >
-          <FaPlus />
-          إضافة تصنيف جديد
-        </button>
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto mt-4 sm:mt-0 self-start">
+          <button
+            className="flex items-center justify-center gap-1.5 bg-card-bg border border-border-color text-foreground/70 hover:text-red-500 hover:border-red-500 hover:bg-red-500/10 px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer flex-1 sm:flex-none order-2 sm:order-none"
+            title="سلة المحذوفات"
+          >
+            <FaTrash />
+            سلة المحذوفات
+          </button>
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-1.5 whitespace-nowrap bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md gold-glow transition-all cursor-pointer w-full sm:w-auto sm:flex-none order-1 sm:order-none"
+          >
+            <FaPlus />
+            إضافة تصنيف جديد
+          </button>
+        </div>
       </div>
 
       {/* Search Toolbar */}
@@ -272,28 +317,30 @@ export default function CategoriesManager() {
               <thead>
                 <tr className="bg-foreground/[0.02] border-b border-border-color text-foreground/75">
                   <th className="p-3.5 font-bold w-16 text-center">أيقونة</th>
-                  <th className="p-3.5 font-bold">اسم التصنيف</th>
-                  <th className="p-3.5 font-bold">رابط التصنيف (Slug)</th>
-                  <th className="p-3.5 font-bold">الوصف</th>
-                  <th className="p-3.5 font-bold text-center">عدد الكتب</th>
-                  <th className="p-3.5 font-bold text-center">حالة الظهور</th>
-                  <th className="p-3.5 font-bold text-center">ترتيب الظهور</th>
-                  <th className="p-3.5 font-bold text-center w-28">إجراءات</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">اسم التصنيف</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">رابط التصنيف (Slug)</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">الوصف</th>
+                  <th className="p-3.5 font-bold text-center whitespace-nowrap">عدد الكتب</th>
+                  <th className="p-3.5 font-bold text-center whitespace-nowrap">حالة الظهور</th>
+                  <th className="p-3.5 font-bold text-center whitespace-nowrap">ترتيب الظهور</th>
+                  <th className="p-3.5 font-bold text-center w-28 whitespace-nowrap">إجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-color/50">
-                {filteredCategories.map((cat) => (
+                {currentCategories.map((cat) => (
                   <tr key={cat._id} className="hover:bg-foreground/[0.005] transition-colors">
                     <td className="p-3">
                       <div className="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center mx-auto">
                         <IconRenderer name={cat.icon} className="w-4 h-4" />
                       </div>
                     </td>
-                    <td className="p-3 font-bold text-foreground">{cat.name}</td>
-                    <td className="p-3 font-mono text-foreground/50 text-[11px]" dir="ltr">
+                    <td className="p-3 font-bold text-foreground max-w-[140px] md:max-w-[200px] truncate" title={cat.name}>
+                      {cat.name}
+                    </td>
+                    <td className="p-3 font-mono text-foreground/50 text-[11px] max-w-[120px] md:max-w-[180px] truncate" dir="ltr" title={cat.slug}>
                       {cat.slug}
                     </td>
-                    <td className="p-3 text-foreground/75 truncate max-w-[200px]">
+                    <td className="p-3 text-foreground/75 truncate max-w-[150px] md:max-w-[200px]" title={cat.description || ""}>
                       {cat.description || "—"}
                     </td>
                     <td className="p-3 text-center font-bold text-foreground">
@@ -338,6 +385,45 @@ export default function CategoriesManager() {
           </div>
         )}
       </div>
+
+      {/* Pagination Footer bar */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border-color pt-4 px-2 text-xs">
+          <span className="text-foreground/60">
+            إجمالي <span className="font-extrabold text-primary">{filteredCategories.length}</span> نتيجة
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-border-color rounded-lg bg-card-bg hover:bg-foreground/5 text-foreground disabled:opacity-40 disabled:hover:bg-card-bg cursor-pointer select-none transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+              السابق
+            </button>
+
+            <select
+              value={currentPage}
+              onChange={(e) => setCurrentPage(Number(e.target.value))}
+              className="bg-card-bg border border-border-color rounded-lg px-2 py-1.5 text-xs font-bold text-foreground focus:border-primary/50 focus:outline-none cursor-pointer"
+            >
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <option key={p} value={p}>{p} / {totalPages}</option>
+              ))}
+            </select>
+
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-border-color rounded-lg bg-card-bg hover:bg-foreground/5 text-foreground disabled:opacity-40 disabled:hover:bg-card-bg cursor-pointer select-none transition-all"
+            >
+              التالي
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add / Edit Category Modal */}
       {modalOpen && (
@@ -391,18 +477,14 @@ export default function CategoriesManager() {
                 <div className="flex flex-col gap-1.5">
                   <label className="font-bold text-foreground/75">أيقونة التصنيف</label>
                   <div className="flex gap-3 items-center">
-                    <select
-                      name="icon"
-                      value={formData.icon}
-                      onChange={handleFormChange}
-                      className="flex-grow bg-card-bg border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                    <button
+                      type="button"
+                      onClick={() => setIsIconPickerOpen(true)}
+                      className="flex-grow flex items-center justify-between bg-card-bg border border-border-color rounded-lg p-2.5 text-xs focus:outline-none hover:bg-foreground/5 transition-colors cursor-pointer"
                     >
-                      {popularIcons.map((ico) => (
-                        <option key={ico.value} value={ico.value}>
-                          {ico.label} ({ico.value})
-                        </option>
-                      ))}
-                    </select>
+                      <span className="text-foreground/80">{formData.icon ? formData.icon : "اختر أيقونة"}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-foreground/50 rotate-90" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                    </button>
                     {/* Live Icon preview */}
                     <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
                       <IconRenderer name={formData.icon} className="w-5 h-5" />
@@ -458,6 +540,49 @@ export default function CategoriesManager() {
 
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* Icon Picker Modal */}
+      {isIconPickerOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl bg-card-bg border border-border-color rounded-2xl shadow-2xl overflow-hidden p-6 relative flex flex-col max-h-[80vh] transition-colors duration-300">
+            
+            {/* Close button */}
+            <button
+              onClick={() => setIsIconPickerOpen(false)}
+              className="absolute top-4 left-4 w-8 h-8 rounded-full bg-foreground/10 hover:bg-red-500 hover:text-white text-foreground flex items-center justify-center cursor-pointer border border-border-color/40 transition-all duration-200 z-10"
+            >
+              <FaTimes className="w-4 h-4" />
+            </button>
+
+            <h2 className="font-black text-base md:text-lg text-foreground border-r-4 border-primary pr-3 py-0.5 mb-6 shrink-0">
+              اختر أيقونة التصنيف
+            </h2>
+
+            <div className="flex-grow overflow-y-auto p-3 custom-scrollbar">
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                {availableIcons.map((iconName) => (
+                  <button
+                    key={iconName}
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, icon: iconName }));
+                      setIsIconPickerOpen(false);
+                    }}
+                    className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+                      formData.icon === iconName
+                        ? "border-primary bg-primary/10 text-primary scale-105 shadow-md"
+                        : "border-border-color hover:border-primary/50 hover:bg-foreground/5 text-foreground/70 hover:text-primary"
+                    }`}
+                    title={iconName}
+                  >
+                    <IconRenderer name={iconName} className="w-6 h-6" />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -16,6 +16,7 @@ import {
   FaMoon,
   FaUser,
   FaTimes,
+  FaHome,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
@@ -143,8 +144,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       
       {/* 1. Sidebar - Fixed on desktop, Drawer on mobile */}
       <aside
-        className={`bg-card-bg border-l border-border-color shrink-0 flex flex-col justify-between transition-all duration-300 z-40 ${
-          collapsed ? "w-16" : "w-64"
+        className={`bg-card-bg border-l border-border-color shrink-0 flex flex-col justify-between transition-all duration-800 ease-in-out z-40 ${
+          collapsed ? "w-[72px]" : "w-64"
         } ${
           mobileOpen
             ? "fixed inset-y-0 right-0 w-64 shadow-2xl block"
@@ -153,18 +154,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         <div className="flex flex-col gap-6">
           {/* Logo & Brand Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border-color/50 h-16 overflow-hidden">
+          <div className={`flex items-center p-4 border-b border-border-color/50 h-16 overflow-hidden transition-all duration-500 ease-in-out ${collapsed ? "justify-center flex-col gap-2 p-2" : "justify-between"}`}>
             {/* Logo always visible - transitions scale/opacity */}
-            <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+            <div className={`flex items-center min-w-0 overflow-hidden transition-all duration-500 ease-in-out ${collapsed ? "justify-center" : "gap-2.5 flex-1"}`}>
               <img
                 src="/images/logo.webp"
                 alt="لوجو"
-                className="w-8 h-8 rounded-full object-cover border border-primary/30 shrink-0 transition-all duration-300"
+                className={`rounded-full object-cover border border-primary/30 shrink-0 transition-all duration-500 ease-in-out ${collapsed ? "w-8 h-8" : "w-8 h-8"}`}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
               <span
-                className={`font-extrabold text-xs text-foreground select-none whitespace-nowrap transition-all duration-300 overflow-hidden ${
-                  collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                className={`font-extrabold text-xs text-foreground select-none whitespace-nowrap transition-all duration-500 ease-in-out overflow-hidden ${
+                  collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"
                 }`}
               >
                 لوحة التحكم - دار ابن الجراح
@@ -174,9 +175,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {/* Collapse Trigger (Desktop Only) */}
             <button
               onClick={toggleSidebar}
-              className="hidden md:flex p-1.5 rounded hover:bg-foreground/5 text-foreground/75 cursor-pointer shrink-0 transition-all duration-300"
+              className={`hidden md:flex rounded hover:bg-foreground/5 text-foreground/75 cursor-pointer shrink-0 transition-all duration-500 ease-in-out ${collapsed ? "p-1.5 mt-1" : "p-1.5"}`}
             >
-              <FaChevronRight className={`w-3.5 h-3.5 transition-transform duration-300 ${collapsed ? "rotate-180" : "rotate-0"}`} />
+              <FaChevronRight className={`transition-transform duration-500 ease-in-out ${collapsed ? "rotate-180 w-3.5 h-3.5" : "rotate-0 w-3.5 h-3.5"}`} />
             </button>
 
             {/* Mobile close trigger */}
@@ -200,15 +201,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all cursor-pointer ${
+                  className={`flex items-center py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-500 ease-in-out cursor-pointer ${
                     isActive
                       ? "bg-primary text-white gold-glow"
                       : "text-foreground/80 hover:bg-foreground/5 hover:text-primary"
-                  }`}
+                  } ${collapsed ? "justify-center gap-0 px-0" : "justify-start gap-3 px-3"}`}
                   title={collapsed ? item.label : undefined}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  <span className={`truncate transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -219,11 +222,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-2 border-t border-border-color/50">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs md:text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+            className={`w-full flex items-center py-2.5 rounded-lg text-xs md:text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all duration-500 ease-in-out cursor-pointer ${collapsed ? "justify-center gap-0 px-0" : "justify-start gap-3 px-3"}`}
             title={collapsed ? "تسجيل الخروج" : undefined}
           >
             <FaSignOutAlt className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>تسجيل الخروج</span>}
+            <span className={`truncate transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+              تسجيل الخروج
+            </span>
           </button>
         </div>
       </aside>
@@ -240,48 +245,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex-grow flex flex-col min-w-0">
         
         {/* Header toolbar */}
-        <header className="bg-card-bg border-b border-border-color h-16 px-4 md:px-6 flex items-center justify-between z-20 shrink-0 transition-colors duration-300">
+        <header className="bg-card-bg border-b border-border-color h-16 px-4 md:px-6 flex items-center justify-between z-20 shrink-0 transition-colors duration-300 w-full">
           
-          {/* Breadcrumbs and mobile bars */}
+          {/* Right Side: Mobile bars & Admin Profile */}
           <div className="flex items-center gap-4">
+            {/* Mobile bars */}
             <button
               onClick={() => setMobileOpen(true)}
-              className="md:hidden p-2 rounded-full hover:bg-foreground/5 text-foreground"
+              className="md:hidden p-2 rounded-full hover:bg-foreground/5 text-foreground shrink-0"
             >
               <FaBars className="w-5 h-5" />
             </button>
 
-            {/* Breadcrumbs display */}
-            <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-foreground/55 select-none">
-              {breadcrumbs.map((crumb, idx) => (
-                <React.Fragment key={crumb}>
-                  {idx > 0 && <span className="text-foreground/30">/</span>}
-                  <span className={idx === breadcrumbs.length - 1 ? "text-primary font-bold" : ""}>
-                    {crumb}
-                  </span>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-
-          {/* User profile & Actions */}
-          <div className="flex items-center gap-4">
-            
-            {/* Theme Switcher */}
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-full hover:bg-foreground/5 text-foreground transition-all cursor-pointer"
-              title={theme === "light" ? "تفعيل الوضع الداكن" : "تفعيل الوضع الفاتح"}
-            >
-              {theme === "light" ? (
-                <FaMoon className="w-4 h-4 text-indigo-900" />
-              ) : (
-                <FaSun className="w-4 h-4 text-amber-500" />
-              )}
-            </button>
-
             {/* Admin Badge */}
-            <div className="flex items-center gap-2 pl-2 border-l border-border-color">
+            <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20">
                 <FaUser className="w-3.5 h-3.5" />
               </div>
@@ -292,21 +269,57 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <span className="text-[9px] text-foreground/50">مسؤول النظام</span>
               </div>
             </div>
+          </div>
 
-            {/* Back to public site button */}
+          {/* Left Side: Actions (Theme & Home) */}
+          <div className="flex items-center gap-3 border-r border-border-color pr-3">
+            {/* Theme Switcher */}
+            <button
+              onClick={toggleTheme}
+              className={`relative p-2 rounded-full border-2 cursor-pointer transition-all duration-300 group
+                ${theme === "dark"
+                  ? "border-amber-400/60 bg-amber-400/5 hover:bg-amber-400/10 hover:border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.15)] hover:shadow-[0_0_16px_rgba(251,191,36,0.25)]"
+                  : "border-indigo-900/60 bg-indigo-900/5 hover:bg-indigo-900/10 hover:border-indigo-900 shadow-[0_0_10px_rgba(49,46,129,0.15)] hover:shadow-[0_0_16px_rgba(49,46,129,0.25)]"
+                }`}
+              title={theme === "light" ? "تفعيل الوضع الداكن" : "تفعيل الوضع الفاتح"}
+            >
+              <span className="transition-transform duration-300 block group-hover:rotate-12">
+                {theme === "light" ? (
+                  <FaMoon className="w-4 h-4 text-indigo-900" />
+                ) : (
+                  <FaSun className="w-4 h-4 text-amber-400" />
+                )}
+              </span>
+            </button>
+
+            {/* Back to public site button (Home Icon) */}
             <Link
               href="/"
-              className="text-xs font-bold text-primary border border-primary/20 bg-primary/5 hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg transition-all"
+              className="relative p-2 rounded-full border-2 border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary shadow-[0_0_10px_rgba(212,175,55,0.15)] hover:shadow-[0_0_16px_rgba(212,175,55,0.25)] transition-all duration-300 group cursor-pointer"
+              title="العودة للموقع العام"
             >
-              الموقع العام
+              <span className="transition-transform duration-300 block group-hover:scale-110">
+                <FaHome className="w-4 h-4 text-primary" />
+              </span>
             </Link>
-
           </div>
 
         </header>
 
         {/* 3. Panel Content Router view */}
-        <div className="flex-grow p-4 md:p-6 overflow-y-auto">
+        <div className="flex-grow p-4 md:p-6 overflow-y-auto flex flex-col">
+          {/* Breadcrumbs display on top right of the page content */}
+          <div className="flex items-center justify-start gap-2 text-xs font-semibold text-foreground/55 select-none mb-6 w-full">
+            {breadcrumbs.map((crumb, idx) => (
+              <React.Fragment key={crumb}>
+                {idx > 0 && <span className="text-foreground/30">/</span>}
+                <span className={idx === breadcrumbs.length - 1 ? "text-primary font-bold" : ""}>
+                  {crumb}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
+
           {children}
         </div>
 

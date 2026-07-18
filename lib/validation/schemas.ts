@@ -38,8 +38,16 @@ export const bookSchema = z.object({
   publisher: z.string().optional(),
   categoryId: mongoIdSchema,
   prices: z.object({
-    egp: z.preprocess((val) => (val === "" || val === null ? undefined : Number(val)), z.number().min(0, { message: "السعر يجب أن يكون 0 أو أكثر" }).optional()),
-    lyd: z.preprocess((val) => (val === "" || val === null ? undefined : Number(val)), z.number().min(0, { message: "السعر يجب أن يكون 0 أو أكثر" }).optional()),
+    egp: z.preprocess((val) => {
+      if (val === "" || val === null) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }, z.number().min(0, { message: "السعر يجب أن يكون 0 أو أكثر" }).optional()),
+    lyd: z.preprocess((val) => {
+      if (val === "" || val === null) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }, z.number().min(0, { message: "السعر يجب أن يكون 0 أو أكثر" }).optional()),
   }).refine(data => data.egp !== undefined || data.lyd !== undefined, {
     message: "يجب إدخال سعر واحد على الأقل (جنيه مصري أو دينار ليبي)",
     path: ["egp"]
@@ -52,9 +60,21 @@ export const bookSchema = z.object({
   }).optional(),
   isbn: z.string().optional(),
   edition: z.string().optional(),
-  publicationYear: z.preprocess((val) => (val === "" || val === null ? undefined : Number(val)), z.number().int().optional()),
-  pagesCount: z.preprocess((val) => (val === "" || val === null ? undefined : Number(val)), z.number().int().optional()),
-  volumesCount: z.preprocess((val) => (val === "" || val === null ? 1 : Number(val)), z.number().int().min(1).default(1)),
+  publicationYear: z.preprocess((val) => {
+    if (val === "" || val === null) return undefined;
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().int().optional()),
+  pagesCount: z.preprocess((val) => {
+    if (val === "" || val === null) return undefined;
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().int().optional()),
+  volumesCount: z.preprocess((val) => {
+    if (val === "" || val === null) return 1;
+    const num = Number(val);
+    return isNaN(num) ? 1 : num;
+  }, z.number().int().min(1).default(1)),
   coverType: z.string().optional(),
   size: z.string().optional(),
   language: z.string().default("العربية"),

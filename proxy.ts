@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 const COOKIE_NAME = "dar_aljarrah_token";
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_123456";
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const { pathname } = request.nextUrl;
 

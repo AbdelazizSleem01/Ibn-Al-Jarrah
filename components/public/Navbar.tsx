@@ -79,7 +79,7 @@ export default function Navbar({ settings }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border-color bg-card-bg/95 backdrop-blur-md transition-colors duration-300">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        
+
         {/* Brand Logo & Name */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-10 h-10 overflow-hidden rounded-full border border-primary/30 flex items-center justify-center bg-foreground/5">
@@ -112,26 +112,17 @@ export default function Navbar({ settings }: NavbarProps) {
               <Link
                 key={link.label}
                 href={link.href}
-                className={`flex items-center gap-1.5 text-sm font-medium pb-1 transition-all duration-200 ${
-                  isActive
+                className={`flex items-center gap-1.5 text-sm font-medium pb-1 transition-all duration-200 ${isActive
                     ? "text-primary font-bold border-b-2 border-primary"
                     : "text-foreground/75 hover:text-primary"
-                }`}
+                  }`}
               >
                 <span className={isActive ? "text-primary" : "text-foreground/50"}>{link.icon}</span>
                 {link.label}
               </Link>
             );
           })}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1.5 rounded-full hover:bg-primary/20 transition-all font-medium text-xs gold-glow"
-            >
-              <FaUserShield />
-              لوحة التحكم
-            </Link>
-          )}
+       
         </nav>
 
         {/* Action Buttons: Dark Mode & Mobile Menu Toggle */}
@@ -175,11 +166,10 @@ export default function Navbar({ settings }: NavbarProps) {
                 key={link.label}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 py-3 px-3 rounded-xl text-base transition-all ${
-                  pathname === link.href
+                className={`flex items-center gap-3 py-3 px-3 rounded-xl text-base transition-all ${pathname === link.href
                     ? "text-primary font-bold bg-primary/5 border-r-4 border-primary"
                     : "text-foreground/80 hover:text-primary hover:bg-foreground/5"
-                }`}
+                  }`}
               >
                 <span className={pathname === link.href ? "text-primary" : "text-foreground/40"}>
                   {link.icon}
@@ -187,16 +177,7 @@ export default function Navbar({ settings }: NavbarProps) {
                 {link.label}
               </Link>
             ))}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl hover:bg-primary-hover transition-colors font-bold text-sm mt-2"
-              >
-                <FaUserShield />
-                لوحة التحكم للأدمن
-              </Link>
-            )}
+
           </div>
         </div>
       )}

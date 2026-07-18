@@ -149,34 +149,34 @@ export default function AdminDashboard() {
               <table className="w-full text-right border-collapse text-xs md:text-sm">
                 <thead>
                   <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
-                    <th className="p-3 font-bold">اسم الكتاب</th>
-                    <th className="p-3 font-bold">المؤلف</th>
-                    <th className="p-3 font-bold">التصنيف</th>
-                    <th className="p-3 font-bold">السعر (جنيه)</th>
-                    <th className="p-3 font-bold">حالة التوفر</th>
+                    <th className="p-3 font-bold whitespace-nowrap">اسم الكتاب</th>
+                    <th className="p-3 font-bold whitespace-nowrap">المؤلف</th>
+                    <th className="p-3 font-bold whitespace-nowrap">التصنيف</th>
+                    <th className="p-3 font-bold whitespace-nowrap">السعر (جنيه)</th>
+                    <th className="p-3 font-bold whitespace-nowrap">حالة التوفر</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-color/50">
                   {stats.recentBooks.map((book) => (
                     <tr key={book._id} className="hover:bg-foreground/[0.01] transition-colors">
-                      <td className="p-3 font-bold text-foreground">
-                        <div className="flex items-center gap-2.5">
+                      <td className="p-3 font-bold text-foreground max-w-[200px]">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           {book.coverImage?.secureUrl ? (
                             <img
                               src={book.coverImage.secureUrl}
                               alt=""
-                              className="w-7 h-9 object-cover rounded shadow-sm border border-border-color"
+                              className="w-7 h-9 object-cover rounded shadow-sm border border-border-color shrink-0"
                             />
                           ) : (
-                            <div className="w-7 h-9 rounded bg-primary/10 text-primary flex items-center justify-center font-bold text-[8px] shadow-sm">
+                            <div className="w-7 h-9 rounded bg-primary/10 text-primary flex items-center justify-center font-bold text-[8px] shadow-sm shrink-0">
                               كتاب
                             </div>
                           )}
-                          <span className="line-clamp-1">{book.title}</span>
+                          <span className="truncate block" title={book.title}>{book.title}</span>
                         </div>
                       </td>
-                      <td className="p-3 text-foreground/80">{book.author || "—"}</td>
-                      <td className="p-3 text-foreground/70">{book.categoryId?.name || "عام"}</td>
+                      <td className="p-3 text-foreground/80 max-w-[120px] truncate" title={book.author || ""}>{book.author || "—"}</td>
+                      <td className="p-3 text-foreground/70 max-w-[120px] truncate" title={book.categoryId?.name || ""}>{book.categoryId?.name || "عام"}</td>
                       <td className="p-3 font-bold text-primary">
                         {book.prices?.egp !== undefined ? `${book.prices.egp} ج.م` : "—"}
                       </td>

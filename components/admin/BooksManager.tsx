@@ -15,6 +15,7 @@ import {
   FaCheck,
   FaTimes,
   FaBookOpen,
+  FaChevronDown,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
@@ -87,6 +88,11 @@ export default function BooksManager() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
+  // Custom Dropdown State
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
   // Selection States
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -156,6 +162,32 @@ export default function BooksManager() {
           setCategories(data.data);
         }
       });
+  }, []);
+
+  // Prevent background scrolling when a modal is open
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
+
+  // Click outside category dropdown to close it
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsCategoryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Fetch books when pagination, filter or deleted-mode changes
@@ -316,8 +348,8 @@ export default function BooksManager() {
       ...formData,
       categoryId: formData.categoryId,
       prices: {
-        egp: formData.priceEgp ? parseFloat(formData.priceEgp) : undefined,
-        lyd: formData.priceLyd ? parseFloat(formData.priceLyd) : undefined,
+        egp: formData.priceEgp && !isNaN(parseFloat(formData.priceEgp)) ? parseFloat(formData.priceEgp) : undefined,
+        lyd: formData.priceLyd && !isNaN(parseFloat(formData.priceLyd)) ? parseFloat(formData.priceLyd) : undefined,
       },
       coverImageBase64: coverBase64 || undefined,
       removeImage: removeImageFlag,
@@ -566,21 +598,22 @@ export default function BooksManager() {
           <p className="text-xs text-foreground/60 mt-1">تعديل وإضافة وحذف الكتب، واستيراد القوائم أو تصديرها</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto mt-4 sm:mt-0">
           <button
             onClick={() => setShowDeleted(!showDeleted)}
-            className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer border flex-1 sm:flex-none order-2 sm:order-none ${
               showDeleted
-                ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20"
-                : "bg-foreground/5 text-foreground border-border-color hover:bg-foreground/10"
+                ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                : "bg-card-bg border-border-color text-foreground/70 hover:text-red-500 hover:border-red-500 hover:bg-red-500/10"
             }`}
           >
+            {showDeleted ? <FaBookOpen /> : <FaTrash />}
             {showDeleted ? "عرض الكتب النشطة" : "سلة المحذوفات"}
           </button>
           
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border-color px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+            className="flex items-center justify-center gap-1.5 bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border-color px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex-1 sm:flex-none order-3 sm:order-none"
           >
             <FaFileExport />
             تصدير النتائج
@@ -588,7 +621,7 @@ export default function BooksManager() {
 
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md gold-glow transition-all cursor-pointer"
+            className="flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md gold-glow transition-all cursor-pointer w-full sm:w-auto sm:flex-none order-1 sm:order-none"
           >
             <FaPlus />
             إضافة كتاب جديد
@@ -615,48 +648,115 @@ export default function BooksManager() {
         </div>
 
         {/* Category Select */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5" ref={categoryDropdownRef}>
           <label className="text-[10px] font-bold text-foreground/70">التصنيف</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full bg-card-bg border border-border-color rounded-lg p-2 text-xs focus:border-primary/50 focus:outline-none"
-          >
-            <option value="">الكل</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+              className="w-full bg-card-bg border border-border-color rounded-lg py-2 pl-8 pr-3 text-xs focus:border-primary/50 focus:outline-none cursor-pointer text-right transition-colors relative"
+            >
+              <span className="truncate block">
+                {selectedCategory
+                  ? categories.find((c) => c._id === selectedCategory)?.name || "غير محدد"
+                  : "الكل"}
+              </span>
+              <FaChevronDown className={`absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 text-[9px] transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isCategoryDropdownOpen && (
+              <div className="absolute right-0 min-w-[240px] max-w-[90vw] mt-1.5 z-30 bg-card-bg border border-border-color rounded-xl shadow-xl p-2.5 flex flex-col gap-2 max-h-60 overflow-y-auto animate-fade-in text-right">
+                {/* Search Input inside Dropdown */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="ابحث عن تصنيف..."
+                    value={categorySearchQuery}
+                    onChange={(e) => setCategorySearchQuery(e.target.value)}
+                    className="w-full bg-foreground/[0.02] border border-border-color rounded-lg py-1.5 pl-3 pr-7 text-xs focus:border-primary/50 focus:outline-none"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <FaSearch className="absolute top-1/2 right-2.5 -translate-y-1/2 text-foreground/45 text-[10px]" />
+                </div>
+
+                {/* Options list */}
+                <div className="flex flex-col max-h-40 overflow-y-auto divide-y divide-border-color/10 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory("");
+                      setIsCategoryDropdownOpen(false);
+                      setCategorySearchQuery("");
+                    }}
+                    className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${
+                      !selectedCategory ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
+                    }`}
+                  >
+                    كل التصنيفات
+                  </button>
+                  {categories
+                    .filter((c) =>
+                      c.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
+                    )
+                    .map((cat) => (
+                      <button
+                        key={cat._id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(cat._id);
+                          setIsCategoryDropdownOpen(false);
+                          setCategorySearchQuery("");
+                        }}
+                        className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${
+                          selectedCategory === cat._id ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  {categories.filter((c) => c.name.toLowerCase().includes(categorySearchQuery.toLowerCase())).length === 0 && (
+                    <div className="text-center text-[10px] text-foreground/40 py-3">
+                      لا توجد تصنيفات مطابقة
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Availability Select */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-bold text-foreground/70">حالة التوفر</label>
-          <select
-            value={availability}
-            onChange={(e) => setAvailability(e.target.value)}
-            className="w-full bg-card-bg border border-border-color rounded-lg p-2 text-xs focus:border-primary/50 focus:outline-none"
-          >
-            <option value="">الكل</option>
-            <option value="available">متوفر</option>
-            <option value="unavailable">نفد</option>
-          </select>
+          <div className="relative">
+            <select
+              value={availability}
+              onChange={(e) => setAvailability(e.target.value)}
+              className="w-full appearance-none bg-card-bg border border-border-color rounded-lg py-2 pl-8 pr-3 text-xs focus:border-primary/50 focus:outline-none cursor-pointer"
+            >
+              <option value="" className="bg-card-bg text-foreground">الكل</option>
+              <option value="available" className="bg-card-bg text-foreground">متوفر</option>
+              <option value="unavailable" className="bg-card-bg text-foreground">نفد</option>
+            </select>
+            <FaChevronDown className="absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 pointer-events-none text-[9px]" />
+          </div>
         </div>
 
         {/* Featured Select */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-bold text-foreground/70">تمييز الكتاب</label>
-          <select
-            value={isFeatured}
-            onChange={(e) => setIsFeatured(e.target.value)}
-            className="w-full bg-card-bg border border-border-color rounded-lg p-2 text-xs focus:border-primary/50 focus:outline-none"
-          >
-            <option value="">الكل</option>
-            <option value="true">مميز</option>
-            <option value="false">غير مميز</option>
-          </select>
+          <div className="relative">
+            <select
+              value={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.value)}
+              className="w-full appearance-none bg-card-bg border border-border-color rounded-lg py-2 pl-8 pr-3 text-xs focus:border-primary/50 focus:outline-none cursor-pointer"
+            >
+              <option value="" className="bg-card-bg text-foreground">الكل</option>
+              <option value="true" className="bg-card-bg text-foreground">مميز</option>
+              <option value="false" className="bg-card-bg text-foreground">غير مميز</option>
+            </select>
+            <FaChevronDown className="absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 pointer-events-none text-[9px]" />
+          </div>
         </div>
 
         {/* Clear search parameters button */}
@@ -766,7 +866,7 @@ export default function BooksManager() {
             <table className="w-full text-right border-collapse text-xs md:text-sm">
               <thead>
                 <tr className="bg-foreground/[0.02] border-b border-border-color text-foreground/75">
-                  <th className="p-3.5 text-center w-12">
+                  <th className="p-3.5 text-center w-12 whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={selectedIds.length === books.length}
@@ -774,12 +874,12 @@ export default function BooksManager() {
                       className="w-4 h-4 rounded border-border-color text-primary focus:ring-primary accent-primary"
                     />
                   </th>
-                  <th className="p-3.5 font-bold">الكتاب</th>
-                  <th className="p-3.5 font-bold">المؤلف</th>
-                  <th className="p-3.5 font-bold">التصنيف</th>
-                  <th className="p-3.5 font-bold">السعر (جنيه)</th>
-                  <th className="p-3.5 font-bold text-center">حالة التوفر</th>
-                  <th className="p-3.5 font-bold text-center w-36">إجراءات</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">الكتاب</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">المؤلف</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">التصنيف</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">السعر (جنيه)</th>
+                  <th className="p-3.5 font-bold text-center whitespace-nowrap">حالة التوفر</th>
+                  <th className="p-3.5 font-bold text-center w-36 whitespace-nowrap">إجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-color/50">
@@ -883,7 +983,7 @@ export default function BooksManager() {
 
       {/* Pagination Footer bar */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border-color pt-4 px-2 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border-color pt-4 px-2 text-xs">
           <span className="text-foreground/60">
             إجمالي <span className="font-extrabold text-primary">{pagination.totalResults}</span> نتيجة
           </span>
@@ -941,12 +1041,12 @@ export default function BooksManager() {
             <form onSubmit={handleFormSubmit} className="w-full flex flex-col md:flex-row items-stretch overflow-y-auto max-h-[92vh]">
               
               {/* Left Column: Image preview & selection */}
-              <div className="w-full md:w-2/5 p-6 bg-foreground/[0.02] border-l border-border-color/50 flex flex-col items-center justify-center shrink-0">
-                <div className="flex flex-col items-center gap-4">
-                  <span className="text-xs font-bold text-foreground/70">غلاف الكتاب (اختياري)</span>
+              <div className="w-full md:w-2/5 p-4 md:p-6 bg-foreground/[0.02] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-center shrink-0">
+                <div className="flex flex-col items-center gap-3 md:gap-4">
+                  <span className="text-[10px] md:text-xs font-bold text-foreground/70">غلاف الكتاب (اختياري)</span>
                   
                   {/* Preview box */}
-                  <div className="w-48 aspect-[3/4] rounded-lg border border-border-color shadow-md bg-card-bg flex flex-col items-center justify-center overflow-hidden relative group gold-glow">
+                  <div className="w-28 md:w-48 aspect-[3/4] rounded-lg border border-border-color shadow-md bg-card-bg flex flex-col items-center justify-center overflow-hidden relative group gold-glow">
                     {coverPreview ? (
                       <>
                         <img src={coverPreview} alt="غلاف الكتاب" className="w-full h-full object-cover" />
@@ -982,7 +1082,7 @@ export default function BooksManager() {
               </div>
 
               {/* Right Column: Metadata inputs */}
-              <div className="w-full md:w-3/5 p-6 md:p-8 flex flex-col gap-4 overflow-y-auto max-h-[80vh] md:max-h-[85vh]">
+              <div className="w-full md:w-3/5 p-6 md:p-8 flex flex-col gap-4 overflow-visible md:overflow-y-auto md:max-h-[85vh]">
                 <h2 className="font-black text-lg text-foreground border-r-4 border-primary pr-3 py-0.5 mb-2">
                   {editingBookId ? "تعديل تفاصيل الكتاب" : "إضافة كتاب جديد للنشر"}
                 </h2>
