@@ -26,10 +26,9 @@ interface NavbarProps {
 export default function Navbar({ settings }: NavbarProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isOpen, setIsOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
 
-  // Load theme and verify admin session
+  // Load theme
   useEffect(() => {
     // Theme initialization
     const storedTheme = localStorage.getItem("theme");
@@ -43,16 +42,6 @@ export default function Navbar({ settings }: NavbarProps) {
       setTheme("light");
       document.documentElement.classList.remove("dark");
     }
-
-    // Check admin status
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setIsAdmin(true);
-        }
-      })
-      .catch(() => setIsAdmin(false));
   }, []);
 
   const toggleTheme = () => {

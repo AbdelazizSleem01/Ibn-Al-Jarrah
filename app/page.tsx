@@ -12,8 +12,8 @@ import Footer from "@/components/public/Footer";
 import Link from "next/link";
 import { FaPhoneAlt, FaFacebook, FaWhatsapp, FaInfoCircle, FaMapMarkerAlt, FaEnvelope } from "react-icons/fa";
 
-// Ensure page is dynamic so it checks DB on every request for settings/books changes
-export const revalidate = 0;
+// Enable ISR caching (revalidate every 60 seconds) to drastically improve home page load speed on Vercel
+export const revalidate = 60;
 
 export default async function Page() {
   let settings: any = null;
