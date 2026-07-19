@@ -9,7 +9,6 @@ import {
   FaTimesCircle,
   FaStar,
   FaImage,
-  FaBookOpen,
 } from "react-icons/fa";
 
 interface StatsData {
@@ -24,72 +23,6 @@ interface StatsData {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<StatsData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/admin/dashboard/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setStats(data.data);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const cards = [
-    {
-      title: "إجمالي الكتب",
-      value: stats?.totalBooks ?? 0,
-      icon: FaBook,
-      color: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-    },
-    {
-      title: "الكتب المتاحة",
-      value: stats?.availableBooks ?? 0,
-      icon: FaCheckCircle,
-      color: "bg-green-500/15 text-green-400 border-green-500/20",
-    },
-    {
-      title: "الكتب غير المتاحة",
-      value: stats?.unavailableBooks ?? 0,
-      icon: FaTimesCircle,
-      color: "bg-red-500/15 text-red-400 border-red-500/20",
-    },
-    {
-      title: "إجمالي التصنيفات",
-      value: stats?.totalCategories ?? 0,
-      icon: FaTags,
-      color: "bg-purple-500/15 text-purple-400 border-purple-500/20",
-    },
-    {
-      title: "الكتب المميزة",
-      value: stats?.featuredBooks ?? 0,
-      icon: FaStar,
-      color: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-    },
-    {
-      title: "كتب بدون غلاف",
-      value: stats?.noImageBooks ?? 0,
-      icon: FaImage,
-      color: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-    },
-  ];
-
-  return (
-    <div className="flex flex-col gap-6 text-right transition-colors duration-300">
-      
-      {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-black text-foreground flex items-center gap-2">
-          <span>لوحة التحكم والمؤشرات</span>
-          <span className={`transition-all duration-300 flex items-center justify-center w-6 h-6 ${loading ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'}`}>
-            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </span>
-        </h1>
-        <p className="teexport default function AdminDashboard() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
