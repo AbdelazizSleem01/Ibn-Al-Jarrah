@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import BookCard from "./BookCard";
 import BookModal from "./BookModal";
-import { FaThLarge, FaList, FaFilter, FaTimes, FaUndo, FaSearch, FaChevronDown, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaThLarge, FaList, FaFilter, FaTimes, FaUndo, FaSearch, FaChevronDown, FaChevronLeft, FaChevronRight, FaInfoCircle } from "react-icons/fa";
 
 interface Category {
   _id: string;
@@ -27,7 +27,11 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [viewType, setViewType] = useState<"cards" | "table">("cards");
+  const [isPending, startTransition] = useTransition();
+
+  const viewParam = searchParams.get("view");
+  const initialView = (viewParam === "table" || viewParam === "cards") ? viewParam : "cards";
+  const [viewType, setViewType] = useState<"cards" | "table">(initialView);
   const [searchVal, setSearchVal] = useState(searchParams.get("search") || "");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(searchParams.get("book") || null);
@@ -76,14 +80,18 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
       }
     });
 
-    router.push(`?${params.toString()}`, { scroll: true });
+    startTransition(() => {
+      router.push(`?${params.toString()}`, { scroll: true });
+    });
   };
 
-  // Load view type from localStorage
+  // Load view type from localStorage or sync with URL query params
   useEffect(() => {
     const savedView = localStorage.getItem("books_view_type");
-    if (savedView === "table" || savedView === "cards") {
+    const currentViewParam = searchParams.get("view");
+    if (!currentViewParam && (savedView === "table" || savedView === "cards")) {
       setViewType(savedView);
+      updateQuery({ view: savedView });
     }
   }, []);
 
@@ -107,6 +115,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   const setAndSaveView = (type: "cards" | "table") => {
     setViewType(type);
     localStorage.setItem("books_view_type", type);
+    updateQuery({ view: type });
   };
 
   const handleClearFilters = () => {
@@ -167,7 +176,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   const activeChips = getActiveChips();
 
   return (
-    <div className=" mx-auto px-4 py-8 text-right min-h-screen transition-colors duration-300">
+    <div className="max-w-7xl mx-auto px-4 py-8 text-right min-h-screen transition-colors duration-300">
 
       {/* Page Title & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -429,7 +438,9 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
         </div>
 
         {/* Results  */}
-        {initialBooks.length === 0 ? (
+        {isPending ? (
+          <BooksSkeletonView viewType={viewType} />
+        ) : initialBooks.length === 0 ? (
           <div className="bg-card-bg border border-border-color rounded-2xl p-16 text-center shadow-sm">
             <p className="text-foreground/50 text-sm font-bold mb-4">لا توجد نتائج تطابق خيارات البحث الحالية.</p>
             <button
@@ -570,3 +581,67 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
     </div>
   );
 }
+
+// Beautiful skeleton loader matching the structural size and columns of cards/table layouts to maintain low CLS
+function BooksSkeletonView({ viewType }: { viewType: "cards" | "table" }) {
+  if (viewType === "cards") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 8 }).map((_, idx) => (
+          <div key={idx} className="bg-card-bg border border-border-color rounded-xl overflow-hidden shadow-sm p-4 flex flex-col gap-3">
+            <div className="aspect-[3/4] w-full skeleton rounded-lg" />
+            <div className="h-5 w-3/4 skeleton rounded" />
+            <div className="h-4 w-1/2 skeleton rounded" />
+            <div className="h-4 w-1/3 skeleton rounded mt-2" />
+            <div className="h-8 w-full skeleton rounded-lg mt-2 md:hidden" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full overflow-x-auto rounded-xl border border-border-color bg-card-bg">
+      <table className="w-full text-right border-collapse text-xs md:text-sm">
+        <thead>
+          <tr className="bg-foreground/[0.02] border-b border-border-color text-foreground/70">
+            <th className="p-3.5 font-bold">اسم الكتاب</th>
+            <th className="p-3.5 font-bold">المؤلف</th>
+            <th className="p-3.5 font-bold">التصنيف</th>
+            <th className="p-3.5 font-bold">السعر (جنيه)</th>
+            <th className="p-3.5 font-bold text-center">الحالة</th>
+            <th className="p-3.5 font-bold text-center">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border-color/55">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <tr key={idx} className="hover:bg-foreground/[0.01] transition-colors">
+              <td className="p-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-10 skeleton rounded shrink-0" />
+                  <div className="h-4 w-28 skeleton rounded" />
+                </div>
+              </td>
+              <td className="p-3.5">
+                <div className="h-4 w-24 skeleton rounded" />
+              </td>
+              <td className="p-3.5">
+                <div className="h-4 w-20 skeleton rounded" />
+              </td>
+              <td className="p-3.5">
+                <div className="h-4 w-16 skeleton rounded animate-pulse bg-primary/20" />
+              </td>
+              <td className="p-3.5">
+                <div className="mx-auto h-5 w-12 skeleton rounded-full" />
+              </td>
+              <td className="p-3.5">
+                <div className="mx-auto h-7 w-16 skeleton rounded-md" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+

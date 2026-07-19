@@ -57,9 +57,9 @@ export default function Navbar({ settings }: NavbarProps) {
   };
 
   const navLinks = [
-    { label: "الرئيسية", href: "/", icon: <FaHome className="text-[18px]" /> },
-    { label: "الكتب", href: "/books", icon: <FaBookOpen className="text-[18px]" /> },
-    { label: "تواصل معنا", href: "/#contact", icon: <FaEnvelope className="text-[18px]" /> },
+    { label: "الرئيسية", href: "/", icon: <FaHome className="text-[16px]" /> },
+    { label: "الكتب", href: "/books", icon: <FaBookOpen className="text-[16px]" /> },
+    { label: "تواصل معنا", href: "/#contact", icon: <FaEnvelope className="text-[16px]" /> },
   ];
 
   const brandName = settings?.title || "مؤسسة دار ابن الجراح ";
@@ -102,8 +102,8 @@ export default function Navbar({ settings }: NavbarProps) {
                 key={link.label}
                 href={link.href}
                 className={`flex items-center gap-1.5 font-medium pb-1 transition-all duration-200 ${isActive
-                    ? "text-primary font-bold border-b-2 border-primary"
-                    : "text-foreground/75 hover:text-primary"
+                  ? "text-primary font-bold border-b-2 border-primary"
+                  : "text-foreground/75 hover:text-primary"
                   }`}
               >
                 <span className={isActive ? "text-primary text-lg" : "text-foreground/50"} >{link.icon}</span>
@@ -111,7 +111,7 @@ export default function Navbar({ settings }: NavbarProps) {
               </Link>
             );
           })}
-       
+
         </nav>
 
         {/* Action Buttons: Dark Mode & Mobile Menu Toggle */}
@@ -156,8 +156,8 @@ export default function Navbar({ settings }: NavbarProps) {
                 href={link.href}
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 py-3 px-3 rounded-xl text-base transition-all ${pathname === link.href
-                    ? "text-primary font-bold bg-primary/5 border-r-4 border-primary"
-                    : "text-foreground/80 hover:text-primary hover:bg-foreground/5"
+                  ? "text-primary font-bold bg-primary/5 border-r-4 border-primary"
+                  : "text-foreground/80 hover:text-primary hover:bg-foreground/5"
                   }`}
               >
                 <span className={pathname === link.href ? "text-primary" : "text-foreground/40"}>
