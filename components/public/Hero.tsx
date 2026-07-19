@@ -26,7 +26,7 @@ export default function Hero({ settings }: HeroProps) {
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
         
         {/* Left/Right Text Content (RTL: right side) */}
-        <div className="md:col-span-7 flex flex-col gap-6 text-center md:text-right items-center md:items-start order-2 md:order-1">
+        <div className="md:col-span-7 flex flex-col gap-6 text-center md:text-right items-center md:items-start order-2 md:order-1 animate-fade-in">
           
           <div className="flex flex-col gap-2 items-center md:items-start">
             <span className="text-xs md:text-sm font-extrabold text-primary tracking-wider uppercase md:border-r-4 md:border-primary md:pr-3 py-0.5">
@@ -44,13 +44,13 @@ export default function Hero({ settings }: HeroProps) {
           <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
             <Link
               href="/books"
-              className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-bold text-sm md:text-base transition-all gold-glow gold-glow-hover active:scale-95 cursor-pointer"
+              className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-bold text-sm md:text-base transition-all gold-glow gold-glow-hover active:scale-95 hover:scale-[1.03] shadow hover:shadow-md cursor-pointer"
             >
               تصفح الكتب
             </Link>
             <a
               href="#contact"
-              className="bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border-color px-6 py-3 rounded-lg font-bold text-sm md:text-base transition-all active:scale-95 cursor-pointer"
+              className="bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border-color px-6 py-3 rounded-lg font-bold text-sm md:text-base transition-all active:scale-95 hover:scale-[1.03] cursor-pointer"
             >
               تواصل معنا
             </a>
@@ -59,7 +59,7 @@ export default function Hero({ settings }: HeroProps) {
         </div>
 
         {/* Right/Left Image Content (RTL: left side) */}
-        <div className="md:col-span-5 flex justify-center order-1 md:order-2">
+        <div className="md:col-span-5 flex justify-center order-1 md:order-2 animate-fade-in [animation-delay:150ms]">
           <div className="relative w-full max-w-[340px] md:max-w-none aspect-square rounded-2xl overflow-hidden border border-border-color shadow-2xl bg-card-bg group gold-glow transition-all duration-500 hover:scale-[1.02]">
             
             {/* Soft gold hover shimmer */}

@@ -76,7 +76,7 @@ export default async function Page() {
         {/* About Us (من نحن) Section */}
         <section id="about" className="py-16 bg-foreground/[0.01] border-b border-border-color/30 transition-colors duration-300">
           <div className="container mx-auto px-4 max-w-4xl">
-            <div className="bg-card-bg border border-border-color rounded-2xl p-6 md:p-10 shadow-md text-right relative overflow-hidden transition-colors duration-300">
+            <div className="bg-card-bg border border-border-color rounded-2xl p-6 md:p-10 shadow-md text-right relative overflow-hidden transition-all duration-300 hover:scale-[1.005] hover:shadow-lg hover:border-primary/40">
               {/* Golden glow decoration */}
               <div className="absolute top-0 right-0 w-2 h-full bg-primary" />
               
@@ -139,7 +139,7 @@ export default async function Page() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
               
               {/* Phone & Details */}
-              <div className="md:col-span-6 bg-card-bg border border-border-color rounded-2xl p-6 flex flex-col gap-4 justify-between transition-colors duration-300">
+              <div className="md:col-span-6 bg-card-bg border border-border-color rounded-2xl p-6 flex flex-col gap-4 justify-between transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:border-primary/40 group/card">
                 <div className="flex flex-col gap-2">
                   <h3 className="font-extrabold text-sm md:text-base text-foreground">معلومات الاتصال المباشر</h3>
                   <p className="text-xs text-foreground/60 leading-relaxed">
@@ -148,11 +148,11 @@ export default async function Page() {
                 </div>
 
                 <div className="flex flex-col gap-3 pt-4 border-t border-border-color/50">
-                  <a href={`tel:${phone}`} className="flex items-center gap-3 text-xs md:text-sm text-foreground hover:text-primary transition-all w-fit">
-                    <span className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                      <FaPhoneAlt className="text-primary text-xs" />
+                  <a href={`tel:${phone}`} className="flex items-center gap-3 text-xs md:text-sm text-foreground hover:text-primary transition-all w-fit group/btn">
+                    <span className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/btn:bg-primary group-hover/btn:text-white group-hover/btn:scale-110">
+                      <FaPhoneAlt className="text-primary text-xs transition-colors duration-300 group-hover/btn:text-white" />
                     </span>
-                    <span className="font-bold" dir="ltr">{phone}</span>
+                    <span className="font-bold transition-colors duration-300 group-hover/btn:text-primary" dir="ltr">{phone}</span>
                   </a>
                   <div className="flex items-center gap-3 text-xs md:text-sm text-foreground/75">
                     <span className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
@@ -164,7 +164,7 @@ export default async function Page() {
               </div>
 
               {/* Social & Group Links */}
-              <div className="md:col-span-6 bg-card-bg border border-border-color rounded-2xl p-6 flex flex-col gap-4 justify-between transition-colors duration-300">
+              <div className="md:col-span-6 bg-card-bg border border-border-color rounded-2xl p-6 flex flex-col gap-4 justify-between transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:border-primary/40 group/card">
                 <div className="flex flex-col gap-2">
                   <h3 className="font-extrabold text-sm md:text-base text-foreground">شبكات التواصل ومجموعاتنا</h3>
                   <p className="text-xs text-foreground/60 leading-relaxed">
@@ -177,7 +177,7 @@ export default async function Page() {
                     href={facebookUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs md:text-sm transition-all"
+                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs md:text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow hover:shadow-md cursor-pointer"
                   >
                     <FaFacebook />
                     تابعنا على فيسبوك
@@ -188,7 +188,7 @@ export default async function Page() {
                       href={whatsappMen}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-xs transition-all"
+                      className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-xs transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow hover:shadow-md cursor-pointer"
                     >
                       <FaWhatsapp />
                       مجموعة الرجال
@@ -197,7 +197,7 @@ export default async function Page() {
                       href={whatsappWomen}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-xs transition-all"
+                      className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-xs transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow hover:shadow-md cursor-pointer"
                     >
                       <FaWhatsapp />
                       مجموعة النساء

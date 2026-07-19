@@ -33,7 +33,7 @@ export default function BookCard({ book, onDetailsClick }: BookCardProps) {
   const isAvailable = book.availabilityStatus === "available";
 
   return (
-    <div className="group relative flex flex-col h-full rounded-xl border border-border-color bg-card-bg overflow-hidden hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
+      <div className="group relative flex flex-col h-full rounded-xl border border-border-color bg-card-bg overflow-hidden hover:scale-[1.02] hover:shadow-xl hover:border-primary/30 transition-all duration-300">
       
       {/* Featured Badge */}
       {book.isFeatured && (
@@ -48,14 +48,14 @@ export default function BookCard({ book, onDetailsClick }: BookCardProps) {
           src={book.coverImage?.secureUrl || "/images/hero-book.webp"}
           alt={book.title}
           loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
 
         {/* Quick View Hover Overlay */}
         <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
           <button
             onClick={() => onDetailsClick(book.slug)}
-            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-lg font-bold text-sm shadow-lg transform translate-y-4 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
           >
             <FaInfoCircle />
             التفاصيل
