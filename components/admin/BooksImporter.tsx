@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import * as XLSX from "xlsx";
-import { FaFileExcel, FaClipboardList, FaFileImport, FaCheckCircle, FaTimesCircle, FaTasks } from "react-icons/fa";
+import { FaFileExcel, FaClipboardList, FaFileImport, FaCheckCircle, FaTimesCircle, FaTasks, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Swal from "sweetalert2";
 
 interface BookRow {
@@ -44,6 +44,9 @@ export default function BooksImporter() {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<any | null>(null);
+
+  // Preview Pagination State
+  const [previewPage, setPreviewPage] = useState(1);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -106,6 +109,7 @@ export default function BooksImporter() {
         setParsedData(jsonData);
         autoMatchHeaders(extractedHeaders);
         setReport(null);
+        setPreviewPage(1);
       } catch (err: any) {
         Swal.fire({
           icon: "error",
@@ -141,6 +145,7 @@ export default function BooksImporter() {
       setParsedData(rows);
       autoMatchHeaders(extractedHeaders);
       setReport(null);
+      setPreviewPage(1);
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -248,6 +253,7 @@ export default function BooksImporter() {
       setHeaders([]);
       setFileName("");
       setPastedText("");
+      setPreviewPage(1);
 
     } catch (error) {
       Swal.fire({
@@ -261,6 +267,12 @@ export default function BooksImporter() {
       setImporting(false);
     }
   };
+
+  // Preview Pagination calculations
+  const previewRowsPerPage = 5;
+  const totalPreviewPages = Math.ceil(parsedData.length / previewRowsPerPage);
+  const startIndex = (previewPage - 1) * previewRowsPerPage;
+  const paginatedPreviewData = parsedData.slice(startIndex, startIndex + previewRowsPerPage);
 
   return (
     <div className="flex flex-col gap-6 text-right transition-colors duration-300">
@@ -410,35 +422,66 @@ export default function BooksImporter() {
               معاينة عينات البيانات المكتشفة
             </h3>
             <p className="text-[10px] text-foreground/60 leading-relaxed">
-              تعرض هذه القائمة عينة من أول 5 صفوف تم قراءتها من الملف لتسهيل المراجعة والتأكد من توافق الأعمدة.
+              تعرض هذه القائمة عينة من صفوف الملف لتسهيل المراجعة والتأكد من توافق الأعمدة. يمكنك التمرير أفقياً لرؤية جميع الأعمدة.
             </p>
 
             <div className="w-full overflow-x-auto rounded-lg border border-border-color bg-foreground/[0.005]">
               <table className="w-full text-right border-collapse text-xs">
                 <thead>
                   <tr className="bg-foreground/[0.02] border-b border-border-color text-foreground/65">
-                    {headers.slice(0, 5).map((h) => (
-                      <th key={h} className="p-3 font-semibold">
+                    {headers.map((h) => (
+                      <th key={h} className="p-3 font-semibold min-w-[150px] whitespace-nowrap">
                         {h}
                       </th>
                     ))}
-                    {headers.length > 5 && <th className="p-3 font-semibold">...</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-color/40">
-                  {parsedData.slice(0, 5).map((row, idx) => (
+                  {paginatedPreviewData.map((row, idx) => (
                     <tr key={idx}>
-                      {headers.slice(0, 5).map((h) => (
-                        <td key={h} className="p-3 text-foreground/80 truncate max-w-[140px]">
-                          {row[h] !== null && row[h] !== undefined ? String(row[h]) : ""}
+                      {headers.map((h) => (
+                        <td key={h} className="p-3 text-foreground/80 truncate max-w-[200px] min-w-[150px] whitespace-nowrap" title={row[h] !== null && row[h] !== undefined ? String(row[h]) : ""}>
+                          {row[h] !== null && row[h] !== undefined ? String(row[h]) : "—"}
                         </td>
                       ))}
-                      {headers.length > 5 && <td className="p-3 text-foreground/45">...</td>}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPreviewPages > 1 && (
+              <div className="flex items-center justify-between gap-4 mt-2 pt-4 border-t border-border-color/40 text-xs">
+                <span className="text-foreground/60">
+                  عرض السجلات {startIndex + 1} - {Math.min(startIndex + previewRowsPerPage, parsedData.length)} من أصل {parsedData.length}
+                </span>
+                
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setPreviewPage((p) => Math.max(p - 1, 1))}
+                    disabled={previewPage === 1}
+                    className="p-2 rounded-lg border border-border-color bg-foreground/[0.02] hover:bg-foreground/[0.05] disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer text-foreground/80 flex items-center justify-center"
+                    title="الصفحة السابقة"
+                  >
+                    <FaChevronRight className="text-[10px]" />
+                  </button>
+                  
+                  <span className="font-semibold text-foreground/85 px-3 py-1 bg-foreground/[0.04] border border-border-color rounded-lg">
+                    صفحة {previewPage} من {totalPreviewPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => setPreviewPage((p) => Math.min(p + 1, totalPreviewPages))}
+                    disabled={previewPage === totalPreviewPages}
+                    className="p-2 rounded-lg border border-border-color bg-foreground/[0.02] hover:bg-foreground/[0.05] disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer text-foreground/80 flex items-center justify-center"
+                    title="الصفحة التالية"
+                  >
+                    <FaChevronLeft className="text-[10px]" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
