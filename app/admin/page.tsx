@@ -102,7 +102,7 @@ export default function AdminDashboard() {
                   <Icon className="w-4 h-4" />
                 </span>
               </div>
-              <span className="text-2xl font-black text-foreground tracking-tight leading-none min-h-[1.5rem] flex items-center">
+              <span className="h-8 text-2xl font-black text-foreground tracking-tight leading-none flex items-center">
                 {loading ? (
                   <span className="h-6 w-12 bg-foreground/10 rounded animate-pulse inline-block" />
                 ) : (
@@ -130,23 +130,23 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          {loading ? (
-            <div className="w-full overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs md:text-sm">
-                <thead>
-                  <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
-                    <th className="p-3 font-bold whitespace-nowrap">اسم الكتاب</th>
-                    <th className="p-3 font-bold whitespace-nowrap">المؤلف</th>
-                    <th className="p-3 font-bold whitespace-nowrap">التصنيف</th>
-                    <th className="p-3 font-bold whitespace-nowrap">السعر (جنيه)</th>
-                    <th className="p-3 font-bold whitespace-nowrap">حالة التوفر</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-color/50">
-                  {[...Array(5)].map((_, i) => (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-right border-collapse text-xs md:text-sm table-fixed">
+              <thead>
+                <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
+                  <th className="p-3 font-bold whitespace-nowrap w-[40%]">اسم الكتاب</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[20%]">المؤلف</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[15%]">التصنيف</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[13%]">السعر (جنيه)</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[12%]">حالة التوفر</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-color/50">
+                {loading ? (
+                  [...Array(5)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
                       <td className="p-3">
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-7 h-9 rounded bg-foreground/10 shrink-0" />
                           <div className="h-4 bg-foreground/10 rounded w-28 shrink-0" />
                         </div>
@@ -164,28 +164,15 @@ export default function AdminDashboard() {
                         <div className="h-4 bg-foreground/10 rounded w-10" />
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : !stats?.recentBooks || stats.recentBooks.length === 0 ? (
-            <div className="text-center py-12 text-xs text-foreground/50">
-              لا توجد كتب مضافة في قاعدة البيانات حالياً.
-            </div>
-          ) : (
-            <div className="w-full overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs md:text-sm">
-                <thead>
-                  <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
-                    <th className="p-3 font-bold whitespace-nowrap">اسم الكتاب</th>
-                    <th className="p-3 font-bold whitespace-nowrap">المؤلف</th>
-                    <th className="p-3 font-bold whitespace-nowrap">التصنيف</th>
-                    <th className="p-3 font-bold whitespace-nowrap">السعر (جنيه)</th>
-                    <th className="p-3 font-bold whitespace-nowrap">حالة التوفر</th>
+                  ))
+                ) : !stats?.recentBooks || stats.recentBooks.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-12 text-xs text-foreground/50">
+                      لا توجد كتب مضافة في قاعدة البيانات حالياً.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border-color/50">
-                  {stats.recentBooks.map((book) => (
+                ) : (
+                  stats.recentBooks.map((book) => (
                     <tr key={book._id} className="hover:bg-foreground/[0.01] transition-colors">
                       <td className="p-3 font-bold text-foreground max-w-[200px]">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -220,11 +207,11 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
         </div>
       </div>
