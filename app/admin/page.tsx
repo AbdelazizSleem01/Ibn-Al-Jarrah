@@ -39,54 +39,40 @@ export default function AdminDashboard() {
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-6 text-right">
-        <div className="h-8 w-48 skeleton rounded" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 skeleton rounded-xl" />
-          ))}
-        </div>
-        <div className="h-64 skeleton rounded-xl mt-4" />
-      </div>
-    );
-  }
-
   const cards = [
     {
       title: "إجمالي الكتب",
-      value: stats?.totalBooks || 0,
+      value: stats?.totalBooks ?? 0,
       icon: FaBook,
       color: "bg-blue-500/15 text-blue-400 border-blue-500/20",
     },
     {
       title: "الكتب المتاحة",
-      value: stats?.availableBooks || 0,
+      value: stats?.availableBooks ?? 0,
       icon: FaCheckCircle,
       color: "bg-green-500/15 text-green-400 border-green-500/20",
     },
     {
       title: "الكتب غير المتاحة",
-      value: stats?.unavailableBooks || 0,
+      value: stats?.unavailableBooks ?? 0,
       icon: FaTimesCircle,
       color: "bg-red-500/15 text-red-400 border-red-500/20",
     },
     {
       title: "إجمالي التصنيفات",
-      value: stats?.totalCategories || 0,
+      value: stats?.totalCategories ?? 0,
       icon: FaTags,
       color: "bg-purple-500/15 text-purple-400 border-purple-500/20",
     },
     {
       title: "الكتب المميزة",
-      value: stats?.featuredBooks || 0,
+      value: stats?.featuredBooks ?? 0,
       icon: FaStar,
       color: "bg-amber-500/15 text-amber-400 border-amber-500/20",
     },
     {
       title: "كتب بدون غلاف",
-      value: stats?.noImageBooks || 0,
+      value: stats?.noImageBooks ?? 0,
       icon: FaImage,
       color: "bg-orange-500/15 text-orange-400 border-orange-500/20",
     },
@@ -116,8 +102,12 @@ export default function AdminDashboard() {
                   <Icon className="w-4 h-4" />
                 </span>
               </div>
-              <span className="text-2xl font-black text-foreground tracking-tight leading-none">
-                {card.value}
+              <span className="text-2xl font-black text-foreground tracking-tight leading-none min-h-[1.5rem] flex items-center">
+                {loading ? (
+                  <span className="h-6 w-12 bg-foreground/10 rounded animate-pulse inline-block" />
+                ) : (
+                  card.value
+                )}
               </span>
             </div>
           );
@@ -140,7 +130,45 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          {!stats?.recentBooks || stats.recentBooks.length === 0 ? (
+          {loading ? (
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-right border-collapse text-xs md:text-sm">
+                <thead>
+                  <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
+                    <th className="p-3 font-bold whitespace-nowrap">اسم الكتاب</th>
+                    <th className="p-3 font-bold whitespace-nowrap">المؤلف</th>
+                    <th className="p-3 font-bold whitespace-nowrap">التصنيف</th>
+                    <th className="p-3 font-bold whitespace-nowrap">السعر (جنيه)</th>
+                    <th className="p-3 font-bold whitespace-nowrap">حالة التوفر</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-color/50">
+                  {[...Array(5)].map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-9 rounded bg-foreground/10 shrink-0" />
+                          <div className="h-4 bg-foreground/10 rounded w-28 shrink-0" />
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-20" />
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-16" />
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-12" />
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-10" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : !stats?.recentBooks || stats.recentBooks.length === 0 ? (
             <div className="text-center py-12 text-xs text-foreground/50">
               لا توجد كتب مضافة في قاعدة البيانات حالياً.
             </div>
