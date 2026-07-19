@@ -27,12 +27,12 @@ interface BookRow {
 
 export default function BooksImporter() {
   const [activeTab, setActiveTab] = useState<"file" | "paste">("file");
-  
+
   // Data State
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mappings, setMappings] = useState<Record<string, string>>({});
-  
+
   // Paste Area state
   const [pastedText, setPastedText] = useState("");
   const [fileName, setFileName] = useState("");
@@ -92,7 +92,7 @@ export default function BooksImporter() {
         const workbook = XLSX.read(data, { type: "binary" });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        
+
         // Convert sheet to json row objects
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
@@ -210,7 +210,7 @@ export default function BooksImporter() {
       // Chunk books list and send POST requests
       for (let i = 0; i < total; i += batchSize) {
         const batch = mappedBooks.slice(i, i + batchSize);
-        
+
         const res = await fetch("/api/admin/books/import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -247,7 +247,7 @@ export default function BooksImporter() {
         confirmButtonText: "موافق",
         confirmButtonColor: "#d4af37",
       });
-      
+
       // Clear data states
       setParsedData([]);
       setHeaders([]);
@@ -276,7 +276,7 @@ export default function BooksImporter() {
 
   return (
     <div className="flex flex-col gap-6 text-right transition-colors duration-300">
-      
+
       {/* Header */}
       <div>
         <h1 className="text-xl md:text-2xl font-black text-foreground">استيراد القوائم والكتب</h1>
@@ -287,27 +287,25 @@ export default function BooksImporter() {
       <div className="flex border-b border-border-color/60 text-xs">
         <button
           onClick={() => setActiveTab("file")}
-          className={`flex items-center gap-2 px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
-            activeTab === "file" ? "border-primary text-primary" : "border-transparent text-foreground/70"
-          }`}
+          className={`flex items-center gap-2 px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "file" ? "border-primary text-primary" : "border-transparent text-foreground/70"
+            }`}
         >
           <FaFileExcel className="text-xs" />
           رفع ملف إكسيل / CSV
         </button>
         <button
           onClick={() => setActiveTab("paste")}
-          className={`flex items-center gap-2 px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
-            activeTab === "paste" ? "border-primary text-primary" : "border-transparent text-foreground/70"
-          }`}
+          className={`flex items-center gap-2 px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "paste" ? "border-primary text-primary" : "border-transparent text-foreground/70"
+            }`}
         >
           <FaClipboardList className="text-xs" />
           لصق نص JSON
         </button>
       </div>
 
-      {/* Import Container Panel */}
+      {/* Import  Panel */}
       <div className="bg-card-bg border border-border-color rounded-2xl p-5 shadow-sm transition-colors duration-300">
-        
+
         {activeTab === "file" ? (
           // File Mode
           <div className="flex flex-col items-center justify-center border-2 border-dashed border-border-color rounded-xl p-8 bg-foreground/[0.005]">
@@ -316,7 +314,7 @@ export default function BooksImporter() {
             <p className="text-xs text-foreground/60 max-w-sm text-center mb-6">
               اختر ملف جدول البيانات بصيغة .xlsx أو .csv المحتوي على قوائم الكتب للتعديل والمطابقة.
             </p>
-            
+
             <label className="bg-primary hover:bg-primary-hover text-white font-bold px-6 py-2.5 rounded-lg text-xs md:text-sm shadow-md gold-glow transition-all cursor-pointer">
               اختر ملف البيانات
               <input
@@ -359,7 +357,7 @@ export default function BooksImporter() {
       {/* Column Matching & Preview Panel */}
       {headers.length > 0 && parsedData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* Mappings Panel (Left column) */}
           <div className="lg:col-span-5 bg-card-bg border border-border-color rounded-2xl p-5 shadow-sm flex flex-col gap-5 transition-colors duration-300">
             <h3 className="font-extrabold text-sm md:text-base text-foreground border-r-4 border-primary pr-3 py-0.5">
@@ -374,7 +372,7 @@ export default function BooksImporter() {
               {targetFields.map((field) => (
                 <div key={field.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <span className="font-semibold text-foreground/85">{field.label}:</span>
-                  
+
                   <select
                     value={mappings[field.key] || ""}
                     onChange={(e) => handleMappingChange(field.key, e.target.value)}
@@ -456,7 +454,7 @@ export default function BooksImporter() {
                 <span className="text-foreground/60">
                   عرض السجلات {startIndex + 1} - {Math.min(startIndex + previewRowsPerPage, parsedData.length)} من أصل {parsedData.length}
                 </span>
-                
+
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setPreviewPage((p) => Math.max(p - 1, 1))}
@@ -466,11 +464,11 @@ export default function BooksImporter() {
                   >
                     <FaChevronRight className="text-[10px]" />
                   </button>
-                  
+
                   <span className="font-semibold text-foreground/85 px-3 py-1 bg-foreground/[0.04] border border-border-color rounded-lg">
                     صفحة {previewPage} من {totalPreviewPages}
                   </span>
-                  
+
                   <button
                     onClick={() => setPreviewPage((p) => Math.min(p + 1, totalPreviewPages))}
                     disabled={previewPage === totalPreviewPages}

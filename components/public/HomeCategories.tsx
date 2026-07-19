@@ -24,7 +24,7 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
 
   // Calculate pages
   const totalPages = Math.ceil(categories.length / itemsPerPage);
-  
+
   const getVisiblePages = () => {
     const maxVisible = 6;
     if (totalPages <= maxVisible) {
@@ -60,8 +60,8 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
 
   return (
     <section className="py-16 bg-foreground/[0.01] border-b border-border-color/30 transition-colors duration-300">
-      <div className="container mx-auto px-4">
-        
+      <div className="max-w-7xl mx-auto px-4">
+
         {/* Header with navigation */}
         <ScrollReveal variant="reveal">
           <div className="flex items-center justify-between mb-8">
@@ -80,7 +80,7 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
                 >
                   <FaChevronLeft className="w-3 h-3" />
                 </button>
-                
+
                 <span className="text-xs font-bold text-foreground/80 px-2 min-w-14 text-center">
                   {currentPage} / {totalPages}
                 </span>
@@ -104,9 +104,9 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
             <Link
               key={cat._id}
               href={`/books?category=${cat.slug}`}
-              className="group bg-card-bg border border-border-color rounded-xl p-5 text-right flex flex-col gap-3 shadow-sm hover:scale-[1.02] hover:shadow-md hover:border-primary/40 transition-all duration-300 cursor-pointer h-full justify-center"
+              className="group bg-card-bg border border-border-color rounded-xl p-5 text-right flex flex-col gap-3 shadow-sm hover:scale-[1.02] hover:shadow-md hover:border-primary/40 transition-all duration-500 ease-out cursor-pointer h-full justify-center"
             >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300 shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-400 shrink-0">
                 <IconRenderer name={cat.icon} className="w-5 h-5" />
               </div>
               <div className="flex flex-col">
@@ -130,11 +130,10 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
-                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                  currentPage === pageNum
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${currentPage === pageNum
                     ? "w-6 bg-primary animate-pulse"
                     : "w-2.5 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-500"
-                }`}
+                  }`}
                 title={`صفحة ${pageNum}`}
               />
             ))}

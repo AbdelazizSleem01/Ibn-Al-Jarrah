@@ -47,8 +47,8 @@ export default function BooksSection({ books, title, showAllLink = false }: Book
 
   return (
     <section className="py-12 transition-colors duration-300">
-      <div className="container mx-auto px-4">
-        
+      <div className="max-w-7xl mx-auto px-4">
+
         {/* Section Header */}
         <ScrollReveal variant="reveal">
           <div className="flex items-center justify-between mb-8">

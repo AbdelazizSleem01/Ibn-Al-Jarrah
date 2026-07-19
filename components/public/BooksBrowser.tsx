@@ -26,7 +26,7 @@ interface BooksBrowserProps {
 export default function BooksBrowser({ initialBooks, categories, pagination }: BooksBrowserProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [viewType, setViewType] = useState<"cards" | "table">("cards");
   const [searchVal, setSearchVal] = useState(searchParams.get("search") || "");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -62,7 +62,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   // Helper to update URL search params
   const updateQuery = (newParams: Record<string, string | number | undefined | null>) => {
     const params = new URLSearchParams(window.location.search);
-    
+
     // Reset page on filter changes unless explicitly specified
     if (!newParams.page && newParams.page !== null) {
       params.set("page", "1");
@@ -129,7 +129,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   // Identify active filters to display as removable chips
   const getActiveChips = () => {
     const chips: { key: string; label: string }[] = [];
-    
+
     const cat = searchParams.get("category");
     if (cat) {
       const categoryObj = categories.find((c) => c.slug === cat);
@@ -167,8 +167,8 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   const activeChips = getActiveChips();
 
   return (
-    <div className="container mx-auto px-4 py-8 text-right min-h-screen transition-colors duration-300">
-      
+    <div className=" mx-auto px-4 py-8 text-right min-h-screen transition-colors duration-300">
+
       {/* Page Title & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
@@ -181,11 +181,10 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
           {/* Toggle Filters Button */}
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs md:text-sm shadow-sm transition-all cursor-pointer border ${
-              isFilterOpen
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs md:text-sm shadow-sm transition-all cursor-pointer border ${isFilterOpen
                 ? "bg-primary text-white border-primary gold-glow"
                 : "bg-card-bg text-foreground border-border-color hover:bg-foreground/5"
-            }`}
+              }`}
           >
             <FaFilter className="w-3 h-3 md:w-3.5 md:h-3.5" />
             <span>{isFilterOpen ? "إخفاء الفلاتر" : "تصفية وبحث الكتب"}</span>
@@ -194,18 +193,16 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
           <div className="flex border border-border-color rounded-lg overflow-hidden bg-card-bg">
             <button
               onClick={() => setAndSaveView("cards")}
-              className={`p-2.5 cursor-pointer transition-colors ${
-                viewType === "cards" ? "bg-primary text-white" : "text-foreground hover:bg-foreground/5"
-              }`}
+              className={`p-2.5 cursor-pointer transition-colors ${viewType === "cards" ? "bg-primary text-white" : "text-foreground hover:bg-foreground/5"
+                }`}
               title="عرض كبطاقات"
             >
               <FaThLarge className="w-4 h-4" />
             </button>
             <button
               onClick={() => setAndSaveView("table")}
-              className={`p-2.5 cursor-pointer transition-colors ${
-                viewType === "table" ? "bg-primary text-white" : "text-foreground hover:bg-foreground/5"
-              }`}
+              className={`p-2.5 cursor-pointer transition-colors ${viewType === "table" ? "bg-primary text-white" : "text-foreground hover:bg-foreground/5"
+                }`}
               title="عرض جدول"
             >
               <FaList className="w-4 h-4" />
@@ -217,7 +214,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
       {/* Horizontal Collapsible Filter Box */}
       {isFilterOpen && (
         <div className="bg-card-bg border border-border-color rounded-2xl p-5 mb-8 shadow-sm flex flex-col gap-5 transition-all duration-300 animate-fade-in">
-          
+
           {/* Title */}
           <div className="flex items-center justify-between border-b border-border-color pb-3">
             <h2 className="font-black text-sm md:text-base text-foreground flex items-center gap-2">
@@ -280,9 +277,8 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
                           setIsCategoryDropdownOpen(false);
                           setCategorySearchQuery("");
                         }}
-                        className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${
-                          !currentCategorySlug ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
-                        }`}
+                        className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${!currentCategorySlug ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
+                          }`}
                       >
                         كل التصنيفات
                       </button>
@@ -295,9 +291,8 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
                             setIsCategoryDropdownOpen(false);
                             setCategorySearchQuery("");
                           }}
-                          className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${
-                            currentCategorySlug === cat.slug ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
-                          }`}
+                          className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${currentCategorySlug === cat.slug ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
+                            }`}
                         >
                           {cat.name}
                         </button>
@@ -389,12 +384,12 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
 
       {/* Books Content Panel (Full Width) */}
       <div className="w-full flex flex-col gap-6">
-        
+
         {/* Active Chips Bar */}
         {(activeChips.length > 0 || searchVal) && (
           <div className="flex flex-wrap items-center gap-2 bg-foreground/[0.01] p-3 rounded-lg border border-border-color/40 text-xs">
             <span className="text-foreground/50 font-bold">الفلاتر النشطة:</span>
-            
+
             {searchVal && (
               <span className="flex items-center gap-1.5 bg-primary/15 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-bold">
                 <span>بحث: {searchVal}</span>
@@ -433,7 +428,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
           </span>
         </div>
 
-        {/* Results Container */}
+        {/* Results  */}
         {initialBooks.length === 0 ? (
           <div className="bg-card-bg border border-border-color rounded-2xl p-16 text-center shadow-sm">
             <p className="text-foreground/50 text-sm font-bold mb-4">لا توجد نتائج تطابق خيارات البحث الحالية.</p>
@@ -475,10 +470,10 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
                     <td className="p-3.5 font-bold text-foreground max-w-[240px]">
                       <div className="flex items-center gap-3">
                         <img
-                            src={book.coverImage?.secureUrl || "/images/hero-book.webp"}
-                            alt=""
-                            className="w-8 h-10 object-cover rounded shadow-sm border border-border-color shrink-0"
-                          />
+                          src={book.coverImage?.secureUrl || "/images/hero-book.webp"}
+                          alt=""
+                          className="w-8 h-10 object-cover rounded shadow-sm border border-border-color shrink-0"
+                        />
                         <span className="truncate block" title={book.title}>{book.title}</span>
                       </div>
                     </td>
@@ -497,11 +492,10 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
                     </td>
                     <td className="p-3.5 text-center">
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          book.availabilityStatus === "available"
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${book.availabilityStatus === "available"
                             ? "bg-green-500/10 text-green-500"
                             : "bg-red-500/10 text-red-500"
-                        }`}
+                          }`}
                       >
                         {book.availabilityStatus === "available" ? "متوفر" : "نفد"}
                       </span>
@@ -532,7 +526,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
               <FaChevronRight className="w-2.5 h-2.5 shrink-0" />
               <span>السابق</span>
             </button>
-            
+
             <div className="flex items-center gap-1.5 text-xs text-foreground/70 font-semibold px-2">
               <span>صفحة</span>
               <div className="relative">

@@ -34,8 +34,8 @@ export default function Footer({ settings }: FooterProps) {
 
   return (
     <footer className="bg-foreground/[0.03] border-t border-border-color pt-12 pb-6 transition-colors duration-300">
-      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-        
+      <div className=" mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+
         {/* Branding & Slogan */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
@@ -100,7 +100,7 @@ export default function Footer({ settings }: FooterProps) {
               </span>
               <span dir="ltr">{phone}</span>
             </a>
-            
+
             <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 hover:text-primary transition-colors w-fit">
               <span className="w-7 h-7 rounded-full bg-blue-600/10 border border-blue-600/20 flex items-center justify-center shrink-0">
                 <FaFacebook className="text-blue-600 text-xs" />
@@ -137,7 +137,7 @@ export default function Footer({ settings }: FooterProps) {
       </div>
 
       {/* Copyrights Section */}
-      <div className="container mx-auto px-4 mt-8 pt-6 border-t border-border-color/50 text-center text-xs text-foreground/60">
+      <div className=" mx-auto px-4 mt-8 pt-6 border-t border-border-color/50 text-center text-xs text-foreground/60">
         <p>
           جميع الحقوق محفوظة © {currentYear} | مؤسسة دار ابن الجراح العالمية للنشر والتوزيع
         </p>

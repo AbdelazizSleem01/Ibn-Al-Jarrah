@@ -590,7 +590,7 @@ export default function BooksManager() {
 
   return (
     <div className="flex flex-col gap-6 text-right transition-colors duration-300">
-      
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -601,16 +601,15 @@ export default function BooksManager() {
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto mt-4 sm:mt-0">
           <button
             onClick={() => setShowDeleted(!showDeleted)}
-            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer border flex-1 sm:flex-none order-2 sm:order-none ${
-              showDeleted
+            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer border flex-1 sm:flex-none order-2 sm:order-none ${showDeleted
                 ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
                 : "bg-card-bg border-border-color text-foreground/70 hover:text-red-500 hover:border-red-500 hover:bg-red-500/10"
-            }`}
+              }`}
           >
             {showDeleted ? <FaBookOpen /> : <FaTrash />}
             {showDeleted ? "عرض الكتب النشطة" : "سلة المحذوفات"}
           </button>
-          
+
           <button
             onClick={handleExport}
             className="flex items-center justify-center gap-1.5 bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border-color px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex-1 sm:flex-none order-3 sm:order-none"
@@ -631,7 +630,7 @@ export default function BooksManager() {
 
       {/* Search and Filters panel */}
       <div className="bg-card-bg border border-border-color rounded-2xl p-4 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end transition-colors duration-300">
-        
+
         {/* Search Input */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-bold text-foreground/70">بحث بالاسم أو المؤلف</label>
@@ -688,9 +687,8 @@ export default function BooksManager() {
                       setIsCategoryDropdownOpen(false);
                       setCategorySearchQuery("");
                     }}
-                    className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${
-                      !selectedCategory ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
-                    }`}
+                    className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${!selectedCategory ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
+                      }`}
                   >
                     كل التصنيفات
                   </button>
@@ -707,9 +705,8 @@ export default function BooksManager() {
                           setIsCategoryDropdownOpen(false);
                           setCategorySearchQuery("");
                         }}
-                        className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${
-                          selectedCategory === cat._id ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
-                        }`}
+                        className={`w-full text-right px-2 py-2 text-xs hover:bg-primary/10 hover:text-primary transition-all rounded-md cursor-pointer ${selectedCategory === cat._id ? "text-primary font-bold bg-primary/5" : "text-foreground/80"
+                          }`}
                       >
                         {cat.name}
                       </button>
@@ -779,9 +776,9 @@ export default function BooksManager() {
       {selectedIds.length > 0 && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
           <span className="font-bold text-primary">تم تحديد ({selectedIds.length}) كتب:</span>
-          
+
           <div className="flex flex-wrap gap-2">
-            
+
             {/* Category migrator */}
             <select
               onChange={(e) => {
@@ -852,7 +849,7 @@ export default function BooksManager() {
 
       {/* Books Table Panel */}
       <div className="bg-card-bg border border-border-color rounded-2xl shadow-sm overflow-hidden transition-colors duration-300">
-        
+
         {loading ? (
           <div className="p-12 text-center text-xs text-foreground/50 skeleton">
             جاري جلب قائمة الكتب من السيرفر...
@@ -917,11 +914,10 @@ export default function BooksManager() {
                     </td>
                     <td className="p-3 text-center">
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          book.availabilityStatus === "available"
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${book.availabilityStatus === "available"
                             ? "bg-green-500/10 text-green-500"
                             : "bg-red-500/10 text-red-500"
-                        }`}
+                          }`}
                       >
                         {book.availabilityStatus === "available" ? "متوفر" : "نفد"}
                       </span>
@@ -994,7 +990,7 @@ export default function BooksManager() {
               onClick={() => setPage(pagination.page - 1)}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-border-color rounded-lg bg-card-bg hover:bg-foreground/5 text-foreground disabled:opacity-40 disabled:hover:bg-card-bg cursor-pointer select-none transition-all"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" /></svg>
               السابق
             </button>
 
@@ -1014,7 +1010,7 @@ export default function BooksManager() {
               className="flex items-center gap-1.5 px-3 py-1.5 border border-border-color rounded-lg bg-card-bg hover:bg-foreground/5 text-foreground disabled:opacity-40 disabled:hover:bg-card-bg cursor-pointer select-none transition-all"
             >
               التالي
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" /></svg>
             </button>
           </div>
         </div>
@@ -1028,7 +1024,7 @@ export default function BooksManager() {
             role="dialog"
             aria-modal="true"
           >
-            {/* Close modal - positioned inside rounded container so it stays within borders */}
+            {/* Close modal - positioned inside rounded  so it stays within borders */}
             <button
               onClick={() => setModalOpen(false)}
               className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-foreground/10 hover:bg-red-500 hover:text-white text-foreground flex items-center justify-center cursor-pointer border border-border-color/40 transition-all duration-200 shadow-sm"
@@ -1039,12 +1035,12 @@ export default function BooksManager() {
 
             {/* Form layout - scrollable inner content */}
             <form onSubmit={handleFormSubmit} className="w-full flex flex-col md:flex-row items-stretch overflow-y-auto max-h-[92vh]">
-              
+
               {/* Left Column: Image preview & selection */}
               <div className="w-full md:w-2/5 p-4 md:p-6 bg-foreground/[0.02] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-center shrink-0">
                 <div className="flex flex-col items-center gap-3 md:gap-4">
                   <span className="text-[10px] md:text-xs font-bold text-foreground/70">غلاف الكتاب (اختياري)</span>
-                  
+
                   {/* Preview box */}
                   <div className="w-28 md:w-48 aspect-[3/4] rounded-lg border border-border-color shadow-md bg-card-bg flex flex-col items-center justify-center overflow-hidden relative group gold-glow">
                     {coverPreview ? (
@@ -1089,7 +1085,7 @@ export default function BooksManager() {
 
                 {/* Form fields grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  
+
                   {/* Book Title */}
                   <div className="flex flex-col gap-1.5 sm:col-span-2">
                     <label className="font-bold text-foreground/75">اسم الكتاب *</label>
@@ -1099,9 +1095,8 @@ export default function BooksManager() {
                       required
                       value={formData.title}
                       onChange={handleFormChange}
-                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${
-                        errors.title ? "border-red-500" : "border-border-color"
-                      }`}
+                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${errors.title ? "border-red-500" : "border-border-color"
+                        }`}
                     />
                     {errors.title && <span className="text-[10px] text-red-500">{errors.title[0]}</span>}
                   </div>
@@ -1170,9 +1165,8 @@ export default function BooksManager() {
                       step="0.01"
                       value={formData.priceEgp}
                       onChange={handleFormChange}
-                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${
-                        errors.prices ? "border-red-500" : "border-border-color"
-                      }`}
+                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${errors.prices ? "border-red-500" : "border-border-color"
+                        }`}
                     />
                   </div>
 
@@ -1186,9 +1180,8 @@ export default function BooksManager() {
                       step="0.01"
                       value={formData.priceLyd}
                       onChange={handleFormChange}
-                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${
-                        errors.prices ? "border-red-500" : "border-border-color"
-                      }`}
+                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${errors.prices ? "border-red-500" : "border-border-color"
+                        }`}
                     />
                   </div>
 

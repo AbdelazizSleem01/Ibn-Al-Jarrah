@@ -70,29 +70,29 @@ export default async function Page() {
       <Navbar settings={settings} />
 
       <main className="flex-grow">
-        
+
         {/* Hero Banner Section */}
         <Hero settings={settings} />
 
         {/* About Us (من نحن) Section */}
         <section id="about" className="py-16 bg-foreground/[0.01] border-b border-border-color/30 transition-colors duration-300">
-          <div className="container mx-auto px-4 max-w-4xl">
+          <div className=" mx-auto px-4 max-w-4xl">
             <ScrollReveal variant="reveal-scale">
               <div className="bg-card-bg border border-border-color rounded-2xl p-6 md:p-10 shadow-md text-right relative overflow-hidden transition-all duration-300 hover:scale-[1.005] hover:shadow-lg hover:border-primary/40">
                 {/* Golden glow decoration */}
                 <div className="absolute top-0 right-0 w-2 h-full bg-primary" />
-                
+
                 <h2 className="text-xl md:text-2xl font-black text-foreground mb-6 border-r-4 border-primary pr-3 py-1 flex items-center gap-2">
                   <FaInfoCircle className="text-primary w-5 h-5" />
                   <span>من نحن</span>
                 </h2>
-                
+
                 <div className="text-sm md:text-base text-foreground/90 space-y-4 leading-relaxed font-medium">
                   <p className="font-extrabold text-primary text-base">بسم الله الرحمن الرحيم</p>
                   <p>السلام عليكم ورحمة الله وبركاته، حيّاكم الله في داركم.</p>
                   <p>
-                    نسعى في <strong>دار ابن الجراح</strong> إلى تيسير العلم الشرعي بأفضل الأسعار وأعلى جودة، 
-                    وتقديم مجموعة متنوعة من الكتب التي تخدم طالب العلم والقارئ، 
+                    نسعى في <strong>دار ابن الجراح</strong> إلى تيسير العلم الشرعي بأفضل الأسعار وأعلى جودة،
+                    وتقديم مجموعة متنوعة من الكتب التي تخدم طالب العلم والقارئ،
                     إلى جانب الهدايا والعروض الخاصة لمحبي الكتاب.
                   </p>
                 </div>
@@ -103,13 +103,13 @@ export default async function Page() {
 
         {/* Featured Books Section */}
         {featuredBooks.length > 0 && (
-          <Suspense fallback={<div className="container mx-auto px-4 py-12 text-center text-xs">جاري تحميل الكتب المميزة...</div>}>
+          <Suspense fallback={<div className=" mx-auto px-4 py-12 text-center text-xs">جاري تحميل الكتب المميزة...</div>}>
             <BooksSection books={featuredBooks} title="الكتب المميزة" />
           </Suspense>
         )}
 
         {/* Latest Books Section */}
-        <Suspense fallback={<div className="container mx-auto px-4 py-12 text-center text-xs">جاري تحميل أحدث الإصدارات...</div>}>
+        <Suspense fallback={<div className=" mx-auto px-4 py-12 text-center text-xs">جاري تحميل أحدث الإصدارات...</div>}>
           <BooksSection books={latestBooks} title="أحدث الإصدارات" showAllLink={true} />
         </Suspense>
 
@@ -119,7 +119,7 @@ export default async function Page() {
         {/* Slogan & Message Section */}
         <section className="py-16 border-b border-border-color/30 text-center relative overflow-hidden transition-colors duration-300">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-96 h-32 bg-primary/5 rounded-full blur-3xl animate-float-slow" />
-          <div className="container mx-auto px-4 flex flex-col items-center justify-center gap-4 max-w-xl">
+          <div className=" mx-auto px-4 flex flex-col items-center justify-center gap-4 max-w-xl">
             <ScrollReveal variant="reveal" threshold={0.2}>
               <div className="flex flex-col items-center gap-4">
                 <span className="text-sm font-semibold text-primary/70 tracking-widest uppercase">شعارنا ورسالتنا</span>
@@ -137,7 +137,7 @@ export default async function Page() {
 
         {/* Contact (اتصل بنا) Section */}
         <section id="contact" className="py-16 transition-colors duration-300">
-          <div className="container mx-auto px-4 max-w-4xl">
+          <div className=" mx-auto px-4 max-w-5xl">
             <ScrollReveal variant="reveal">
               <h2 className="text-xl md:text-2xl font-black text-foreground mb-8 text-center flex items-center justify-center gap-2">
                 <FaEnvelope className="text-primary w-5 h-5" />
@@ -146,7 +146,7 @@ export default async function Page() {
             </ScrollReveal>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
-              
+
               {/* Phone & Details */}
               <ScrollReveal variant="reveal-right" delay={0} className="md:col-span-6">
                 <div className="bg-card-bg border border-border-color rounded-2xl p-6 flex flex-col gap-4 justify-between transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:border-primary/40 group/card h-full">
@@ -227,7 +227,7 @@ export default async function Page() {
       </main>
 
       <WhatsappButton phone={whatsappNum} message="السلام عليكم، أريد الاستفسار عن أحد الكتب." />
-      
+
       <Footer settings={settings} />
     </>
   );

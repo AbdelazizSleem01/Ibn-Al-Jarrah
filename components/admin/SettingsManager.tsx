@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
+import {
   FaUserCog, FaBuilding, FaGlobe, FaSave, FaTimes, FaCamera,
   FaCog, FaUserEdit, FaLock, FaIdCard, FaEnvelope, FaKey, FaCheckCircle,
   FaPhoneAlt, FaWhatsapp, FaFacebook, FaUsers, FaAlignRight, FaPen, FaBullhorn,
@@ -267,7 +267,7 @@ export default function SettingsManager() {
 
   return (
     <div className="flex flex-col gap-6 text-right transition-colors duration-300">
-      
+
       {/* Header */}
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -285,9 +285,8 @@ export default function SettingsManager() {
             setActiveTab("account");
             setErrors({});
           }}
-          className={`flex items-center gap-2 px-4 md:px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
-            activeTab === "account" ? "border-primary text-primary" : "border-transparent text-foreground/75"
-          }`}
+          className={`flex items-center gap-2 px-4 md:px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === "account" ? "border-primary text-primary" : "border-transparent text-foreground/75"
+            }`}
         >
           <FaUserCog className="text-xs" />
           إعدادات الحساب والأمان
@@ -297,9 +296,8 @@ export default function SettingsManager() {
             setActiveTab("site");
             setErrors({});
           }}
-          className={`flex items-center gap-2 px-4 md:px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
-            activeTab === "site" ? "border-primary text-primary" : "border-transparent text-foreground/75"
-          }`}
+          className={`flex items-center gap-2 px-4 md:px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === "site" ? "border-primary text-primary" : "border-transparent text-foreground/75"
+            }`}
         >
           <FaBuilding className="text-xs" />
           الهوية والاتصال
@@ -309,29 +307,28 @@ export default function SettingsManager() {
             setActiveTab("seo");
             setErrors({});
           }}
-          className={`flex items-center gap-2 px-4 md:px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
-            activeTab === "seo" ? "border-primary text-primary" : "border-transparent text-foreground/75"
-          }`}
+          className={`flex items-center gap-2 px-4 md:px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === "seo" ? "border-primary text-primary" : "border-transparent text-foreground/75"
+            }`}
         >
           <FaGlobe className="text-xs" />
           تهيئة الـ SEO والأرشفة
         </button>
       </div>
 
-      {/* Settings Forms container */}
+      {/* Settings Forms  */}
       <div className="bg-card-bg border border-border-color rounded-2xl p-6 md:p-8 shadow-sm transition-colors duration-300">
-        
+
         {activeTab === "account" && (
           // Account Settings Forms
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-            
+
             {/* Profile Info Form */}
             <form onSubmit={handleProfileSubmit} className="md:col-span-6 flex flex-col gap-4 text-xs">
               <h3 className="font-extrabold text-sm md:text-base text-foreground mb-2 flex items-center gap-2">
                 <FaUserEdit className="text-primary" />
                 تحديث بيانات المشرف
               </h3>
-              
+
               <div className="flex flex-col gap-1.5">
                 <label className="font-bold text-foreground/75 flex items-center gap-1.5">
                   <FaIdCard className="text-foreground/50" />
@@ -356,9 +353,8 @@ export default function SettingsManager() {
                   required
                   value={profileForm.email}
                   onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                  className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none transition-colors ${
-                    errors.email ? "border-red-500" : "border-border-color focus:border-primary/50"
-                  }`}
+                  className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none transition-colors ${errors.email ? "border-red-500" : "border-border-color focus:border-primary/50"
+                    }`}
                 />
                 {errors.email && <span className="text-[10px] text-red-500">{errors.email[0]}</span>}
               </div>
@@ -375,9 +371,8 @@ export default function SettingsManager() {
                     placeholder="أدخل كلمة مرورك لتأكيد الحفظ"
                     value={profileForm.currentPassword}
                     onChange={(e) => setProfileForm({ ...profileForm, currentPassword: e.target.value })}
-                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
-                      errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                    }`}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                      }`}
                   />
                   <button
                     type="button"
@@ -421,9 +416,8 @@ export default function SettingsManager() {
                     required
                     value={passwordForm.currentPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
-                      errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                    }`}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                      }`}
                   />
                   <button
                     type="button"
@@ -447,9 +441,8 @@ export default function SettingsManager() {
                     required
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
-                      errors.newPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                    }`}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${errors.newPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                      }`}
                   />
                   <button
                     type="button"
@@ -474,9 +467,8 @@ export default function SettingsManager() {
                     required
                     value={passwordForm.confirmPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
-                      errors.confirmPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                    }`}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${errors.confirmPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                      }`}
                   />
                   <button
                     type="button"
@@ -508,11 +500,11 @@ export default function SettingsManager() {
         {activeTab === "site" && (
           // Site and Contact Info Form
           <form onSubmit={handleSiteSubmit} className="flex flex-col md:flex-row gap-8 items-stretch text-xs">
-            
+
             {/* Logo Image selection (Left side) */}
             <div className="w-full md:w-1/3 flex flex-col items-center justify-center bg-foreground/[0.01] border border-border-color rounded-2xl p-6 shrink-0 gap-4">
               <span className="font-bold text-foreground/70 text-center">شعار المؤسسة</span>
-              
+
               <div className="relative w-28 h-28 rounded-full border border-primary/20 bg-card-bg flex items-center justify-center overflow-hidden group shadow-md gold-glow">
                 {logoPreview ? (
                   <>
@@ -548,9 +540,9 @@ export default function SettingsManager() {
                 <FaBuilding className="text-primary" />
                 إعدادات الهوية البصرية وبيانات الاتصال
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
+
                 {/* Title */}
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className="font-bold text-foreground/75 flex items-center gap-1.5">
@@ -732,7 +724,7 @@ export default function SettingsManager() {
 
             {/* SEO Form fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
+
               {/* Meta title */}
               <div className="flex flex-col gap-1.5 sm:col-span-2">
                 <label className="font-bold text-foreground/75 flex items-center gap-1.5">
