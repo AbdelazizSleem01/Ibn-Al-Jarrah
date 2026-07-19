@@ -6,13 +6,13 @@
 ## 📸 لقطات من الموقع (Screenshots)
 
 ### 1️⃣ الصفحة الرئيسية (الوضع الداكن)
-![الصفحة الرئيسية](/public/images/screenshots/home-dark.png)
+![الصفحة الرئيسية](image.png)
 
 ### 2️⃣ تصفح الكتب (عرض الشبكة / بطاقات)
-![تصفح الكتب كروت](/public/images/screenshots/books-cards.png)
+![تصفح الكتب كروت](image-2.png)
 
 ### 3️⃣ تصفح الكتب (عرض الجدول السلس)
-![تصفح الكتب جدول](/public/images/screenshots/books-table.png)
+![تصفح الكتب جدول](image-1.png)
 
 ---
 
@@ -48,29 +48,6 @@
 
 ---
 
-## 🚀 البدء في التشغيل المحلي (Getting Started)
-
-### 1. إعداد المتغيرات البيئية (Environment Variables)
-قم بإنشاء ملف `.env.local` في الجذر وأضف المتغيرات التالية:
-```env
-MONGODB_URI=your_mongodb_connection_string
-CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_cloudinary_key
-CLOUDINARY_API_SECRET=your_cloudinary_secret
-JWT_SECRET=your_jwt_secret_for_admin_auth
-```
-
-### 2. تثبيت الحزم (Install Dependencies)
-```bash
-npm install
-```
-
-### 3. تشغيل خادم التطوير (Run Local Dev Server)
-```bash
-npm run dev
-```
-افتح الرابط [http://localhost:3000](http://localhost:3000) لمشاهدة الموقع العام.  
-ولوحة التحكم تكون متاحة تحت الرابط `/admin`.
 
 ---
 
