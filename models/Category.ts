@@ -51,6 +51,7 @@ const CategorySchema = new Schema<ICategory>(
   },
   {
     timestamps: true,
+  }
 );
 
 // Indexes for optimized query and sort performance
