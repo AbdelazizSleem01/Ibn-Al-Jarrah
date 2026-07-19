@@ -104,7 +104,7 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
             <Link
               key={cat._id}
               href={`/books?category=${cat.slug}`}
-              className="group bg-card-bg border border-border-color rounded-xl p-5 text-right flex flex-col gap-3 shadow-sm hover:scale-[1.02] hover:shadow-md hover:border-primary/40 transition-all duration-500 ease-out cursor-pointer h-full justify-center"
+              className="group bg-card-bg border border-border-color rounded-xl p-5 text-right flex flex-col gap-3 shadow-sm hover:scale-[1.02] hover:shadow-md hover:border-primary/40 card-hover cursor-pointer h-full justify-center"
             >
               <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-400 shrink-0">
                 <IconRenderer name={cat.icon} className="w-5 h-5" />

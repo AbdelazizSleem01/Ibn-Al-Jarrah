@@ -33,7 +33,7 @@ export default function BookCard({ book, onDetailsClick }: BookCardProps) {
   const isAvailable = book.availabilityStatus === "available";
 
   return (
-      <div className="group relative flex flex-col h-full rounded-xl border border-border-color bg-card-bg overflow-hidden hover:scale-[1.02] hover:shadow-xl hover:border-primary/30 transition-all duration-800 ease-out">
+      <div className="group relative flex flex-col h-full rounded-xl border border-border-color bg-card-bg overflow-hidden hover:scale-[1.02] hover:shadow-xl hover:border-primary/30 card-hover">
       
       {/* Featured Badge */}
       {book.isFeatured && (
