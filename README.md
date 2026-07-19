@@ -48,8 +48,5 @@
 
 ---
 
-
----
-
 ## 📦 النشر (Deployment)
 الموقع مهيأ تماماً للنشر على منصة [Vercel](https://vercel.com/) بضغطة زر واحدة، مع ربط قاعدة بيانات MongoDB Atlas والـ Cloudinary لرفع الصور.
