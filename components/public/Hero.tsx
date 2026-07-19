@@ -60,7 +60,7 @@ export default function Hero({ settings }: HeroProps) {
 
         {/* Right/Left Image Content (RTL: left side) */}
         <div className="md:col-span-5 flex justify-center order-1 md:order-2 animate-fade-in [animation-delay:150ms]">
-          <div className="relative w-full max-w-[300px] md:max-w-[380px] md:-translate-y-8 aspect-square rounded-2xl overflow-hidden border border-border-color shadow-2xl bg-card-bg group gold-glow transition-all duration-700 ease-out hover:scale-[1.02] hover:shadow-[0_20px_50px_rgba(212,175,55,0.2)]">
+          <div className="relative w-full max-w-[300px] md:max-w-[420px] md:-translate-y-8 aspect-square rounded-2xl overflow-hidden border border-border-color shadow-2xl bg-card-bg group gold-glow transition-all duration-700 ease-out hover:scale-[1.02] hover:shadow-[0_20px_50px_rgba(212,175,55,0.2)]">
 
             {/* Soft gold hover shimmer */}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
