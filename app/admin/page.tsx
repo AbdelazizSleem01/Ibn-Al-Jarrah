@@ -77,98 +77,6 @@ export default function AdminDashboard() {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-6 text-right transition-colors duration-300">
-        {/* Header */}
-        <div>
-          <h1 className="text-xl md:text-2xl font-black text-foreground flex items-center gap-2">
-            <span>لوحة التحكم والمؤشرات</span>
-            <span className="w-6 h-6 flex items-center justify-center">
-              <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            </span>
-          </h1>
-          <p className="text-xs text-foreground/60 mt-1">نظرة عامة على إحصائيات وعمليات دار ابن الجراح</p>
-        </div>
-
-        {/* Stats Cards Grid Skeleton */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {cards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.title}
-                className="bg-card-bg border border-border-color rounded-xl p-5 flex flex-col justify-between gap-4 shadow-sm h-28"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground/75 truncate">{card.title}</span>
-                  <span className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${card.color}`}>
-                    <Icon className="w-4 h-4" />
-                  </span>
-                </div>
-                <span className="h-8 flex items-center">
-                  <span className="h-6 w-12 bg-foreground/10 rounded animate-pulse inline-block" />
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Main Grid: Recent Books List Skeleton */}
-        <div className="grid grid-cols-1 gap-6 mt-4">
-          <div className="bg-card-bg border border-border-color rounded-2xl p-5 shadow-sm transition-colors duration-300">
-            <div className="flex items-center justify-between border-b border-border-color pb-4 mb-4">
-              <h2 className="font-extrabold text-sm md:text-base text-foreground">
-                أحدث الكتب المضافة
-              </h2>
-              <span className="text-xs text-primary font-bold hover:underline opacity-50 cursor-not-allowed">
-                إدارة كل الكتب &larr;
-              </span>
-            </div>
-
-            <div className="w-full overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs md:text-sm table-fixed">
-                <thead>
-                  <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
-                    <th className="p-3 font-bold whitespace-nowrap w-[40%]">اسم الكتاب</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[20%]">المؤلف</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[15%]">التصنيف</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[13%]">السعر (جنيه)</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[12%]">حالة التوفر</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-color/50">
-                  {[...Array(5)].map((_, i) => (
-                    <tr key={i} className="animate-pulse h-[58px]">
-                      <td className="p-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-9 rounded bg-foreground/10 shrink-0" />
-                          <div className="h-4 bg-foreground/10 rounded w-28 shrink-0" />
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="h-4 bg-foreground/10 rounded w-20" />
-                      </td>
-                      <td className="p-3">
-                        <div className="h-4 bg-foreground/10 rounded w-16" />
-                      </td>
-                      <td className="p-3">
-                        <div className="h-4 bg-foreground/10 rounded w-12" />
-                      </td>
-                      <td className="p-3">
-                        <div className="h-4 bg-foreground/10 rounded w-10" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-6 text-right transition-colors duration-300">
       
@@ -176,7 +84,7 @@ export default function AdminDashboard() {
       <div>
         <h1 className="text-xl md:text-2xl font-black text-foreground flex items-center gap-2">
           <span>لوحة التحكم والمؤشرات</span>
-          <span className="w-6 h-6 flex items-center justify-center opacity-0 scale-75 pointer-events-none transition-all duration-300">
+          <span className={`transition-all duration-300 flex items-center justify-center w-6 h-6 ${loading ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'}`}>
             <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </span>
         </h1>
@@ -199,7 +107,11 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <span className="h-8 text-2xl font-black text-foreground tracking-tight leading-none flex items-center">
-                {card.value}
+                {loading ? (
+                  <span className="h-6 w-12 bg-foreground/10 rounded animate-pulse inline-block" />
+                ) : (
+                  card.value
+                )}
               </span>
             </div>
           );
@@ -222,24 +134,49 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          {!stats?.recentBooks || stats.recentBooks.length === 0 ? (
-            <div className="text-center py-12 text-xs text-foreground/50">
-              لا توجد كتب مضافة في قاعدة البيانات حالياً.
-            </div>
-          ) : (
-            <div className="w-full overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs md:text-sm table-fixed">
-                <thead>
-                  <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
-                    <th className="p-3 font-bold whitespace-nowrap w-[40%]">اسم الكتاب</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[20%]">المؤلف</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[15%]">التصنيف</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[13%]">السعر (جنيه)</th>
-                    <th className="p-3 font-bold whitespace-nowrap w-[12%]">حالة التوفر</th>
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-right border-collapse text-xs md:text-sm table-fixed">
+              <thead>
+                <tr className="bg-foreground/[0.01] border-b border-border-color text-foreground/70">
+                  <th className="p-3 font-bold whitespace-nowrap w-[40%]">اسم الكتاب</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[20%]">المؤلف</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[15%]">التصنيف</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[13%]">السعر (جنيه)</th>
+                  <th className="p-3 font-bold whitespace-nowrap w-[12%]">حالة التوفر</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-color/50">
+                {loading ? (
+                  [...Array(5)].map((_, i) => (
+                    <tr key={i} className="animate-pulse h-[58px]">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-9 rounded bg-foreground/10 shrink-0" />
+                          <div className="h-4 bg-foreground/10 rounded w-28 shrink-0" />
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-20" />
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-16" />
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-12" />
+                      </td>
+                      <td className="p-3">
+                        <div className="h-4 bg-foreground/10 rounded w-10" />
+                      </td>
+                    </tr>
+                  ))
+                ) : !stats?.recentBooks || stats.recentBooks.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-12 text-xs text-foreground/50 h-[290px]">
+                      لا توجد كتب مضافة في قاعدة البيانات حالياً.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border-color/50">
-                  {stats.recentBooks.map((book) => (
+                ) : (
+                  stats.recentBooks.map((book) => (
                     <tr key={book._id} className="hover:bg-foreground/[0.01] transition-colors h-[58px]">
                       <td className="p-3 font-bold text-foreground">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -278,11 +215,11 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
         </div>
       </div>
