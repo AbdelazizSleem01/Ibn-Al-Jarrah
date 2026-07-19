@@ -57,9 +57,9 @@ export default function Navbar({ settings }: NavbarProps) {
   };
 
   const navLinks = [
-    { label: "الرئيسية", href: "/", icon: <FaHome className="text-[11px]" /> },
-    { label: "الكتب", href: "/books", icon: <FaBookOpen className="text-[11px]" /> },
-    { label: "تواصل معنا", href: "/#contact", icon: <FaEnvelope className="text-[11px]" /> },
+    { label: "الرئيسية", href: "/", icon: <FaHome className="text-[18px]" /> },
+    { label: "الكتب", href: "/books", icon: <FaBookOpen className="text-[18px]" /> },
+    { label: "تواصل معنا", href: "/#contact", icon: <FaEnvelope className="text-[18px]" /> },
   ];
 
   const brandName = settings?.title || "مؤسسة دار ابن الجراح ";
@@ -101,12 +101,12 @@ export default function Navbar({ settings }: NavbarProps) {
               <Link
                 key={link.label}
                 href={link.href}
-                className={`flex items-center gap-1.5 text-sm font-medium pb-1 transition-all duration-200 ${isActive
+                className={`flex items-center gap-1.5 font-medium pb-1 transition-all duration-200 ${isActive
                     ? "text-primary font-bold border-b-2 border-primary"
                     : "text-foreground/75 hover:text-primary"
                   }`}
               >
-                <span className={isActive ? "text-primary" : "text-foreground/50"}>{link.icon}</span>
+                <span className={isActive ? "text-primary text-lg" : "text-foreground/50"} >{link.icon}</span>
                 {link.label}
               </Link>
             );
