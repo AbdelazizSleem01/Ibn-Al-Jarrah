@@ -51,8 +51,11 @@ const CategorySchema = new Schema<ICategory>(
   },
   {
     timestamps: true,
-  }
 );
+
+// Indexes for optimized query and sort performance
+CategorySchema.index({ displayOrder: 1 });
+CategorySchema.index({ isVisible: 1, displayOrder: 1 });
 
 const Category: Model<ICategory> =
   mongoose.models.Category || mongoose.model<ICategory>("Category", CategorySchema);

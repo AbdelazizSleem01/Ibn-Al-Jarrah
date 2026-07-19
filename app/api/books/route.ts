@@ -122,16 +122,17 @@ export async function GET(request: Request) {
         break;
     }
 
-    // Execute query
-    const totalResults = await Book.countDocuments(query);
+    // Execute queries in parallel
+    const [totalResults, books] = await Promise.all([
+      Book.countDocuments(query),
+      Book.find(query)
+        .populate("categoryId", "name slug icon")
+        .sort(sortQuery)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
     const totalPages = Math.ceil(totalResults / limit);
-
-    const books = await Book.find(query)
-      .populate("categoryId", "name slug icon")
-      .sort(sortQuery)
-      .skip(skip)
-      .limit(limit)
-      .lean();
 
     return NextResponse.json({
       success: true,

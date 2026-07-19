@@ -5,7 +5,7 @@ import {
   FaUserCog, FaBuilding, FaGlobe, FaSave, FaTimes, FaCamera,
   FaCog, FaUserEdit, FaLock, FaIdCard, FaEnvelope, FaKey, FaCheckCircle,
   FaPhoneAlt, FaWhatsapp, FaFacebook, FaUsers, FaAlignRight, FaPen, FaBullhorn,
-  FaSearch, FaTags, FaInfoCircle
+  FaSearch, FaTags, FaInfoCircle, FaEye, FaEyeSlash
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
@@ -54,6 +54,12 @@ export default function SettingsManager() {
   });
 
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+
+  // Password visibility states
+  const [showProfilePass, setShowProfilePass] = useState(false);
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   // Fetch Settings on mount
   useEffect(() => {
@@ -362,16 +368,26 @@ export default function SettingsManager() {
                   <FaKey className="text-primary/70" />
                   كلمة المرور الحالية للتأكيد *
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="أدخل كلمة مرورك لتأكيد الحفظ"
-                  value={profileForm.currentPassword}
-                  onChange={(e) => setProfileForm({ ...profileForm, currentPassword: e.target.value })}
-                  className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none transition-colors ${
-                    errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type={showProfilePass ? "text" : "password"}
+                    required
+                    placeholder="أدخل كلمة مرورك لتأكيد الحفظ"
+                    value={profileForm.currentPassword}
+                    onChange={(e) => setProfileForm({ ...profileForm, currentPassword: e.target.value })}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
+                      errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowProfilePass(!showProfilePass)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-primary transition-colors focus:outline-none"
+                    aria-label={showProfilePass ? "إخفاء كلمة المرور" : "عرض كلمة المرور"}
+                  >
+                    {showProfilePass ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.currentPassword && (
                   <span className="text-[10px] text-red-500">{errors.currentPassword[0]}</span>
                 )}
@@ -399,15 +415,25 @@ export default function SettingsManager() {
                   <FaKey className="text-foreground/50" />
                   كلمة المرور الحالية *
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none transition-colors ${
-                    errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type={showCurrentPass ? "text" : "password"}
+                    required
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
+                      errors.currentPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-primary transition-colors focus:outline-none"
+                    aria-label={showCurrentPass ? "إخفاء كلمة المرور" : "عرض كلمة المرور"}
+                  >
+                    {showCurrentPass ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -415,15 +441,25 @@ export default function SettingsManager() {
                   <FaLock className="text-foreground/50" />
                   كلمة المرور الجديدة *
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none transition-colors ${
-                    errors.newPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPass ? "text" : "password"}
+                    required
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
+                      errors.newPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-primary transition-colors focus:outline-none"
+                    aria-label={showNewPass ? "إخفاء كلمة المرور" : "عرض كلمة المرور"}
+                  >
+                    {showNewPass ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.newPassword && <span className="text-[10px] text-red-500">{errors.newPassword[0]}</span>}
               </div>
 
@@ -432,15 +468,25 @@ export default function SettingsManager() {
                   <FaCheckCircle className="text-foreground/50" />
                   تأكيد كلمة المرور الجديدة *
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none transition-colors ${
-                    errors.confirmPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPass ? "text" : "password"}
+                    required
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    className={`w-full bg-foreground/[0.02] border rounded-lg p-2.5 pl-10 text-xs focus:outline-none transition-colors ${
+                      errors.confirmPassword ? "border-red-500" : "border-border-color focus:border-primary/50"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-primary transition-colors focus:outline-none"
+                    aria-label={showConfirmPass ? "إخفاء كلمة المرور" : "عرض كلمة المرور"}
+                  >
+                    {showConfirmPass ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {errors.confirmPassword && (
                   <span className="text-[10px] text-red-500">{errors.confirmPassword[0]}</span>
                 )}

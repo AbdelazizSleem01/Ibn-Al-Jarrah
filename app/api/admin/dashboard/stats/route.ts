@@ -16,42 +16,46 @@ export async function GET() {
 
     await dbConnect();
 
-    // 1. Calculate main counts
-    const totalBooks = await Book.countDocuments({ isDeleted: false });
-    const totalCategories = await Category.countDocuments();
-    
-    const availableBooks = await Book.countDocuments({
-      availabilityStatus: "available",
-      isDeleted: false,
-    });
-    
-    const unavailableBooks = await Book.countDocuments({
-      availabilityStatus: "unavailable",
-      isDeleted: false,
-    });
-    
-    const featuredBooks = await Book.countDocuments({
-      isFeatured: true,
-      isDeleted: false,
-    });
-
-    const noImageBooks = await Book.countDocuments({
-      isDeleted: false,
-      $or: [
-        { "coverImage.secureUrl": { $exists: false } },
-        { "coverImage.secureUrl": "" },
-        { "coverImage.secureUrl": null },
-      ],
-    });
-
-    const softDeletedBooks = await Book.countDocuments({ isDeleted: true });
-
-    // 2. Fetch latest 5 added books
-    const recentBooks = await Book.find({ isDeleted: false })
-      .populate("categoryId", "name slug")
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .lean();
+    // 1. Calculate main counts and fetch recent books in parallel
+    const [
+      totalBooks,
+      totalCategories,
+      availableBooks,
+      unavailableBooks,
+      featuredBooks,
+      noImageBooks,
+      softDeletedBooks,
+      recentBooks
+    ] = await Promise.all([
+      Book.countDocuments({ isDeleted: false }),
+      Category.countDocuments(),
+      Book.countDocuments({
+        availabilityStatus: "available",
+        isDeleted: false,
+      }),
+      Book.countDocuments({
+        availabilityStatus: "unavailable",
+        isDeleted: false,
+      }),
+      Book.countDocuments({
+        isFeatured: true,
+        isDeleted: false,
+      }),
+      Book.countDocuments({
+        isDeleted: false,
+        $or: [
+          { "coverImage.secureUrl": { $exists: false } },
+          { "coverImage.secureUrl": "" },
+          { "coverImage.secureUrl": null },
+        ],
+      }),
+      Book.countDocuments({ isDeleted: true }),
+      Book.find({ isDeleted: false })
+        .populate("categoryId", "name slug")
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+    ]);
 
     return NextResponse.json({
       success: true,

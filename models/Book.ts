@@ -178,6 +178,10 @@ const BookSchema = new Schema<IBook>(
 
 // Indexes
 BookSchema.index({ createdAt: -1 });
+BookSchema.index({ isDeleted: 1, createdAt: -1 });
+BookSchema.index({ isDeleted: 1, categoryId: 1, createdAt: -1 });
+BookSchema.index({ isDeleted: 1, isFeatured: 1, createdAt: -1 });
+BookSchema.index({ isDeleted: 1, availabilityStatus: 1, createdAt: -1 });
 BookSchema.index({ title: "text", normalizedTitle: "text", author: "text", publisher: "text", description: "text" });
 
 const Book: Model<IBook> = mongoose.models.Book || mongoose.model<IBook>("Book", BookSchema);
