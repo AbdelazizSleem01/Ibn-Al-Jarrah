@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight, FaTags } from "react-icons/fa";
 import IconRenderer from "@/components/ui/IconRenderer";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 interface Category {
   _id: string;
@@ -62,41 +63,43 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
       <div className="container mx-auto px-4">
         
         {/* Header with navigation */}
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-xl md:text-2xl font-black text-foreground border-r-4 border-primary pr-3 py-1 flex items-center gap-2">
-            <FaTags className="text-primary w-5 h-5" />
-            <span>تصنيفات الكتب</span>
-          </h2>
+        <ScrollReveal variant="reveal">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-xl md:text-2xl font-black text-foreground border-r-4 border-primary pr-3 py-1 flex items-center gap-2">
+              <FaTags className="text-primary w-5 h-5" />
+              <span>تصنيفات الكتب</span>
+            </h2>
 
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2" dir="ltr">
-              <button
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                className="w-8 h-8 rounded-lg border border-border-color bg-card-bg flex items-center justify-center text-foreground hover:border-primary/50 disabled:opacity-30 disabled:hover:border-border-color transition-colors cursor-pointer"
-                title="السابق"
-              >
-                <FaChevronLeft className="w-3 h-3" />
-              </button>
-              
-              <span className="text-xs font-bold text-foreground/80 px-2 min-w-14 text-center">
-                {currentPage} / {totalPages}
-              </span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2" dir="ltr">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 rounded-lg border border-border-color bg-card-bg flex items-center justify-center text-foreground hover:border-primary/50 disabled:opacity-30 disabled:hover:border-border-color transition-colors cursor-pointer"
+                  title="السابق"
+                >
+                  <FaChevronLeft className="w-3 h-3" />
+                </button>
+                
+                <span className="text-xs font-bold text-foreground/80 px-2 min-w-14 text-center">
+                  {currentPage} / {totalPages}
+                </span>
 
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className="w-8 h-8 rounded-lg border border-border-color bg-card-bg flex items-center justify-center text-foreground hover:border-primary/50 disabled:opacity-30 disabled:hover:border-border-color transition-colors cursor-pointer"
-                title="التالي"
-              >
-                <FaChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-        </div>
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 rounded-lg border border-border-color bg-card-bg flex items-center justify-center text-foreground hover:border-primary/50 disabled:opacity-30 disabled:hover:border-border-color transition-colors cursor-pointer"
+                  title="التالي"
+                >
+                  <FaChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </ScrollReveal>
 
         {/* Categories Grid */}
-        <div key={currentPage} className="grid grid-cols-2 md:grid-cols-4 gap-6 animate-fade-in items-stretch">
+        <ScrollReveal key={currentPage} variant="reveal" stagger className="grid grid-cols-2 md:grid-cols-4 gap-6 items-stretch">
           {currentCategories.map((cat) => (
             <Link
               key={cat._id}
@@ -118,7 +121,7 @@ export default function HomeCategories({ categories }: HomeCategoriesProps) {
               </div>
             </Link>
           ))}
-        </div>
+        </ScrollReveal>
 
         {/* Bullet page indicators at bottom */}
         {totalPages > 1 && (
