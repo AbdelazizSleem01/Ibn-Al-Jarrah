@@ -67,15 +67,15 @@ export default function Navbar({ settings }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border-color bg-card-bg/95 backdrop-blur-md transition-colors duration-300">
-      <div className=" mx-auto px-8 py-3 flex items-center justify-between">
+      <div className=" mx-auto px-8 py-4 flex items-center justify-between">
 
         {/* Brand Logo & Name */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-10 h-10 overflow-hidden rounded-full border border-primary/30 flex items-center justify-center bg-foreground/5">
+          <div className="relative w-12 h-12 overflow-hidden rounded-full border border-primary/30 flex items-center justify-center bg-foreground/5 shrink-0 shadow-sm">
             <img
               src={logoUrl}
               alt="شعار المؤسسة"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = "none";
                 const parent = (e.target as HTMLElement).parentElement;
