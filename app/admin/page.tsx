@@ -83,7 +83,12 @@ export default function AdminDashboard() {
       
       {/* Header */}
       <div>
-        <h1 className="text-xl md:text-2xl font-black text-foreground">لوحة التحكم والمؤشرات</h1>
+        <h1 className="text-xl md:text-2xl font-black text-foreground flex items-center gap-2">
+          <span>لوحة التحكم والمؤشرات</span>
+          <span className={`transition-all duration-300 flex items-center justify-center w-6 h-6 ${loading ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'}`}>
+            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </span>
+        </h1>
         <p className="text-xs text-foreground/60 mt-1">نظرة عامة على إحصائيات وعمليات دار ابن الجراح</p>
       </div>
 
