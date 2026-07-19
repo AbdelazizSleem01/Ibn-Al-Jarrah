@@ -117,6 +117,15 @@ export default function BookCard({ book, onDetailsClick }: BookCardProps) {
           </span>
         </div>
 
+        {/* Mobile-only Details Button – always visible on touch screens */}
+        <button
+          onClick={() => onDetailsClick(book.slug)}
+          className="md:hidden flex items-center justify-center gap-1.5 w-full bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary px-4 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 cursor-pointer mt-1"
+        >
+          <FaInfoCircle />
+          التفاصيل
+        </button>
+
       </div>
 
     </div>
