@@ -1,21 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
-/**
- * ScrollReveal – wraps any element and triggers CSS .is-visible
- * when it enters the viewport via IntersectionObserver.
- *
- * Props:
- *  - className: the reveal variant class ("reveal", "reveal-left", "reveal-right", "reveal-scale")
- *  - stagger: adds .stagger-children so nth-child delays cascade
- *  - delay: optional extra CSS transition-delay (ms)
- *  - threshold: how much of element must be visible (0–1, default 0.12)
- */
 interface ScrollRevealProps {
   children: React.ReactNode;
   className?: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: React.ElementType;
   variant?: "reveal" | "reveal-left" | "reveal-right" | "reveal-scale";
   stagger?: boolean;
   delay?: number;
