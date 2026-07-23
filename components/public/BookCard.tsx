@@ -1,6 +1,5 @@
-"use client";
-
-import React from "react";
+import React, { memo } from "react";
+import Image from "next/image";
 import { FaBookOpen, FaUser, FaTag, FaInfoCircle } from "react-icons/fa";
 
 interface BookCardProps {
@@ -28,7 +27,7 @@ interface BookCardProps {
   onDetailsClick: (slug: string) => void;
 }
 
-export default function BookCard({ book, onDetailsClick }: BookCardProps) {
+function BookCard({ book, onDetailsClick }: BookCardProps) {
   const hasCover = !!book.coverImage?.secureUrl;
   const isAvailable = book.availabilityStatus === "available";
 
@@ -44,11 +43,13 @@ export default function BookCard({ book, onDetailsClick }: BookCardProps) {
 
       {/* Book Cover Image / Mockup Placeholder */}
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-foreground/5 flex items-center justify-center border-b border-border-color">
-        <img
+        <Image
           src={book.coverImage?.secureUrl || "/images/hero-book.webp"}
           alt={book.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
 
         {/* Quick View Hover Overlay */}
@@ -131,3 +132,5 @@ export default function BookCard({ book, onDetailsClick }: BookCardProps) {
     </div>
   );
 }
+
+export default memo(BookCard);

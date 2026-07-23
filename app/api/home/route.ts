@@ -3,36 +3,32 @@ import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
 import SiteSettings from "@/models/SiteSettings";
+import { getCachedSettings } from "@/lib/db/settingsCache";
 
 export async function GET() {
   try {
     await dbConnect();
 
-    // 1. Fetch site settings
-    let settings = await SiteSettings.findOne({ key: "main_settings" }).lean();
+    // Fetch settings, categories, featured, and latest books in parallel (cached settings)
+    let [settings, categories, featuredBooks, latestBooks] = await Promise.all([
+      getCachedSettings(),
+      Category.find({ isVisible: true }).sort({ displayOrder: 1 }).lean(),
+      Book.find({ isFeatured: true, isDeleted: false })
+        .populate("categoryId", "name slug icon")
+        .sort({ displayOrder: 1, createdAt: -1 })
+        .limit(8)
+        .lean(),
+      Book.find({ isDeleted: false })
+        .populate("categoryId", "name slug icon")
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+    ]);
+
     if (!settings) {
       // Return defaults if not initialized yet
       settings = new SiteSettings({ key: "main_settings" }).toObject();
     }
-
-    // 2. Fetch categories (only visible, sorted)
-    const categories = await Category.find({ isVisible: true })
-      .sort({ displayOrder: 1 })
-      .lean();
-
-    // 3. Fetch featured books (limit 8)
-    const featuredBooks = await Book.find({ isFeatured: true, isDeleted: false })
-      .populate("categoryId", "name slug icon")
-      .sort({ displayOrder: 1, createdAt: -1 })
-      .limit(8)
-      .lean();
-
-    // 4. Fetch latest books (limit 8)
-    const latestBooks = await Book.find({ isDeleted: false })
-      .populate("categoryId", "name slug icon")
-      .sort({ createdAt: -1 })
-      .limit(8)
-      .lean();
 
     return NextResponse.json({
       success: true,
@@ -43,6 +39,10 @@ export async function GET() {
         featuredBooks,
         latestBooks,
       },
+    }, {
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=600, stale-while-revalidate=1200",
+      }
     });
   } catch (error) {
     console.error("Public Home API GET Error:", error);

@@ -13,6 +13,10 @@ export async function GET() {
       success: true,
       message: "تم جلب التصنيفات بنجاح",
       data: categories,
+    }, {
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=600, stale-while-revalidate=1200",
+      }
     });
   } catch (error) {
     console.error("Public Categories API Error:", error);

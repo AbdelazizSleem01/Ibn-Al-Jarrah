@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
 import SiteSettings from "@/models/SiteSettings";
+import { getCachedSettings } from "@/lib/db/settingsCache";
 import Navbar from "@/components/public/Navbar";
 import Hero from "@/components/public/Hero";
 import BooksSection from "@/components/public/BooksSection";
@@ -25,32 +26,27 @@ export default async function Page() {
   try {
     await dbConnect();
 
-    // 1. Fetch site settings
-    const settingsDoc = await SiteSettings.findOne({ key: "main_settings" });
+    // 1. Fetch all data in parallel using lean() queries (with cached settings)
+    const [settingsDoc, categoriesDocs, featuredDocs, latestDocs] = await Promise.all([
+      getCachedSettings(),
+      Category.find({ isVisible: true }).sort({ displayOrder: 1 }).lean(),
+      Book.find({ isFeatured: true, isDeleted: false })
+        .populate("categoryId", "name slug")
+        .sort({ displayOrder: 1, createdAt: -1 })
+        .limit(8)
+        .lean(),
+      Book.find({ isDeleted: false })
+        .populate("categoryId", "name slug")
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+    ]);
+
     if (settingsDoc) {
       settings = JSON.parse(JSON.stringify(settingsDoc));
     }
-
-    // 2. Fetch active categories
-    const categoriesDocs = await Category.find({ isVisible: true })
-      .sort({ displayOrder: 1 })
-      .lean();
     categories = JSON.parse(JSON.stringify(categoriesDocs));
-
-    // 3. Fetch featured books (limit 8)
-    const featuredDocs = await Book.find({ isFeatured: true, isDeleted: false })
-      .populate("categoryId", "name slug")
-      .sort({ displayOrder: 1, createdAt: -1 })
-      .limit(8)
-      .lean();
     featuredBooks = JSON.parse(JSON.stringify(featuredDocs));
-
-    // 4. Fetch latest books (limit 8)
-    const latestDocs = await Book.find({ isDeleted: false })
-      .populate("categoryId", "name slug")
-      .sort({ createdAt: -1 })
-      .limit(8)
-      .lean();
     latestBooks = JSON.parse(JSON.stringify(latestDocs));
   } catch (error) {
     console.error("Home page DB fetch error:", error);

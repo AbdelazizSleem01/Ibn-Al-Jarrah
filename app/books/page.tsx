@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
 import SiteSettings from "@/models/SiteSettings";
+import { getCachedSettings } from "@/lib/db/settingsCache";
 import Navbar from "@/components/public/Navbar";
 import BooksBrowser from "@/components/public/BooksBrowser";
 import WhatsappButton from "@/components/public/WhatsappButton";
@@ -45,16 +46,18 @@ export default async function Page({ searchParams }: PageProps) {
   try {
     await dbConnect();
 
-    // 1. Fetch site settings
-    const settingsDoc = await SiteSettings.findOne({ key: "main_settings" });
+    // 1. Parallelize first stage (Metadata / settings / category lookup) with cached settings
+    const [settingsDoc, categoriesDocs, catDoc] = await Promise.all([
+      getCachedSettings(),
+      Category.find({ isVisible: true }).sort({ displayOrder: 1 }).lean(),
+      params.category && !params.category.match(/^[0-9a-fA-F]{24}$/)
+        ? Category.findOne({ slug: params.category }).lean()
+        : null,
+    ]);
+
     if (settingsDoc) {
       settings = JSON.parse(JSON.stringify(settingsDoc));
     }
-
-    // 2. Fetch categories for filters
-    const categoriesDocs = await Category.find({ isVisible: true })
-      .sort({ displayOrder: 1 })
-      .lean();
     categories = JSON.parse(JSON.stringify(categoriesDocs));
 
     // 3. Setup book query variables
@@ -77,9 +80,8 @@ export default async function Page({ searchParams }: PageProps) {
 
     // Category filter
     if (params.category) {
-      const cat = await Category.findOne({ slug: params.category });
-      if (cat) {
-        query.categoryId = cat._id;
+      if (catDoc) {
+        query.categoryId = catDoc._id;
       } else if (params.category.match(/^[0-9a-fA-F]{24}$/)) {
         query.categoryId = params.category;
       }
@@ -149,17 +151,18 @@ export default async function Page({ searchParams }: PageProps) {
         break;
     }
 
-    // Execute queries
-    const totalResults = await Book.countDocuments(query);
+    // Execute pagination and find queries in parallel
+    const [totalResults, booksDocs] = await Promise.all([
+      Book.countDocuments(query),
+      Book.find(query)
+        .populate("categoryId", "name slug icon")
+        .sort(sortQuery)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
+
     const totalPages = Math.ceil(totalResults / limit);
-
-    const booksDocs = await Book.find(query)
-      .populate("categoryId", "name slug icon")
-      .sort(sortQuery)
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
     books = JSON.parse(JSON.stringify(booksDocs));
 
     pagination = {

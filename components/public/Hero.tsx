@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface HeroProps {
   settings?: {
@@ -65,10 +66,13 @@ export default function Hero({ settings }: HeroProps) {
             {/* Soft gold hover shimmer */}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
 
-            <img
+            <Image
               src="/images/hero-book.webp"
               alt="كتاب مفتوح يرمز لنشر العلم الشرعي"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              fill
+              priority
+              sizes="(max-width: 768px) 320px, 420px"
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
           </div>
         </div>

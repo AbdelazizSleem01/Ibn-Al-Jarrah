@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import dbConnect from "@/lib/db/dbConnect";
 import SiteSettings from "@/models/SiteSettings";
 import { getAuthUser } from "@/lib/auth/token";
@@ -106,6 +107,7 @@ export async function PATCH(request: Request) {
 
     settings.updatedAt = new Date();
     await settings.save();
+    revalidateTag("settings", "max");
 
     return NextResponse.json({
       success: true,

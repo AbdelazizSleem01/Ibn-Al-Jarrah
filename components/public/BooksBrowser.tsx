@@ -1,9 +1,25 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useTransition } from "react";
+import React, { useState, useEffect, useRef, useTransition, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import BookCard from "./BookCard";
-import BookModal from "./BookModal";
+
+const BookModal = dynamic(() => import("./BookModal"), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-4xl bg-card-bg rounded-2xl border border-border-color shadow-2xl p-8 flex flex-col md:flex-row gap-8 items-center min-h-[300px]">
+        <div className="w-48 aspect-[3/4] skeleton rounded-lg shrink-0" />
+        <div className="flex-grow flex flex-col gap-4 w-full">
+          <div className="h-6 w-3/4 skeleton rounded" />
+          <div className="h-4 w-1/2 skeleton rounded" />
+          <div className="h-20 w-full skeleton rounded" />
+        </div>
+      </div>
+    </div>
+  ),
+});
 import { FaThLarge, FaList, FaFilter, FaTimes, FaUndo, FaSearch, FaChevronDown, FaChevronLeft, FaChevronRight, FaInfoCircle } from "react-icons/fa";
 
 interface Category {
@@ -64,7 +80,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   );
 
   // Helper to update URL search params
-  const updateQuery = (newParams: Record<string, string | number | undefined | null>) => {
+  const updateQuery = useCallback((newParams: Record<string, string | number | undefined | null>) => {
     const params = new URLSearchParams(window.location.search);
 
     // Reset page on filter changes unless explicitly specified
@@ -83,7 +99,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
     startTransition(() => {
       router.push(`?${params.toString()}`, { scroll: true });
     });
-  };
+  }, [router]);
 
   // Load view type from localStorage or sync with URL query params
   useEffect(() => {
@@ -127,13 +143,13 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
     updateQuery({ page: newPage });
   };
 
-  const handleDetailsClick = (slug: string) => {
+  const handleDetailsClick = useCallback((slug: string) => {
     updateQuery({ book: slug });
-  };
+  }, [updateQuery]);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     updateQuery({ book: undefined });
-  };
+  }, [updateQuery]);
 
   // Identify active filters to display as removable chips
   const getActiveChips = () => {
