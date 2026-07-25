@@ -22,19 +22,20 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const title = settings?.seo?.title || settings?.title || "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع";
   const description = settings?.seo?.description || settings?.description || "مؤسسة متخصصة في نشر وتوزيع الكتب، ونسعى إلى تيسير العلم الشرعي وتوفير الكتب بأفضل الأسعار وأعلى جودة.";
-  const keywords = settings?.seo?.keywords || "دار ابن الجراح, نشر وتوزيع, كتب شرعية, طالب العلم, علم شرعي, فقه, عقيدة, تفسير";
+  const keywords = settings?.seo?.keywords || "دار ابن الجراح, نشر وتوزيع, كتب شرعية, طالب العلم, علم شرعي, فقه, عقيدة, تفسير, Ibn Al Jarrah";
   
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const logoUrl = "/images/logo.webp";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://al-jarrah.vercel.app";
+  const logoUrl = `${siteUrl}/images/logo.webp`;
 
   return {
+    metadataBase: new URL(siteUrl),
     title: {
       default: title,
       template: `%s | ${settings?.title || "دار ابن الجراح"}`
     },
+    applicationName: "دار ابن الجراح",
     description,
     keywords,
-    metadataBase: new URL(siteUrl),
     verification: {
       google: "google88383ba5c90a6dc2",
     },
@@ -45,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       url: siteUrl,
-      siteName: settings?.title || "دار ابن الجراح",
+      siteName: "دار ابن الجراح",
       locale: "ar_EG",
       type: "website",
       images: [
@@ -65,13 +66,20 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
+        { url: '/favicon.ico', sizes: 'any' },
         { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+        { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
         { url: '/favicon.svg', type: 'image/svg+xml' },
       ],
-      apple: '/apple-touch-icon.png',
-      shortcut: '/favicon.ico',
+      apple: [
+        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      ],
+      shortcut: ['/favicon.ico'],
     },
     manifest: '/site.webmanifest',
+    other: {
+      "apple-mobile-web-app-title": "دار ابن الجراح",
+    },
   };
 }
 
@@ -104,6 +112,27 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Schema.org WebSite JSON-LD for Google Search Brand Name */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "دار ابن الجراح",
+              "alternateName": ["Ibn Al Jarrah", "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع", "دار ابن الجراح للنشر والتوزيع"],
+              "url": "https://al-jarrah.vercel.app",
+              "publisher": {
+                "@type": "Organization",
+                "name": "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://al-jarrah.vercel.app/images/logo.webp"
+                }
+              }
+            }),
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
@@ -111,4 +140,3 @@ export default function RootLayout({
     </html>
   );
 }
-

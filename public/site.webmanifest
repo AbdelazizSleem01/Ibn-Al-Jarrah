@@ -1,17 +1,17 @@
 {
-  "name": "Your Application Name",
-  "short_name": "App",
-  "description": "Application description",
+  "name": "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع",
+  "short_name": "دار ابن الجراح",
+  "description": "مؤسسة متخصصة في نشر وتوزيع الكتب، ونسعى إلى تيسير العلم الشرعي وتوفير الكتب بأفضل الأسعار وأعلى جودة.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#0d1117",
+  "theme_color": "#d4af37",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
       "purpose": "any"
     },
     {
@@ -28,8 +28,9 @@
     }
   ],
   "categories": [
-    "productivity"
+    "education",
+    "books"
   ],
-  "lang": "en",
-  "dir": "ltr"
+  "lang": "ar",
+  "dir": "rtl"
 }
