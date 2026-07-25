@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+
 export interface ExtractedBookData {
   title?: string;
   author?: string;
@@ -27,37 +30,13 @@ function cleanText(str: string): string {
  * Smart Arabic Book Metadata Extractor from PDF text
  */
 export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<ExtractedBookData> {
-  // Polyfill global DOMMatrix/ImageData if needed by pdf-parse internal worker in Node serverless
-  if (typeof (global as any).DOMMatrix === "undefined") {
-    (global as any).DOMMatrix = class DOMMatrix {};
-  }
-  if (typeof (global as any).ImageData === "undefined") {
-    (global as any).ImageData = class ImageData {};
-  }
-  if (typeof (global as any).Path2D === "undefined") {
-    (global as any).Path2D = class Path2D {};
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParseModule = require("pdf-parse");
-  const PDFParse = pdfParseModule.PDFParse || pdfParseModule;
-
   let rawText = "";
   let totalPages = 0;
 
   try {
-    if (typeof PDFParse === "function" && PDFParse.prototype && PDFParse.prototype.getText) {
-      // PDFParse v2 class API
-      const parser = new PDFParse({ data: pdfBuffer });
-      const pdfData = await parser.getText();
-      totalPages = pdfData.total || 0;
-      rawText = cleanText(pdfData.text || "");
-    } else if (typeof pdfParseModule === "function") {
-      // PDFParse v1 function API fallback
-      const pdfData = await pdfParseModule(pdfBuffer);
-      totalPages = pdfData.numpages || 0;
-      rawText = cleanText(pdfData.text || "");
-    }
+    const pdfData = await pdfParse(pdfBuffer);
+    totalPages = pdfData.numpages || 0;
+    rawText = cleanText(pdfData.text || "");
   } catch (err: any) {
     console.error("PDF Parsing error:", err);
     throw new Error("فشل قراءة محتوى ملف الـ PDF. يرجى التأكد من أن الملف غير محمي بكلمة سر أو تالف.");

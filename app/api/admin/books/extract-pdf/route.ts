@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     console.error("PDF Extraction API Error:", error);
     return NextResponse.json(
       { success: false, message: error.message || "حدث خطأ أثناء قراءة ملف الـ PDF" },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }
