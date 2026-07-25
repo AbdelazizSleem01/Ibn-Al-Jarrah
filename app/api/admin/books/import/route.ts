@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     await dbConnect();
     const body = await request.json();
-    const { books, duplicateStrategy } = body; // duplicateStrategy: 'ignore' | 'update' | 'create_copy'
+    const { books, duplicateStrategy, defaultCategoryId } = body; // duplicateStrategy: 'ignore' | 'update' | 'create_copy'
 
     if (!books || !Array.isArray(books) || books.length === 0) {
       return NextResponse.json(
@@ -68,16 +68,28 @@ export async function POST(request: Request) {
           continue;
         }
 
-        if (!item.categoryName && !item.categoryId) {
-          report.failed++;
-          report.errors.push(`الصف ${index + 1}: يجب تحديد التصنيف لهذا الكتاب (${item.title})`);
-          continue;
+        let catIdentifier = item.categoryId || item.categoryName || defaultCategoryId;
+        if (!catIdentifier) {
+          // Fallback to "عام" category if no category specified
+          let generalCat = await Category.findOne({ name: "عام" });
+          if (!generalCat) {
+            generalCat = await Category.create({
+              name: "عام",
+              slug: "general",
+              description: "التصنيف العام للكتب",
+              icon: "FaBook",
+              isVisible: true,
+              displayOrder: 99,
+              booksCount: 0,
+            });
+          }
+          catIdentifier = generalCat._id.toString();
         }
 
-        const category = await getCategory(item.categoryId || item.categoryName);
+        const category = await getCategory(catIdentifier);
         if (!category) {
           report.failed++;
-          report.errors.push(`الصف ${index + 1}: التصنيف غير موجود (${item.categoryId || item.categoryName})`);
+          report.errors.push(`الصف ${index + 1}: التصنيف غير موجود (${catIdentifier})`);
           continue;
         }
 

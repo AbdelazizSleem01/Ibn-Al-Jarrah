@@ -39,6 +39,23 @@ export default function BooksImporter() {
 
   // Import Options
   const [duplicateStrategy, setDuplicateStrategy] = useState<"ignore" | "update" | "create_copy">("ignore");
+  const [categories, setCategories] = useState<any[]>([]);
+  const [defaultCategoryId, setDefaultCategoryId] = useState("");
+
+  // Fetch categories on mount for default category assignment
+  React.useEffect(() => {
+    fetch("/api/admin/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setCategories(data.data);
+          if (data.data.length > 0) {
+            setDefaultCategoryId(data.data[0]._id);
+          }
+        }
+      })
+      .catch((err) => console.error("Failed to fetch categories:", err));
+  }, []);
 
   // Progress State
   const [importing, setImporting] = useState(false);
@@ -313,6 +330,9 @@ export default function BooksImporter() {
           book[field.key] = row[mappedHeader];
         }
       });
+      if (!book.categoryId && !book.categoryName && defaultCategoryId) {
+        book.categoryId = defaultCategoryId;
+      }
       return book as BookRow;
     });
   };
@@ -363,6 +383,7 @@ export default function BooksImporter() {
           body: JSON.stringify({
             books: batch,
             duplicateStrategy,
+            defaultCategoryId,
           }),
         });
         const result = await res.json();
@@ -570,8 +591,27 @@ export default function BooksImporter() {
               ))}
             </div>
 
-            {/* Duplicate Conflict Strategy Option */}
+            {/* Default Category Selector */}
             <div className="flex flex-col gap-2 pt-4 border-t border-border-color/50 text-xs">
+              <label className="font-bold text-foreground/85">
+                التصنيف الافتراضي للكتب المستوردة <span className="text-primary font-bold">(في حال عدم وجود عمود تصنيف بالملف)</span>:
+              </label>
+              <select
+                value={defaultCategoryId}
+                onChange={(e) => setDefaultCategoryId(e.target.value)}
+                className="w-full bg-card-bg border border-border-color rounded-lg p-2.5 focus:outline-none"
+              >
+                <option value="">-- اختر التصنيف الافتراضي --</option>
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Duplicate Conflict Strategy Option */}
+            <div className="flex flex-col gap-2 pt-2 border-t border-border-color/50 text-xs">
               <label className="font-bold text-foreground/85">خيار معالجة الكتب المكررة:</label>
               <select
                 value={duplicateStrategy}
