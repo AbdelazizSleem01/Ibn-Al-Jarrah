@@ -42,7 +42,6 @@ function cleanText(str: string): string {
  */
 function fixReversedArabic(str: string): string {
   if (!str) return str;
-  // If string contains common reversed patterns like "باتكلا" or "املؤلف"
   if (str.includes("باتكلا") || str.includes("املؤلف") || str.includes("رشنا")) {
     return str.split("").reverse().join("");
   }
@@ -50,11 +49,16 @@ function fixReversedArabic(str: string): string {
 }
 
 /**
- * Smart Arabic Book Metadata & Catalog Extractor from PDF text
+ * Smart Arabic Book Metadata & Catalog Extractor with Real-Time Progress Callback
  */
-export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<ExtractedBookData> {
+export async function extractBookDataFromPDF(
+  pdfBuffer: Buffer,
+  onProgress?: (percent: number, status: string) => void
+): Promise<ExtractedBookData> {
   let rawText = "";
   let totalPages = 0;
+
+  onProgress?.(25, "جاري قراءة محتوى الصفحات والجداول من الملف...");
 
   try {
     const pdfData = await pdfParse(pdfBuffer);
@@ -64,6 +68,11 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
     console.error("PDF Parsing error:", err);
     throw new Error("فشل قراءة محتوى ملف الـ PDF. يرجى التأكد من أن الملف غير محمي بكلمة سر أو تالف.");
   }
+
+  onProgress?.(
+    45,
+    `تم قراءة (${totalPages}) صفحة. جاري التحليل بالذكاء الاصطناعي وتصحيح النصوص المعكوسة...`
+  );
 
   // Take up to 25,000 characters to cover bulk catalogs
   const fullContentText = rawText.slice(0, 25000);
@@ -82,8 +91,13 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (apiKey) {
     try {
-      const aiResult = await extractWithGemini(fullContentText, apiKey);
+      const aiResult = await extractWithGemini(fullContentText, apiKey, onProgress);
       if (aiResult) {
+        const bookCount = aiResult.isCatalog ? aiResult.books?.length || 0 : 1;
+        onProgress?.(
+          85,
+          `تم استخراج (${bookCount}) كتاب بنجاح. جاري تجميع الجدول والتأكد من الأعمدة...`
+        );
         return {
           ...aiResult,
           pagesCount: result.pagesCount || aiResult.pagesCount,
@@ -95,9 +109,10 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
     }
   }
 
-  // 2. Local Regex & Pattern Extraction Fallback for Single Arabic Book
+  onProgress?.(75, "جاري استخراج البيانات بالمحرك المحلي المتقدم...");
   extractLocalRegex(lines, fullContentText, result);
 
+  onProgress?.(85, "جاري تجهيز البيانات وتنسيق الجدول...");
   return result;
 }
 
@@ -204,9 +219,15 @@ function extractLocalRegex(lines: string[], fullText: string, result: ExtractedB
 }
 
 /**
- * Gemini AI Extraction for Catalog Tables & Single Books
+ * Gemini AI Extraction for Catalog Tables & Single Books with Status Callback
  */
-async function extractWithGemini(fullText: string, apiKey: string): Promise<ExtractedBookData | null> {
+async function extractWithGemini(
+  fullText: string,
+  apiKey: string,
+  onProgress?: (percent: number, status: string) => void
+): Promise<ExtractedBookData | null> {
+  onProgress?.(55, "جاري إرسال البيانات لنماذج الذكاء الاصطناعي وقراءة الجداول...");
+
   const prompt = `أنت نظام ذكاء اصطناعي خبير في قراءة وتحليل قوائم الكتب العربية وكشوف أسعار الدور والنشر والتوزيع.
 حلل النص المرفق المأخوذ من ملف PDF واستخرج البيانات بدقة متناهية وفق القواعد التالية:
 
@@ -266,6 +287,8 @@ ${fullText}
   if (!response.ok) {
     return null;
   }
+
+  onProgress?.(75, "تم استلام الاستجابة الذكية وجاري مطابقة صفوف الكتب...");
 
   const data = await response.json();
   const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;

@@ -139,17 +139,17 @@ export default function BooksManager() {
       return;
     }
 
-    // Dynamic Swal Progress Dialog
+    // Real-Time Progress Swal Dialog
     Swal.fire({
       title: "جاري تحليل وقراءة ملف الـ PDF...",
       html: `
         <div style="direction: rtl; font-family: inherit; padding: 6px 0;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span id="pdf-status-text" style="font-size: 12px; font-weight: bold; color: #64748b;">جاري رفع وقراءة الصفحات الأولية...</span>
-            <span id="pdf-percent-text" style="font-size: 16px; font-weight: 900; color: #d4af37;">15%</span>
+            <span id="pdf-percent-text" style="font-size: 16px; font-weight: 900; color: #d4af37;">10%</span>
           </div>
           <div style="width: 100%; background-color: #e2e8f0; height: 12px; border-radius: 9999px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
-            <div id="pdf-progress-bar" style="width: 15%; background: linear-gradient(90deg, #d4af37, #f59e0b); height: 100%; border-radius: 9999px; transition: width 0.4s ease-in-out;"></div>
+            <div id="pdf-progress-bar" style="width: 10%; background: linear-gradient(90deg, #d4af37, #f59e0b); height: 100%; border-radius: 9999px; transition: width 0.3s ease-in-out;"></div>
           </div>
         </div>
       `,
@@ -166,11 +166,6 @@ export default function BooksManager() {
       if (statusEl) statusEl.innerText = statusText;
     };
 
-    // Simulated progress steps during network request
-    const timer1 = setTimeout(() => updateProgress(40, "جاري استخراج الجداول والنصوص والعناوين..."), 600);
-    const timer2 = setTimeout(() => updateProgress(70, "جاري تحليل المحتوى بالذكاء الاصطناعي وتصحيح العناوين..."), 1800);
-    const timer3 = setTimeout(() => updateProgress(92, "جاري تجهيز بيانات الكتاب وإتمام التحليل..."), 3200);
-
     try {
       const data = new FormData();
       data.append("file", file);
@@ -180,17 +175,55 @@ export default function BooksManager() {
         body: data,
       });
 
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      updateProgress(100, "تم التحليل بنجاح 100%!");
-      await new Promise((r) => setTimeout(r, 400));
+      if (!res.ok) {
+        throw new Error("فشل الاتصال بسيرفر معالجة الـ PDF");
+      }
 
-      const result = await res.json();
+      const reader = res.body?.getReader();
+      if (!reader) {
+        throw new Error("استجابة السيرفر غير قابلة للقراءة التفاعلية");
+      }
+
+      const decoder = new TextDecoder();
+      let bufferStr = "";
+      let finalResultData: any = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        bufferStr += decoder.decode(value, { stream: true });
+        const events = bufferStr.split("\n\n");
+        bufferStr = events.pop() || "";
+
+        for (const eventLine of events) {
+          const trimmed = eventLine.trim();
+          if (!trimmed.startsWith("data:")) continue;
+
+          const jsonStr = trimmed.replace(/^data:\s*/, "");
+          try {
+            const parsedEvent = JSON.parse(jsonStr);
+            if (parsedEvent.type === "progress") {
+              updateProgress(parsedEvent.percent, parsedEvent.status);
+            } else if (parsedEvent.type === "complete") {
+              updateProgress(100, parsedEvent.status || "تم التحليل بنجاح 100%!");
+              finalResultData = parsedEvent.data;
+            } else if (parsedEvent.type === "error") {
+              throw new Error(parsedEvent.message || "حدث خطأ أثناء معالجة ملف الـ PDF");
+            }
+          } catch (e: any) {
+            if (e.message && !e.message.includes("JSON")) {
+              throw e;
+            }
+          }
+        }
+      }
+
+      await new Promise((r) => setTimeout(r, 400));
       Swal.close();
 
-      if (result.success && result.data) {
-        const ext = result.data;
+      if (finalResultData) {
+        const ext = finalResultData;
         openCreateModal();
 
         setFormData((prev) => ({
@@ -213,7 +246,7 @@ export default function BooksManager() {
           confirmButtonColor: "#d4af37",
         });
       } else {
-        Swal.fire("خطأ", result.message || "فشل استخراج البيانات من ملف الـ PDF", "error");
+        Swal.fire("خطأ", "فشل استخراج البيانات من ملف الـ PDF", "error");
       }
     } catch (err: any) {
       Swal.close();

@@ -29,24 +29,73 @@ export async function POST(request: Request) {
       );
     }
 
-    // Convert file to Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Extract book data from PDF
-    const extractedData = await extractBookDataFromPDF(buffer);
+    const encoder = new TextEncoder();
 
-    return NextResponse.json({
-      success: true,
-      message: "تم قراءة واستخراج بيانات ملف الـ PDF بنجاح",
-      data: extractedData,
-      fileName: file.name,
+    const stream = new ReadableStream({
+      async start(controller) {
+        const sendEvent = (eventData: any) => {
+          try {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(eventData)}\n\n`)
+            );
+          } catch (e) {
+            console.error("Stream enqueue error:", e);
+          }
+        };
+
+        try {
+          // Event 1: Initial PDF Reception
+          sendEvent({
+            type: "progress",
+            percent: 10,
+            status: "تم استقبال الملف وجاري تفكيك محتويات صفحات الـ PDF...",
+          });
+
+          // Run PDF Extractor with live progress callback
+          const extractedData = await extractBookDataFromPDF(
+            buffer,
+            (percent: number, status: string) => {
+              sendEvent({ type: "progress", percent, status });
+            }
+          );
+
+          // Event 2: Completion
+          sendEvent({
+            type: "complete",
+            percent: 100,
+            status: "تم التحليل بنجاح 100%!",
+            data: extractedData,
+            fileName: file.name,
+          });
+
+          controller.close();
+        } catch (error: any) {
+          console.error("PDF Streaming Extraction Error:", error);
+          sendEvent({
+            type: "error",
+            message: error.message || "حدث خطأ أثناء قراءة ملف الـ PDF",
+          });
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (error: any) {
-    console.error("PDF Extraction API Error:", error);
+    console.error("PDF Extraction API Global Error:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "حدث خطأ أثناء قراءة ملف الـ PDF" },
-      { status: 400 }
+      { success: false, message: error.message || "حدث خطأ غير متوقع" },
+      { status: 500 }
     );
   }
 }
