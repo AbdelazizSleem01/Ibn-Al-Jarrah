@@ -62,14 +62,38 @@ export default function BooksImporter() {
     }
 
     setFileName(file.name);
+
+    // Dynamic Swal Progress Dialog
     Swal.fire({
-      title: "جاري تحليل الـ PDF...",
-      text: "استخراج البيانات والعناوين والمؤلفين...",
+      title: "جاري تحليل وقراءة كشف الـ PDF...",
+      html: `
+        <div style="direction: rtl; font-family: inherit; padding: 6px 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span id="pdf-status-text" style="font-size: 12px; font-weight: bold; color: #64748b;">جاري رفع وقراءة الصفحات الأولية...</span>
+            <span id="pdf-percent-text" style="font-size: 16px; font-weight: 900; color: #d4af37;">15%</span>
+          </div>
+          <div style="width: 100%; background-color: #e2e8f0; height: 12px; border-radius: 9999px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
+            <div id="pdf-progress-bar" style="width: 15%; background: linear-gradient(90deg, #ef4444, #f59e0b, #d4af37); height: 100%; border-radius: 9999px; transition: width 0.4s ease-in-out;"></div>
+          </div>
+        </div>
+      `,
+      showConfirmButton: false,
       allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
     });
+
+    const updateProgress = (percent: number, statusText: string) => {
+      const barEl = document.getElementById("pdf-progress-bar");
+      const percentEl = document.getElementById("pdf-percent-text");
+      const statusEl = document.getElementById("pdf-status-text");
+      if (barEl) barEl.style.width = `${percent}%`;
+      if (percentEl) percentEl.innerText = `${percent}%`;
+      if (statusEl) statusEl.innerText = statusText;
+    };
+
+    // Simulated progress steps during network request
+    const timer1 = setTimeout(() => updateProgress(35, "جاري استخراج الجداول وقوائم أسعار الكتب..."), 700);
+    const timer2 = setTimeout(() => updateProgress(65, "جاري تحليل وتصحيح العناوين والكلمات المعكوسة..."), 2000);
+    const timer3 = setTimeout(() => updateProgress(90, "جاري تجميع كشف الكتب وتجهيز الجدول النهائي..."), 3500);
 
     try {
       const data = new FormData();
@@ -79,6 +103,12 @@ export default function BooksImporter() {
         method: "POST",
         body: data,
       });
+
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      updateProgress(100, "تم التحليل بنجاح 100%!");
+      await new Promise((r) => setTimeout(r, 450));
 
       const result = await res.json();
       Swal.close();
