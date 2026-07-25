@@ -16,6 +16,7 @@ import {
   FaTimes,
   FaBookOpen,
   FaChevronDown,
+  FaFilePdf,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
@@ -126,6 +127,72 @@ export default function BooksManager() {
   });
 
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  // PDF Metadata Extraction Handler
+  const handlePDFExtract = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      Swal.fire("تنبيه", "يرجى اختيار ملف PDF فقط", "warning");
+      return;
+    }
+
+    Swal.fire({
+      title: "جاري قراءة ملف الـ PDF...",
+      text: "استخراج بيانات العنوان والمؤلف ودار النشر وصفحات الكتاب...",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    try {
+      const data = new FormData();
+      data.append("file", file);
+
+      const res = await fetch("/api/admin/books/extract-pdf", {
+        method: "POST",
+        body: data,
+      });
+
+      const result = await res.json();
+      Swal.close();
+
+      if (result.success && result.data) {
+        const ext = result.data;
+        openCreateModal();
+
+        setFormData((prev) => ({
+          ...prev,
+          title: ext.title || prev.title,
+          author: ext.author || prev.author,
+          publisher: ext.publisher || prev.publisher,
+          isbn: ext.isbn || prev.isbn,
+          edition: ext.edition || prev.edition,
+          publicationYear: ext.publicationYear ? String(ext.publicationYear) : prev.publicationYear,
+          pagesCount: ext.pagesCount ? String(ext.pagesCount) : prev.pagesCount,
+          volumesCount: ext.volumesCount ? String(ext.volumesCount) : prev.volumesCount,
+          internalNotes: ext.editorOrTranslator ? `المحقق/المترجم: ${ext.editorOrTranslator}` : prev.internalNotes,
+        }));
+
+        Swal.fire({
+          icon: "success",
+          title: "تم استخراج البيانات بنجاح!",
+          text: `تم التعرف على عنوان الكتاب: "${ext.title || "غير محدد"}". يمكنك تحديد التصنيف والسعر والحفظ الآن.`,
+          confirmButtonColor: "#d4af37",
+        });
+      } else {
+        Swal.fire("خطأ", result.message || "فشل استخراج البيانات من ملف الـ PDF", "error");
+      }
+    } catch (err: any) {
+      Swal.close();
+      Swal.fire("خطأ", "حدث خطأ أثناء معالجة ملف الـ PDF", "error");
+    } finally {
+      if (e.target) e.target.value = "";
+    }
+  };
 
   // Fetch books list
   const fetchBooks = () => {
@@ -616,6 +683,23 @@ export default function BooksManager() {
           >
             <FaFileExport />
             تصدير النتائج
+          </button>
+
+          <input
+            type="file"
+            accept=".pdf"
+            ref={pdfInputRef}
+            onChange={handlePDFExtract}
+            className="hidden"
+          />
+
+          <button
+            onClick={() => pdfInputRef.current?.click()}
+            className="flex items-center justify-center gap-1.5 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex-1 sm:flex-none order-2 sm:order-none shadow-sm"
+            title="استخراج دقيق لتفاصيل الكتاب وغلافه من ملف PDF"
+          >
+            <FaFilePdf className="text-sm" />
+            استخراج من PDF
           </button>
 
           <button

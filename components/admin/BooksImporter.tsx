@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import * as XLSX from "xlsx";
-import { FaFileExcel, FaClipboardList, FaFileImport, FaCheckCircle, FaTimesCircle, FaTasks, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaFileExcel, FaClipboardList, FaFileImport, FaCheckCircle, FaTimesCircle, FaTasks, FaChevronLeft, FaChevronRight, FaFilePdf } from "react-icons/fa";
 import Swal from "sweetalert2";
 
 interface BookRow {
@@ -26,7 +26,7 @@ interface BookRow {
 }
 
 export default function BooksImporter() {
-  const [activeTab, setActiveTab] = useState<"file" | "paste">("file");
+  const [activeTab, setActiveTab] = useState<"file" | "paste" | "pdf">("file");
 
   // Data State
   const [parsedData, setParsedData] = useState<any[]>([]);
@@ -49,6 +49,75 @@ export default function BooksImporter() {
   const [previewPage, setPreviewPage] = useState(1);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle PDF File Import
+  const handlePDFFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      Swal.fire("تنبيه", "يرجى اختيار ملف PDF فقط", "warning");
+      return;
+    }
+
+    setFileName(file.name);
+    Swal.fire({
+      title: "جاري تحليل الـ PDF...",
+      text: "استخراج البيانات والعناوين والمؤلفين...",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    try {
+      const data = new FormData();
+      data.append("file", file);
+
+      const res = await fetch("/api/admin/books/extract-pdf", {
+        method: "POST",
+        body: data,
+      });
+
+      const result = await res.json();
+      Swal.close();
+
+      if (result.success && result.data) {
+        const ext = result.data;
+        const row = {
+          "الكتاب": ext.title || "",
+          "المؤلف": ext.author || "",
+          "الناشر": ext.publisher || "",
+          "رقم ISBN": ext.isbn || "",
+          "سنة النشر": ext.publicationYear || "",
+          "عدد المجلدات": ext.volumesCount || 1,
+          "التجليد": ext.edition || "",
+        };
+
+        const extractedHeaders = Object.keys(row);
+        setHeaders(extractedHeaders);
+        setParsedData([row]);
+        autoMatchHeaders(extractedHeaders);
+        setReport(null);
+        setPreviewPage(1);
+
+        Swal.fire({
+          icon: "success",
+          title: "تم قراءة الـ PDF بنجاح!",
+          text: `تم التعرف على كتاب: "${ext.title || "غير محدد"}". يمكنك التأكد من الأعمدة واستكمال الاستيراد.`,
+          confirmButtonColor: "#d4af37",
+        });
+      } else {
+        Swal.fire("خطأ", result.message || "فشل قراءة الملف", "error");
+      }
+    } catch (err: any) {
+      Swal.close();
+      Swal.fire("خطأ", "حدث خطأ أثناء الاتصال بالخادم لمعالجة الـ PDF", "error");
+    } finally {
+      if (e.target) e.target.value = "";
+    }
+  };
 
   const targetFields = [
     { key: "title", label: "اسم الكتاب *", matchedKeys: ["الكتاب", "العنوان", "title", "name"] },
@@ -293,6 +362,16 @@ export default function BooksImporter() {
           <FaFileExcel className="text-xs" />
           رفع ملف إكسيل / CSV
         </button>
+
+        <button
+          onClick={() => setActiveTab("pdf")}
+          className={`flex items-center gap-2 px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "pdf" ? "border-red-500 text-red-500" : "border-transparent text-foreground/70"
+            }`}
+        >
+          <FaFilePdf className="text-xs" />
+          رفع ملف PDF
+        </button>
+
         <button
           onClick={() => setActiveTab("paste")}
           className={`flex items-center gap-2 px-6 py-3 font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "paste" ? "border-primary text-primary" : "border-transparent text-foreground/70"
@@ -306,7 +385,32 @@ export default function BooksImporter() {
       {/* Import  Panel */}
       <div className="bg-card-bg border border-border-color rounded-2xl p-5 shadow-sm transition-colors duration-300">
 
-        {activeTab === "file" ? (
+        {activeTab === "pdf" ? (
+          // PDF Mode
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-red-500/30 rounded-xl p-8 bg-foreground/[0.005]">
+            <FaFilePdf className="text-red-500/40 text-5xl mb-4" />
+            <span className="font-extrabold text-sm text-foreground mb-1">رفع واستخراج من PDF</span>
+            <p className="text-xs text-foreground/60 max-w-sm text-center mb-6">
+              قم باختيار ملف PDF للكتاب وسيقوم النظام بقراءة الصفحات الأولى واستخراج كافة البيانات تلقائياً.
+            </p>
+
+            <label className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-lg text-xs md:text-sm shadow-md transition-all cursor-pointer">
+              اختر ملف PDF
+              <input
+                ref={pdfInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handlePDFFileUpload}
+                className="hidden"
+              />
+            </label>
+            {fileName && (
+              <span className="text-xs text-foreground/70 font-semibold mt-4">
+                الملف المختار: <span className="text-primary font-bold">{fileName}</span>
+              </span>
+            )}
+          </div>
+        ) : activeTab === "file" ? (
           // File Mode
           <div className="flex flex-col items-center justify-center border-2 border-dashed border-border-color rounded-xl p-8 bg-foreground/[0.005]">
             <FaFileExcel className="text-primary/30 text-5xl mb-4" />
