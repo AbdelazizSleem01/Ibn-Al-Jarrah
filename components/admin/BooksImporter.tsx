@@ -85,27 +85,41 @@ export default function BooksImporter() {
 
       if (result.success && result.data) {
         const ext = result.data;
-        const row = {
-          "الكتاب": ext.title || "",
-          "المؤلف": ext.author || "",
-          "الناشر": ext.publisher || "",
-          "رقم ISBN": ext.isbn || "",
-          "سنة النشر": ext.publicationYear || "",
-          "عدد المجلدات": ext.volumesCount || 1,
-          "التجليد": ext.edition || "",
-        };
 
-        const extractedHeaders = Object.keys(row);
+        let rows: any[] = [];
+        if (ext.isCatalog && Array.isArray(ext.books) && ext.books.length > 0) {
+          rows = ext.books.map((b: any) => ({
+            "الكتاب": b.title || "",
+            "المؤلف": b.author || "",
+            "الناشر": b.publisher || ext.publisher || "",
+            "السعر بالجنيه": b.priceEgp || "",
+            "نوع التجليد": b.edition || "",
+          }));
+        } else {
+          rows = [
+            {
+              "الكتاب": ext.title || "",
+              "المؤلف": ext.author || "",
+              "الناشر": ext.publisher || "",
+              "رقم ISBN": ext.isbn || "",
+              "سنة النشر": ext.publicationYear || "",
+              "عدد المجلدات": ext.volumesCount || 1,
+              "نوع التجليد": ext.edition || "",
+            },
+          ];
+        }
+
+        const extractedHeaders = Object.keys(rows[0] || {});
         setHeaders(extractedHeaders);
-        setParsedData([row]);
+        setParsedData(rows);
         autoMatchHeaders(extractedHeaders);
         setReport(null);
         setPreviewPage(1);
 
         Swal.fire({
           icon: "success",
-          title: "تم قراءة الـ PDF بنجاح!",
-          text: `تم التعرف على كتاب: "${ext.title || "غير محدد"}". يمكنك التأكد من الأعمدة واستكمال الاستيراد.`,
+          title: "تم قراءة كشف الـ PDF بنجاح!",
+          text: `تم استخراج (${rows.length}) كتاب من القائمة وتعديل الحروف المقلوبة. يمكنك الآن اختيار التصنيف ومطابقة الأعمدة ثم الاستيراد.`,
           confirmButtonColor: "#d4af37",
         });
       } else {

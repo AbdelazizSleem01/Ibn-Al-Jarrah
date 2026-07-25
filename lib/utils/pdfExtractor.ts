@@ -2,6 +2,17 @@
 const pdfParse = require("pdf-parse/lib/pdf-parse.js");
 
 export interface ExtractedBookData {
+  isCatalog?: boolean;
+  books?: Array<{
+    title?: string;
+    author?: string;
+    publisher?: string;
+    priceEgp?: number;
+    edition?: string;
+    publicationYear?: number;
+    isbn?: string;
+    volumesCount?: number;
+  }>;
   title?: string;
   author?: string;
   editorOrTranslator?: string;
@@ -27,7 +38,19 @@ function cleanText(str: string): string {
 }
 
 /**
- * Smart Arabic Book Metadata Extractor from PDF text
+ * Reverse character sequence helper if Arabic bidi text is inverted by PDF generator
+ */
+function fixReversedArabic(str: string): string {
+  if (!str) return str;
+  // If string contains common reversed patterns like "باتكلا" or "املؤلف"
+  if (str.includes("باتكلا") || str.includes("املؤلف") || str.includes("رشنا")) {
+    return str.split("").reverse().join("");
+  }
+  return str;
+}
+
+/**
+ * Smart Arabic Book Metadata & Catalog Extractor from PDF text
  */
 export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<ExtractedBookData> {
   let rawText = "";
@@ -42,9 +65,9 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
     throw new Error("فشل قراءة محتوى ملف الـ PDF. يرجى التأكد من أن الملف غير محمي بكلمة سر أو تالف.");
   }
 
-  // Take the first 4000 characters (typically contains Cover, Title Page, and Copyright Page)
-  const frontText = rawText.slice(0, 4000);
-  const lines = frontText
+  // Take up to 25,000 characters to cover bulk catalogs
+  const fullContentText = rawText.slice(0, 25000);
+  const lines = fullContentText
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
@@ -52,15 +75,15 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
   const result: ExtractedBookData = {
     pagesCount: totalPages > 0 ? totalPages : undefined,
     volumesCount: 1,
-    rawTextPreview: frontText.slice(0, 500),
+    rawTextPreview: fullContentText.slice(0, 500),
   };
 
   // 1. Try Gemini AI Extraction if GEMINI_API_KEY is configured
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (apiKey) {
     try {
-      const aiResult = await extractWithGemini(frontText, apiKey);
-      if (aiResult && aiResult.title) {
+      const aiResult = await extractWithGemini(fullContentText, apiKey);
+      if (aiResult) {
         return {
           ...aiResult,
           pagesCount: result.pagesCount || aiResult.pagesCount,
@@ -72,8 +95,8 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
     }
   }
 
-  // 2. Local Regex & Pattern Extraction Engine for Arabic Islamic Books
-  extractLocalRegex(lines, frontText, result);
+  // 2. Local Regex & Pattern Extraction Fallback for Single Arabic Book
+  extractLocalRegex(lines, fullContentText, result);
 
   return result;
 }
@@ -82,7 +105,6 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
  * Local Regex Extractor logic for Arabic book headers
  */
 function extractLocalRegex(lines: string[], fullText: string, result: ExtractedBookData) {
-  // Ignore common opening headers
   const headerFilters = [
     /بسم\s+الله\s+الرحمن\s+الرحيم/,
     /الحمد\s+لله/,
@@ -92,14 +114,14 @@ function extractLocalRegex(lines: string[], fullText: string, result: ExtractedB
     /دار\s+النشر/,
   ];
 
-  // Filter valid title candidate lines
-  const candidateLines = lines.filter(
+  const candidateLines = lines.map(fixReversedArabic).filter(
     (line) => !headerFilters.some((filter) => filter.test(line)) && line.length > 2 && line.length < 120
   );
 
   // A. Extract Author (المؤلف)
   const authorRegex = /(?:تأليف|المؤلف|تأليف\s+فضيلة|تأليف\s+الشيخ|تأليف\s+الإمام|تأليف\s+الدكتور|للحافظ|للشيخ|للإمام|للعلامة|صنفه|وضع)\s*[:\-\s]+([^\n\r,.]+)/i;
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = fixReversedArabic(rawLine);
     const match = line.match(authorRegex);
     if (match && match[1]) {
       result.author = match[1].trim().replace(/^(فضيلة|الشيخ|الإمام|الدكتور|أ\.د|أد)\s+/, "");
@@ -109,7 +131,8 @@ function extractLocalRegex(lines: string[], fullText: string, result: ExtractedB
 
   // B. Extract Editor/Translator (المحقق / المترجم)
   const editorRegex = /(?:تحقيق|دراسة\s+وتحقيق|تخريج|اعتنى\s+به|حققه|المحقق|ترجمة|تقديم)\s*[:\-\s]+([^\n\r,.]+)/i;
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = fixReversedArabic(rawLine);
     const match = line.match(editorRegex);
     if (match && match[1]) {
       result.editorOrTranslator = match[1].trim();
@@ -119,7 +142,8 @@ function extractLocalRegex(lines: string[], fullText: string, result: ExtractedB
 
   // C. Extract Publisher (دار النشر)
   const publisherRegex = /(?:دار|مؤسسة|مركز|مكتبة|منشورات|مطبعة)\s+([^\n\r,.]+)/i;
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = fixReversedArabic(rawLine);
     const match = line.match(publisherRegex);
     if (match && match[0]) {
       result.publisher = match[0].trim();
@@ -180,25 +204,51 @@ function extractLocalRegex(lines: string[], fullText: string, result: ExtractedB
 }
 
 /**
- * Gemini AI Extraction for 99% Precision (if API Key provided)
+ * Gemini AI Extraction for Catalog Tables & Single Books
  */
-async function extractWithGemini(text: string, apiKey: string): Promise<ExtractedBookData | null> {
-  const prompt = `أنت خبير في التعرف على كتب التراث والعلم الشرعي والكتب العربية. استخرج بيانات الكتاب التالية من النص المرفق بصيغة JSON فقط وبدون أي كود تشكيلي إضافي:
-  {
-    "title": "عنوان الكتاب الرئيسي الدقيق",
-    "author": "اسم المؤلف الرئيسي بدون ألقاب زائدة",
-    "editorOrTranslator": "اسم المحقق أو المترجم إن وجد",
-    "publisher": "اسم دار النشر أو المؤسسة الناشرة",
-    "publicationYear": 2023 (السنة كعدد صحيحي),
-    "edition": "رقم أو اسم الطبعة (مثل: الطبعة الأولى)",
-    "volumesCount": 1 (عدد المجلدات كعدد صحيح),
-    "isbn": "الرقم الدولي إن وجد"
-  }
+async function extractWithGemini(fullText: string, apiKey: string): Promise<ExtractedBookData | null> {
+  const prompt = `أنت نظام ذكاء اصطناعي خبير في قراءة وتحليل قوائم الكتب العربية وكشوف أسعار الدور والنشر والتوزيع.
+حلل النص المرفق المأخوذ من ملف PDF واستخرج البيانات بدقة متناهية وفق القواعد التالية:
 
-  النص المستخرج من أول صفحات الـ PDF:
-  """
-  ${text}
-  """`;
+1. إذا كان النص يحتوي على جدول أو قائمة كتب (كشف أسعار أو كتالوج يحتوي عدة كتب وأسعار ومؤلفين):
+استخرج كود JSON بالبنية التالية للـ catalog:
+{
+  "type": "catalog",
+  "publisher": "اسم دار النشر من رأس الصفحة (مثل: الدار العالمية للنشر والتجليد)",
+  "books": [
+    {
+      "title": "اسم الكتاب بالعربية الصحيحة مع تصحيح أي نصوص أو حروف معكوسة الترتيب",
+      "author": "اسم المؤلف",
+      "priceEgp": 140 (السعر الصافي أو النهائي بالجنيه كعدد صحيح أو عشري),
+      "edition": "النوع أو التجليد (مثل: مجلد، غلاف، 2مجلد)",
+      "publisher": "اسم الناشر"
+    }
+  ]
+}
+
+2. إذا كان النص يمثل كتاباً واحداً فردياً:
+استخرج كود JSON بالبنية التالية للـ single_book:
+{
+  "type": "single_book",
+  "title": "عنوان الكتاب الرئيسي الدقيق مع تصحيح أي حروف معكوسة",
+  "author": "اسم المؤلف الرئيسي",
+  "editorOrTranslator": "اسم المحقق أو المترجم إن وجد",
+  "publisher": "اسم دار النشر",
+  "publicationYear": 2026,
+  "edition": "الطبعة",
+  "volumesCount": 1,
+  "isbn": "الرقم الدولي"
+}
+
+ملاحظات هامة جداً:
+- قم بتصحيح وإصلاح أي كلمات عربية مقلوبة النمط بسبب تنسيق الـ PDF (مثل تصحيح 'باتكلا' إلى 'الكتاب'، و'املؤلف' إلى 'المؤلف').
+- استخرج كل صفوف الكتب المتاحة في القائمة قدر الإمكان.
+- أرجع كائن JSON فقط دون أي نصوص إضافية أو علامات formatting.
+
+نص الـ PDF:
+"""
+${fullText}
+"""`;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`;
   const response = await fetch(url, {
@@ -222,7 +272,23 @@ async function extractWithGemini(text: string, apiKey: string): Promise<Extracte
   if (!jsonText) return null;
 
   const parsed = JSON.parse(jsonText);
+
+  if (parsed.type === "catalog" && Array.isArray(parsed.books) && parsed.books.length > 0) {
+    return {
+      isCatalog: true,
+      publisher: parsed.publisher || undefined,
+      books: parsed.books.map((b: any) => ({
+        title: b.title || "",
+        author: b.author || "",
+        publisher: b.publisher || parsed.publisher || "",
+        priceEgp: typeof b.priceEgp === "number" ? b.priceEgp : parseFloat(b.priceEgp) || undefined,
+        edition: b.edition || "",
+      })),
+    };
+  }
+
   return {
+    isCatalog: false,
     title: parsed.title || undefined,
     author: parsed.author || undefined,
     editorOrTranslator: parsed.editorOrTranslator || undefined,
