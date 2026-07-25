@@ -39,11 +39,29 @@ export async function extractBookDataFromPDF(pdfBuffer: Buffer): Promise<Extract
   }
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse");
+  const pdfParseModule = require("pdf-parse");
+  const PDFParse = pdfParseModule.PDFParse || pdfParseModule;
 
-  const pdfData = await pdfParse(pdfBuffer);
-  const totalPages = pdfData.numpages || 0;
-  const rawText = cleanText(pdfData.text || "");
+  let rawText = "";
+  let totalPages = 0;
+
+  try {
+    if (typeof PDFParse === "function" && PDFParse.prototype && PDFParse.prototype.getText) {
+      // PDFParse v2 class API
+      const parser = new PDFParse({ data: pdfBuffer });
+      const pdfData = await parser.getText();
+      totalPages = pdfData.total || 0;
+      rawText = cleanText(pdfData.text || "");
+    } else if (typeof pdfParseModule === "function") {
+      // PDFParse v1 function API fallback
+      const pdfData = await pdfParseModule(pdfBuffer);
+      totalPages = pdfData.numpages || 0;
+      rawText = cleanText(pdfData.text || "");
+    }
+  } catch (err: any) {
+    console.error("PDF Parsing error:", err);
+    throw new Error("فشل قراءة محتوى ملف الـ PDF. يرجى التأكد من أن الملف غير محمي بكلمة سر أو تالف.");
+  }
 
   // Take the first 4000 characters (typically contains Cover, Title Page, and Copyright Page)
   const frontText = rawText.slice(0, 4000);
