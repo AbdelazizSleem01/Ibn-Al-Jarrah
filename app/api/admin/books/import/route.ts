@@ -5,6 +5,23 @@ import Category from "@/models/Category";
 import { getAuthUser } from "@/lib/auth/token";
 import { normalizeArabic, generateSlug } from "@/lib/utils/normalize";
 
+/**
+ * Helper function to safely parse numeric values (prices, years, pages, volumes)
+ * Returns undefined if non-numeric or NaN to prevent Mongoose CastError.
+ */
+function parseSafeNumber(val: any): number | undefined {
+  if (val === undefined || val === null || val === "" || val === "undefined" || val === "null") {
+    return undefined;
+  }
+  if (typeof val === "number") {
+    return isNaN(val) ? undefined : val;
+  }
+  const str = String(val).replace(/[^\d.]/g, "");
+  if (!str) return undefined;
+  const num = parseFloat(str);
+  return isNaN(num) ? undefined : num;
+}
+
 export async function POST(request: Request) {
   try {
     const user = await getAuthUser();
@@ -113,6 +130,13 @@ export async function POST(request: Request) {
           });
         }
 
+        // Parse numerical fields safely
+        const egpVal = parseSafeNumber(item.prices?.egp ?? item.priceEgp ?? item["السعر بالجنيه"] ?? item["السعر"]);
+        const lydVal = parseSafeNumber(item.prices?.lyd ?? item.priceLyd ?? item["السعر بالدينار"]);
+        const pubYear = parseSafeNumber(item.publicationYear ?? item["سنة النشر"]);
+        const pages = parseSafeNumber(item.pagesCount ?? item["عدد الصفحات"]);
+        const volumes = parseSafeNumber(item.volumesCount ?? item["عدد المجلدات"]) || 1;
+
         if (duplicateBook) {
           if (strategy === "ignore") {
             report.ignored++;
@@ -128,17 +152,15 @@ export async function POST(request: Request) {
             duplicateBook.editorOrTranslator = item.editorOrTranslator || duplicateBook.editorOrTranslator;
             
             // Handle prices mapping safely
-            const prices = duplicateBook.prices || {};
-            if (item.prices?.egp !== undefined) prices.egp = parseFloat(item.prices.egp);
-            if (item.prices?.lyd !== undefined) prices.lyd = parseFloat(item.prices.lyd);
-            if (item.priceEgp !== undefined) prices.egp = parseFloat(item.priceEgp);
-            if (item.priceLyd !== undefined) prices.lyd = parseFloat(item.priceLyd);
+            const prices: any = duplicateBook.prices || {};
+            if (egpVal !== undefined) prices.egp = egpVal;
+            if (lydVal !== undefined) prices.lyd = lydVal;
             duplicateBook.prices = prices;
 
             duplicateBook.edition = item.edition || duplicateBook.edition;
-            duplicateBook.publicationYear = item.publicationYear || duplicateBook.publicationYear;
-            duplicateBook.pagesCount = item.pagesCount || duplicateBook.pagesCount;
-            duplicateBook.volumesCount = item.volumesCount || duplicateBook.volumesCount;
+            duplicateBook.publicationYear = pubYear !== undefined ? pubYear : duplicateBook.publicationYear;
+            duplicateBook.pagesCount = pages !== undefined ? pages : duplicateBook.pagesCount;
+            duplicateBook.volumesCount = volumes || duplicateBook.volumesCount;
             duplicateBook.coverType = item.coverType || duplicateBook.coverType;
             duplicateBook.size = item.size || duplicateBook.size;
             duplicateBook.language = item.language || duplicateBook.language;
@@ -172,10 +194,9 @@ export async function POST(request: Request) {
           slugCounter++;
         }
 
-        const prices = {
-          egp: item.prices?.egp !== undefined ? parseFloat(item.prices.egp) : (item.priceEgp !== undefined ? parseFloat(item.priceEgp) : undefined),
-          lyd: item.prices?.lyd !== undefined ? parseFloat(item.prices.lyd) : (item.priceLyd !== undefined ? parseFloat(item.priceLyd) : undefined),
-        };
+        const prices: any = {};
+        if (egpVal !== undefined) prices.egp = egpVal;
+        if (lydVal !== undefined) prices.lyd = lydVal;
 
         await Book.create({
           title,
@@ -190,9 +211,9 @@ export async function POST(request: Request) {
           prices,
           isbn,
           edition: item.edition,
-          publicationYear: item.publicationYear,
-          pagesCount: item.pagesCount,
-          volumesCount: item.volumesCount || 1,
+          publicationYear: pubYear,
+          pagesCount: pages,
+          volumesCount: volumes,
           coverType: item.coverType,
           size: item.size,
           language: item.language || "العربية",
