@@ -36,13 +36,27 @@ export async function POST(request: Request) {
 
     const stream = new ReadableStream({
       async start(controller) {
+        let isClosed = false;
+
         const sendEvent = (eventData: any) => {
+          if (isClosed) return;
           try {
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify(eventData)}\n\n`)
             );
           } catch (e) {
-            console.error("Stream enqueue error:", e);
+            isClosed = true;
+          }
+        };
+
+        const safeClose = () => {
+          if (!isClosed) {
+            isClosed = true;
+            try {
+              controller.close();
+            } catch (e) {
+              // Controller already closed
+            }
           }
         };
 
@@ -71,15 +85,18 @@ export async function POST(request: Request) {
             fileName: file.name,
           });
 
-          controller.close();
+          safeClose();
         } catch (error: any) {
           console.error("PDF Streaming Extraction Error:", error);
           sendEvent({
             type: "error",
             message: error.message || "حدث خطأ أثناء قراءة ملف الـ PDF",
           });
-          controller.close();
+          safeClose();
         }
+      },
+      cancel() {
+        // Client aborted connection
       },
     });
 
