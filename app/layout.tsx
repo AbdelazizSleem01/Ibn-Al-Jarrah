@@ -112,6 +112,11 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Explicit Favicon Links for Google Search Crawler */}
+        <link rel="icon" href="/favicon-96x96.png" sizes="96x96" type="image/png" />
+        <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         {/* Schema.org WebSite JSON-LD for Google Search Brand Name */}
         <script
           type="application/ld+json"
@@ -127,7 +132,7 @@ export default function RootLayout({
                 "name": "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع",
                 "logo": {
                   "@type": "ImageObject",
-                  "url": "https://al-jarrah.vercel.app/images/logo.webp"
+                  "url": "https://al-jarrah.vercel.app/icon-512.png"
                 }
               }
             }),
