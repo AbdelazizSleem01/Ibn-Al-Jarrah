@@ -101,19 +101,20 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
     });
   }, [router]);
 
-  // Load view type from localStorage or sync with URL query params
+  // Load view type from localStorage
   useEffect(() => {
     const savedView = localStorage.getItem("books_view_type");
-    const currentViewParam = searchParams.get("view");
-    if (!currentViewParam && (savedView === "table" || savedView === "cards")) {
+    if (savedView === "table" || savedView === "cards") {
       setViewType(savedView);
-      updateQuery({ view: savedView });
     }
   }, []);
 
   // Update active book slug from URL parameters
   useEffect(() => {
-    setActiveSlug(searchParams.get("book"));
+    const paramSlug = searchParams.get("book");
+    if (paramSlug !== activeSlug) {
+      setActiveSlug(paramSlug);
+    }
   }, [searchParams]);
 
   // Debounced search input handler
@@ -131,7 +132,6 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   const setAndSaveView = (type: "cards" | "table") => {
     setViewType(type);
     localStorage.setItem("books_view_type", type);
-    updateQuery({ view: type });
   };
 
   const handleClearFilters = () => {
@@ -144,12 +144,20 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
   };
 
   const handleDetailsClick = useCallback((slug: string) => {
-    updateQuery({ book: slug });
-  }, [updateQuery]);
+    setActiveSlug(slug);
+    const params = new URLSearchParams(window.location.search);
+    params.set("book", slug);
+    window.history.pushState(null, "", `?${params.toString()}`);
+  }, []);
 
   const handleCloseModal = useCallback(() => {
-    updateQuery({ book: undefined });
-  }, [updateQuery]);
+    setActiveSlug(null);
+    const params = new URLSearchParams(window.location.search);
+    params.delete("book");
+    const newQuery = params.toString();
+    const newUrl = newQuery ? `?${newQuery}` : window.location.pathname;
+    window.history.pushState(null, "", newUrl);
+  }, []);
 
   // Identify active filters to display as removable chips
   const getActiveChips = () => {
@@ -469,10 +477,11 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
         ) : viewType === "cards" ? (
           // Cards Grid View (4 columns on large desktop)
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {initialBooks.map((book) => (
+            {initialBooks.map((book, idx) => (
               <BookCard
                 key={book._id}
                 book={book}
+                priority={idx < 4}
                 onDetailsClick={handleDetailsClick}
               />
             ))}

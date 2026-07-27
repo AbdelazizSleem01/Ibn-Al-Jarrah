@@ -31,9 +31,10 @@ interface BookCardProps {
     isFeatured?: boolean;
   };
   onDetailsClick: (slug: string) => void;
+  priority?: boolean;
 }
 
-function BookCard({ book, onDetailsClick }: BookCardProps) {
+function BookCard({ book, onDetailsClick, priority = false }: BookCardProps) {
   const imageUrl = book.images?.[0]?.secureUrl || book.coverImage?.secureUrl || "/images/hero-book.webp";
   const isAvailable = book.availabilityStatus === "available";
 
@@ -53,9 +54,10 @@ function BookCard({ book, onDetailsClick }: BookCardProps) {
           src={imageUrl}
           alt={book.title}
           fill
+          priority={priority}
           sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="object-cover transition-transform duration-700 group-hover:scale-105"
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
         />
 
         {/* Quick View Hover Overlay */}
