@@ -96,6 +96,7 @@ export default function BooksManager() {
 
   // Selection States
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectAllMatching, setSelectAllMatching] = useState(false);
 
   // Modal States
   const [modalOpen, setModalOpen] = useState(false);
@@ -323,6 +324,7 @@ export default function BooksManager() {
   useEffect(() => {
     fetchBooks();
     setSelectedIds([]);
+    setSelectAllMatching(false);
   }, [page, limit, selectedCategory, availability, isFeatured, showDeleted]);
 
   // Debounced search logic
@@ -596,15 +598,22 @@ export default function BooksManager() {
   const handleBulkAction = async (action: string, extraData: any = {}) => {
     if (selectedIds.length === 0) return;
 
+    const count = selectAllMatching ? pagination.totalResults : selectedIds.length;
     let confirmTitle = "إجراء جماعي";
-    let confirmText = `هل أنت متأكد من تطبيق هذا الإجراء على ${selectedIds.length} كتب؟`;
+    let confirmText = selectAllMatching
+      ? `هل أنت متأكد من تطبيق هذا الإجراء على كافة الكتب في قاعدة البيانات بالكامل (${count} كتاب)؟`
+      : `هل أنت متأكد من تطبيق هذا الإجراء على ${count} كتب؟`;
 
     if (action === "delete") {
       confirmTitle = "حذف جماعي";
-      confirmText = `هل أنت متأكد من نقل ${selectedIds.length} كتب إلى سلة المحذوفات؟`;
+      confirmText = selectAllMatching
+        ? `هل أنت متأكد من نقل كافة الكتب في قاعدة البيانات بالكامل (${count} كتاب) إلى سلة المحذوفات؟`
+        : `هل أنت متأكد من نقل ${count} كتب إلى سلة المحذوفات؟`;
     } else if (action === "permanentDelete") {
       confirmTitle = "حذف نهائي جماعي";
-      confirmText = `هل أنت متأكد من حذف ${selectedIds.length} كتب نهائياً؟ هذا الإجراء لا يمكن التراجع عنه.`;
+      confirmText = selectAllMatching
+        ? `هل أنت متأكد من حذف كافة الكتب بالكامل (${count} كتاب) نهائياً؟ هذا الإجراء لا يمكن التراجع عنه.`
+        : `هل أنت متأكد من حذف ${count} كتب نهائياً؟ هذا الإجراء لا يمكن التراجع عنه.`;
     }
 
     const result = await Swal.fire({
@@ -626,6 +635,14 @@ export default function BooksManager() {
           body: JSON.stringify({
             ids: selectedIds,
             action,
+            selectAllMatching,
+            filters: {
+              search: search.trim(),
+              categoryId: selectedCategory,
+              availability,
+              isFeatured,
+              showDeleted,
+            },
             ...extraData,
           }),
         });
@@ -640,6 +657,7 @@ export default function BooksManager() {
             confirmButtonColor: "#d4af37",
           });
           setSelectedIds([]);
+          setSelectAllMatching(false);
           fetchBooks();
         } else {
           Swal.fire({ icon: "error", title: "فشل العملية", text: data.message });
@@ -657,6 +675,7 @@ export default function BooksManager() {
       setSelectedIds(allIds);
     } else {
       setSelectedIds([]);
+      setSelectAllMatching(false);
     }
   };
 
@@ -665,6 +684,7 @@ export default function BooksManager() {
       setSelectedIds((prev) => [...prev, id]);
     } else {
       setSelectedIds((prev) => prev.filter((item) => item !== id));
+      setSelectAllMatching(false);
     }
   };
 
@@ -921,7 +941,30 @@ export default function BooksManager() {
       {/* Bulk actions bar */}
       {selectedIds.length > 0 && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <span className="font-bold text-primary">تم تحديد ({selectedIds.length}) كتب:</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectAllMatching ? (
+              <span className="font-bold text-primary flex items-center gap-1.5">
+                <FaCheck className="text-emerald-500 text-sm" />
+                تم تحديد كافة الكتب المطابقة في قاعدة البيانات بالكامل ({pagination.totalResults} كتاب)
+              </span>
+            ) : (
+              <span className="font-bold text-primary">
+                تم تحديد ({selectedIds.length}) كتب في هذه الصفحة:
+              </span>
+            )}
+
+            {pagination.totalResults > books.length && (
+              <button
+                type="button"
+                onClick={() => setSelectAllMatching(!selectAllMatching)}
+                className="text-[11px] font-black underline hover:no-underline text-primary cursor-pointer px-2.5 py-1 rounded-lg bg-primary/15 hover:bg-primary/25 transition-all shadow-sm"
+              >
+                {selectAllMatching
+                  ? "تحديد الصفحة الحالية فقط"
+                  : `تحديد جميع الكتب في قاعدة البيانات بالكامل (${pagination.totalResults} كتاب) ⚡`}
+              </button>
+            )}
+          </div>
 
           <div className="flex flex-wrap gap-2">
 

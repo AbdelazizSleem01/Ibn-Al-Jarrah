@@ -4,6 +4,7 @@ import Book from "@/models/Book";
 import Category from "@/models/Category";
 import { getAuthUser } from "@/lib/auth/token";
 import { deleteImage } from "@/lib/cloudinary/upload";
+import { normalizeArabic } from "@/lib/utils/normalize";
 
 export async function POST(request: Request) {
   try {
@@ -17,9 +18,44 @@ export async function POST(request: Request) {
 
     await dbConnect();
     const body = await request.json();
-    const { ids, action, categoryId, availabilityStatus, isFeatured } = body;
+    const { ids, action, selectAllMatching, filters, categoryId, availabilityStatus, isFeatured } = body;
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    let targetIds: string[] = Array.isArray(ids) ? ids : [];
+
+    // If database-wide select all matching is enabled, query matching documents from DB
+    if (selectAllMatching && filters) {
+      const query: any = { isDeleted: filters.showDeleted === true };
+
+      if (filters.search && filters.search.trim()) {
+        const searchTrim = filters.search.trim();
+        const normalized = normalizeArabic(searchTrim);
+        const regex = new RegExp(searchTrim, "i");
+        const normRegex = new RegExp(normalized, "i");
+
+        query.$or = [
+          { title: regex },
+          { normalizedTitle: normRegex },
+          { author: regex },
+          { publisher: regex },
+          { isbn: regex },
+        ];
+      }
+
+      if (filters.categoryId) {
+        query.categoryId = filters.categoryId;
+      }
+      if (filters.availability) {
+        query.availabilityStatus = filters.availability;
+      }
+      if (filters.isFeatured !== undefined && filters.isFeatured !== "") {
+        query.isFeatured = filters.isFeatured === "true";
+      }
+
+      const matchingBooks = await Book.find(query, { _id: 1 }).lean();
+      targetIds = matchingBooks.map((b: any) => b._id.toString());
+    }
+
+    if (!targetIds || targetIds.length === 0) {
       return NextResponse.json(
         { success: false, message: "يجب تحديد كتاب واحد على الأقل" },
         { status: 400 }
@@ -30,7 +66,7 @@ export async function POST(request: Request) {
 
     if (action === "delete") {
       // Soft Delete: sets isDeleted=true, decrements categories booksCount
-      for (const id of ids) {
+      for (const id of targetIds) {
         const book = await Book.findOne({ _id: id, isDeleted: false });
         if (book) {
           book.isDeleted = true;
@@ -49,7 +85,7 @@ export async function POST(request: Request) {
 
     if (action === "restore") {
       // Restore Soft Deleted: sets isDeleted=false, increments categories booksCount
-      for (const id of ids) {
+      for (const id of targetIds) {
         const book = await Book.findOne({ _id: id, isDeleted: true });
         if (book) {
           book.isDeleted = false;
@@ -68,7 +104,7 @@ export async function POST(request: Request) {
 
     if (action === "permanentDelete") {
       // Hard Delete: deletes from DB, deletes images from Cloudinary, decrements category booksCount
-      for (const id of ids) {
+      for (const id of targetIds) {
         const book = await Book.findById(id);
         if (book) {
           if (book.coverImage?.publicId) {
@@ -105,7 +141,7 @@ export async function POST(request: Request) {
         );
       }
 
-      for (const id of ids) {
+      for (const id of targetIds) {
         const book = await Book.findOne({ _id: id, isDeleted: false });
         if (book && book.categoryId.toString() !== categoryId) {
           const oldCategoryId = book.categoryId;
@@ -133,7 +169,7 @@ export async function POST(request: Request) {
       }
 
       const res = await Book.updateMany(
-        { _id: { $in: ids }, isDeleted: false },
+        { _id: { $in: targetIds }, isDeleted: false },
         { $set: { availabilityStatus, updatedBy: user.id } }
       );
       return NextResponse.json({
@@ -145,7 +181,7 @@ export async function POST(request: Request) {
     if (action === "updateFeatured") {
       const isFeaturedBool = isFeatured === true;
       const res = await Book.updateMany(
-        { _id: { $in: ids }, isDeleted: false },
+        { _id: { $in: targetIds }, isDeleted: false },
         { $set: { isFeatured: isFeaturedBool, updatedBy: user.id } }
       );
       return NextResponse.json({
