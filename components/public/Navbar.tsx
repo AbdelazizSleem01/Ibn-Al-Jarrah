@@ -14,6 +14,8 @@ import {
   FaEnvelope,
 } from "react-icons/fa";
 
+import { toggleThemeWithNoFlash } from "@/lib/utils/theme";
+
 interface NavbarProps {
   settings?: {
     title: string;
@@ -45,15 +47,7 @@ export default function Navbar({ settings }: NavbarProps) {
   }, []);
 
   const toggleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark");
-      localStorage.setItem("theme", "dark");
-      document.documentElement.classList.add("dark");
-    } else {
-      setTheme("light");
-      localStorage.setItem("theme", "light");
-      document.documentElement.classList.remove("dark");
-    }
+    toggleThemeWithNoFlash(setTheme);
   };
 
   const navLinks = [
@@ -66,7 +60,7 @@ export default function Navbar({ settings }: NavbarProps) {
   const logoUrl = settings?.logo?.secureUrl || "/images/logo.webp";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border-color bg-card-bg/95 backdrop-blur-md transition-colors duration-300">
+    <header className="sticky top-0 z-50 w-full border-b border-border-color bg-card-bg/95 backdrop-blur-md transition-colors duration-150">
       <div className=" mx-auto px-8 py-4 flex items-center justify-between">
 
         {/* Brand Logo & Name */}
@@ -101,7 +95,7 @@ export default function Navbar({ settings }: NavbarProps) {
               <Link
                 key={link.label}
                 href={link.href}
-                className={`flex items-center gap-1.5 font-medium pb-1 transition-all duration-200 ${isActive
+                className={`flex items-center gap-1.5 font-medium pb-1 transition-colors duration-150 ${isActive
                   ? "text-primary font-bold border-b-2 border-primary"
                   : "text-foreground/75 hover:text-primary"
                   }`}
@@ -124,11 +118,11 @@ export default function Navbar({ settings }: NavbarProps) {
             aria-label="تبديل الوضع الليلي والنهاري"
             title={theme === "light" ? "تفعيل الوضع الداكن" : "تفعيل الوضع الفاتح"}
           >
-            <span className="transition-transform duration-300 block group-hover:rotate-12">
-              {theme === "light" ? (
-                <FaMoon className="w-4 h-4 text-white" />
-              ) : (
+            <span className="transition-transform duration-200 block group-hover:rotate-12">
+              {theme === "dark" ? (
                 <FaSun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <FaMoon className="w-4 h-4 text-slate-700" />
               )}
             </span>
           </button>

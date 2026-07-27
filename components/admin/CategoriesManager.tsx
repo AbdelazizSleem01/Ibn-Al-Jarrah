@@ -43,6 +43,10 @@ export default function CategoriesManager() {
 
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
+  // Selection States
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectAllMatching, setSelectAllMatching] = useState(false);
+
   const fetchCategories = () => {
     setLoading(true);
     fetch("/api/admin/categories")
@@ -87,10 +91,112 @@ export default function CategoriesManager() {
       setFilteredCategories(filtered);
     }
     setCurrentPage(1); // Reset page on search
+    setSelectedIds([]); // Reset selection on search
+    setSelectAllMatching(false);
   }, [search, categories]);
 
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
   const currentCategories = filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(currentCategories.map((c) => c._id));
+    } else {
+      setSelectedIds([]);
+      setSelectAllMatching(false);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+    setSelectAllMatching(false);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0 && !selectAllMatching) return;
+
+    const targetCategories = selectAllMatching
+      ? filteredCategories
+      : categories.filter((c) => selectedIds.includes(c._id));
+
+    const categoriesWithBooks = targetCategories.filter((c) => c.booksCount > 0);
+    const eligibleCategories = targetCategories.filter((c) => c.booksCount === 0);
+
+    if (eligibleCategories.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "تعذر الحذف الجماعي",
+        text: `جميع التصنيفات المحددة (${categoriesWithBooks.length}) تحتوي على كتب مرتبطة بها. يرجى نقل الكتب منها أولاً قبل الحذف.`,
+        confirmButtonText: "موافق",
+        confirmButtonColor: "#d4af37",
+      });
+      return;
+    }
+
+    let textMsg = selectAllMatching
+      ? `هل أنت متأكد من حذف جميع التصنيفات الفارغة في القائمة بالكامل (${eligibleCategories.length} تصنيف)؟`
+      : `هل أنت متأكد من رغبتك في حذف ${eligibleCategories.length} من التصنيفات المحددة نهائياً؟`;
+
+    if (categoriesWithBooks.length > 0) {
+      textMsg += ` (تنبيه: سيتم استثناء ${categoriesWithBooks.length} تصنيف/تصنيفات لاحتوائها على كتب مرتبطة).`;
+    }
+
+    const result = await Swal.fire({
+      title: "حذف جماعي للتصنيفات",
+      text: textMsg,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، حذف التصنيفات الفارغة",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#dc3545",
+      cancelButtonColor: "#6c757d",
+    });
+
+    if (result.isConfirmed) {
+      // Loading Swal
+      Swal.fire({
+        title: "جاري تنفيذ الحذف الجماعي...",
+        text: "يرجى الانتظار لحين معالجة وتحديث التصنيفات...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      try {
+        const res = await fetch("/api/admin/categories/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ids: targetCategories.map((c) => c._id),
+            selectAllMatching,
+            search: search.trim(),
+          }),
+        });
+        const data = await res.json();
+        Swal.close();
+
+        if (res.ok && data.success) {
+          Swal.fire({
+            icon: "success",
+            title: "تم الحذف الجماعي بنجاح",
+            text: data.message,
+            confirmButtonText: "موافق",
+            confirmButtonColor: "#d4af37",
+          });
+          setSelectedIds([]);
+          setSelectAllMatching(false);
+          fetchCategories();
+        } else {
+          Swal.fire({ icon: "error", title: "فشل الحذف الجماعي", text: data.message });
+        }
+      } catch (err) {
+        Swal.fire({ icon: "error", title: "خطأ", text: "حدث خطأ غير متوقع في الاتصال" });
+      }
+    }
+  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -283,6 +389,58 @@ export default function CategoriesManager() {
         </div>
       </div>
 
+      {/* Bulk Action Bar (Visible when items selected) */}
+      {selectedIds.length > 0 && (
+        <div className="bg-primary/10 border border-primary/30 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-3 text-xs font-bold text-foreground">
+            <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[11px] shrink-0">
+              {selectAllMatching ? filteredCategories.length : selectedIds.length}
+            </span>
+            <span>تصنيفات محددة</span>
+
+            {filteredCategories.length > currentCategories.length && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectAllMatching) {
+                    setSelectAllMatching(false);
+                    setSelectedIds(currentCategories.map((c) => c._id));
+                  } else {
+                    setSelectAllMatching(true);
+                    setSelectedIds(filteredCategories.map((c) => c._id));
+                  }
+                }}
+                className="text-[11px] font-black underline hover:no-underline text-primary cursor-pointer px-2.5 py-1 rounded-lg bg-primary/15 hover:bg-primary/25 transition-all shadow-sm"
+              >
+                {selectAllMatching
+                  ? "تحديد الصفحة الحالية فقط"
+                  : `تحديد جميع التصنيفات بالكامل (${filteredCategories.length} تصنيف) ⚡`}
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md cursor-pointer transition-all"
+            >
+              <FaTrash className="w-3 h-3" />
+              حذف المحدد ({selectAllMatching ? filteredCategories.length : selectedIds.length})
+            </button>
+
+            <button
+              onClick={() => {
+                setSelectedIds([]);
+                setSelectAllMatching(false);
+              }}
+              className="px-3 py-2 border border-border-color bg-card-bg hover:bg-foreground/5 text-foreground/75 rounded-lg text-xs font-bold cursor-pointer transition-all"
+            >
+              إلغاء التحديد
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Search Toolbar */}
       <div className="bg-card-bg border border-border-color rounded-2xl p-4 shadow-sm flex items-center justify-between transition-colors duration-300">
         <div className="relative w-full max-w-xs">
@@ -316,6 +474,17 @@ export default function CategoriesManager() {
             <table className="w-full text-right border-collapse text-xs md:text-sm">
               <thead>
                 <tr className="bg-foreground/[0.02] border-b border-border-color text-foreground/75">
+                  <th className="p-3.5 font-bold w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        currentCategories.length > 0 &&
+                        currentCategories.every((c) => selectedIds.includes(c._id))
+                      }
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-border-color text-primary focus:ring-primary accent-primary cursor-pointer"
+                    />
+                  </th>
                   <th className="p-3.5 font-bold w-16 text-center">أيقونة</th>
                   <th className="p-3.5 font-bold whitespace-nowrap">اسم التصنيف</th>
                   <th className="p-3.5 font-bold whitespace-nowrap">رابط التصنيف (Slug)</th>
@@ -328,7 +497,15 @@ export default function CategoriesManager() {
               </thead>
               <tbody className="divide-y divide-border-color/50">
                 {currentCategories.map((cat) => (
-                  <tr key={cat._id} className="hover:bg-foreground/[0.005] transition-colors">
+                  <tr key={cat._id} className={`hover:bg-foreground/[0.005] transition-colors ${selectedIds.includes(cat._id) ? "bg-primary/5" : ""}`}>
+                    <td className="p-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(cat._id)}
+                        onChange={() => handleSelectRow(cat._id)}
+                        className="w-4 h-4 rounded border-border-color text-primary focus:ring-primary accent-primary cursor-pointer"
+                      />
+                    </td>
                     <td className="p-3">
                       <div className="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center mx-auto">
                         <IconRenderer name={cat.icon} className="w-4 h-4" />

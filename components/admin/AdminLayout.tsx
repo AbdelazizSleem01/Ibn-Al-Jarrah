@@ -20,6 +20,8 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
+import { toggleThemeWithNoFlash } from "@/lib/utils/theme";
+
 const menuItems = [
   { label: "نظرة عامة", href: "/admin", icon: FaChartPie },
   { label: "إدارة الكتب", href: "/admin/books", icon: FaBook },
@@ -81,15 +83,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const toggleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark");
-      localStorage.setItem("theme", "dark");
-      document.documentElement.classList.add("dark");
-    } else {
-      setTheme("light");
-      localStorage.setItem("theme", "light");
-      document.documentElement.classList.remove("dark");
-    }
+    toggleThemeWithNoFlash(setTheme);
   };
 
   const handleLogout = async () => {
@@ -140,12 +134,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground transition-colors duration-300 text-right">
+    <div className="min-h-screen flex bg-background text-foreground transition-colors duration-150 text-right">
       
       {/* 1. Sidebar - Fixed on desktop, Drawer on mobile */}
       <aside
-        className={`bg-card-bg border-l border-border-color shrink-0 flex flex-col justify-between transition-all duration-800 ease-in-out z-40 ${
-          collapsed ? "w-[72px]" : "w-64"
+        className={`bg-card-bg border-l border-border-color shrink-0 flex flex-col justify-between transition-[width,transform] duration-300 ease-in-out z-40 ${
+          collapsed ? "w-18" : "w-64"
         } ${
           mobileOpen
             ? "fixed inset-y-0 right-0 w-64 shadow-2xl block"
@@ -281,8 +275,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               title={theme === "light" ? "تفعيل الوضع الداكن" : "تفعيل الوضع الفاتح"}
             >
               <span className="block transition-transform duration-200 group-hover:rotate-12">
-                <FaMoon className="w-4 h-4 text-slate-700 dark:hidden" />
-                <FaSun className="w-4 h-4 text-amber-400 hidden dark:block" />
+                {theme === "dark" ? (
+                  <FaSun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <FaMoon className="w-4 h-4 text-slate-700" />
+                )}
               </span>
             </button>
 
@@ -301,7 +298,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* 3. Panel Content Router view */}
-        <div className="flex-grow p-4 md:p-6 overflow-y-auto flex flex-col">
+        <div className="grow p-4 md:p-6 overflow-y-auto flex flex-col">
           {/* Breadcrumbs display on top right of the page content */}
           <div className="flex items-center justify-start gap-2 text-xs font-semibold text-foreground/55 select-none mb-6 w-full">
             {breadcrumbs.map((crumb, idx) => (
