@@ -201,7 +201,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-500 ease-in-out cursor-pointer ${
+                  className={`flex items-center py-2.5 rounded-lg text-xs md:text-sm font-bold transition-colors duration-150 cursor-pointer ${
                     isActive
                       ? "bg-primary text-white gold-glow"
                       : "text-foreground/80 hover:bg-foreground/5 hover:text-primary"
@@ -209,7 +209,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   title={collapsed ? item.label : undefined}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span className={`truncate transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+                  <span className={`truncate transition-all duration-200 overflow-hidden whitespace-nowrap ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
                     {item.label}
                   </span>
                 </Link>
@@ -222,11 +222,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-2 border-t border-border-color/50">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center py-2.5 rounded-lg text-xs md:text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all duration-500 ease-in-out cursor-pointer ${collapsed ? "justify-center gap-0 px-0" : "justify-start gap-3 px-3"}`}
+            className={`w-full flex items-center py-2.5 rounded-lg text-xs md:text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors duration-150 cursor-pointer ${collapsed ? "justify-center gap-0 px-0" : "justify-start gap-3 px-3"}`}
             title={collapsed ? "تسجيل الخروج" : undefined}
           >
             <FaSignOutAlt className="w-4 h-4 shrink-0" />
-            <span className={`truncate transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
+            <span className={`truncate transition-all duration-200 overflow-hidden whitespace-nowrap ${collapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"}`}>
               تسجيل الخروج
             </span>
           </button>
@@ -245,7 +245,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex-grow flex flex-col min-w-0">
         
         {/* Header toolbar */}
-        <header className="bg-card-bg border-b border-border-color h-16 px-4 md:px-6 flex items-center justify-between z-20 shrink-0 transition-colors duration-300 w-full">
+        <header className="bg-card-bg border-b border-border-color h-16 px-4 md:px-6 flex items-center justify-between z-20 shrink-0 transition-colors duration-150 w-full">
           
           {/* Right Side: Mobile bars & Admin Profile */}
           <div className="flex items-center gap-4">
@@ -273,22 +273,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
           {/* Left Side: Actions (Theme & Home) */}
           <div className="flex items-center gap-3 border-r border-border-color pr-3">
-            {/* Theme Switcher */}
+            {/* Instant CSS-Driven Theme Switcher */}
             <button
               onClick={toggleTheme}
-              className={`relative p-2 rounded-full border-2 cursor-pointer transition-all duration-300 group
-                ${theme === "dark"
-                  ? "border-amber-400/60 bg-amber-400/5 hover:bg-amber-400/10 hover:border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.15)] hover:shadow-[0_0_16px_rgba(251,191,36,0.25)]"
-                  : "border-indigo-900/60 bg-indigo-900/5 hover:bg-indigo-900/10 hover:border-indigo-900 shadow-[0_0_10px_rgba(49,46,129,0.15)] hover:shadow-[0_0_16px_rgba(49,46,129,0.25)]"
-                }`}
+              type="button"
+              className="relative p-2 rounded-full border-2 border-border-color bg-card-bg hover:border-primary/60 cursor-pointer transition-colors duration-150 group shadow-sm"
               title={theme === "light" ? "تفعيل الوضع الداكن" : "تفعيل الوضع الفاتح"}
             >
-              <span className="transition-transform duration-300 block group-hover:rotate-12">
-                {theme === "light" ? (
-                  <FaMoon className="w-4 h-4 text-indigo-900" />
-                ) : (
-                  <FaSun className="w-4 h-4 text-amber-400" />
-                )}
+              <span className="block transition-transform duration-200 group-hover:rotate-12">
+                <FaMoon className="w-4 h-4 text-slate-700 dark:hidden" />
+                <FaSun className="w-4 h-4 text-amber-400 hidden dark:block" />
               </span>
             </button>
 

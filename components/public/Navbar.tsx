@@ -116,14 +116,11 @@ export default function Navbar({ settings }: NavbarProps) {
 
         {/* Action Buttons: Dark Mode & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
-          {/* Theme Toggle with styled border ring */}
+          {/* Instant CSS-Driven Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className={`relative p-2.5 rounded-full border-2 cursor-pointer transition-all duration-300 group
-              ${theme === "dark"
-                ? "border-amber-400/60 bg-amber-400/5 hover:bg-amber-400/10 hover:border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.15)] hover:shadow-[0_0_16px_rgba(251,191,36,0.25)]"
-                : "border-gray-900/70 bg-gray-950/70 hover:bg-gray-900 hover:border-gray-700 shadow-[0_0_10px_rgba(30,27,75,0.3)] hover:shadow-[0_0_16px_rgba(30,27,75,0.45)]"
-              }`}
+            type="button"
+            className="relative p-2.5 rounded-full border-2 border-border-color bg-card-bg hover:border-primary/60 cursor-pointer transition-colors duration-150 group shadow-sm"
             aria-label="تبديل الوضع الليلي والنهاري"
             title={theme === "light" ? "تفعيل الوضع الداكن" : "تفعيل الوضع الفاتح"}
           >
