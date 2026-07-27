@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
@@ -62,67 +63,111 @@ export async function POST(request: Request) {
       );
     }
 
-    let modifiedCount = 0;
+    const objectIds = targetIds.map((id) => new mongoose.Types.ObjectId(id));
 
     if (action === "delete") {
-      // Soft Delete: sets isDeleted=true, decrements categories booksCount
-      for (const id of targetIds) {
-        const book = await Book.findOne({ _id: id, isDeleted: false });
-        if (book) {
-          book.isDeleted = true;
-          book.deletedAt = new Date();
-          book.updatedBy = user.id as any;
-          await book.save();
-          await Category.findByIdAndUpdate(book.categoryId, { $inc: { booksCount: -1 } });
-          modifiedCount++;
-        }
+      // Fast Aggregation to count books per category before soft-deleting
+      const categoryCounts = await Book.aggregate([
+        { $match: { _id: { $in: objectIds }, isDeleted: false } },
+        { $group: { _id: "$categoryId", count: { $sum: 1 } } },
+      ]);
+
+      // Bulk updateMany for soft deletion
+      const updateResult = await Book.updateMany(
+        { _id: { $in: objectIds }, isDeleted: false },
+        { $set: { isDeleted: true, deletedAt: new Date(), updatedBy: user.id } }
+      );
+
+      // Decrement category booksCount in bulk
+      if (categoryCounts.length > 0) {
+        const bulkOps = categoryCounts.map((cat) => ({
+          updateOne: {
+            filter: { _id: cat._id },
+            update: { $inc: { booksCount: -cat.count } },
+          },
+        }));
+        await Category.bulkWrite(bulkOps);
       }
+
       return NextResponse.json({
         success: true,
-        message: `تم نقل ${modifiedCount} كتب إلى سلة المحذوفات بنجاح.`,
+        message: `تم نقل ${updateResult.modifiedCount} كتب إلى سلة المحذوفات بنجاح.`,
       });
     }
 
     if (action === "restore") {
-      // Restore Soft Deleted: sets isDeleted=false, increments categories booksCount
-      for (const id of targetIds) {
-        const book = await Book.findOne({ _id: id, isDeleted: true });
-        if (book) {
-          book.isDeleted = false;
-          book.deletedAt = undefined;
-          book.updatedBy = user.id as any;
-          await book.save();
-          await Category.findByIdAndUpdate(book.categoryId, { $inc: { booksCount: 1 } });
-          modifiedCount++;
-        }
+      // Fast Aggregation to count soft-deleted books per category before restoring
+      const categoryCounts = await Book.aggregate([
+        { $match: { _id: { $in: objectIds }, isDeleted: true } },
+        { $group: { _id: "$categoryId", count: { $sum: 1 } } },
+      ]);
+
+      // Bulk updateMany for restoring
+      const updateResult = await Book.updateMany(
+        { _id: { $in: objectIds }, isDeleted: true },
+        { $set: { isDeleted: false, updatedBy: user.id }, $unset: { deletedAt: "" } }
+      );
+
+      // Increment category booksCount in bulk
+      if (categoryCounts.length > 0) {
+        const bulkOps = categoryCounts.map((cat) => ({
+          updateOne: {
+            filter: { _id: cat._id },
+            update: { $inc: { booksCount: cat.count } },
+          },
+        }));
+        await Category.bulkWrite(bulkOps);
       }
+
       return NextResponse.json({
         success: true,
-        message: `تم استعادة ${modifiedCount} كتب بنجاح.`,
+        message: `تم استعادة ${updateResult.modifiedCount} كتب بنجاح.`,
       });
     }
 
     if (action === "permanentDelete") {
-      // Hard Delete: deletes from DB, deletes images from Cloudinary, decrements category booksCount
-      for (const id of targetIds) {
-        const book = await Book.findById(id);
-        if (book) {
-          if (book.coverImage?.publicId) {
-            await deleteImage(book.coverImage.publicId);
-          }
-          const wasDeleted = book.isDeleted;
-          const catId = book.categoryId;
-          await Book.findByIdAndDelete(id);
+      // Find books to delete and collect images
+      const booksToDelete = await Book.find(
+        { _id: { $in: objectIds } },
+        { _id: 1, isDeleted: 1, categoryId: 1, "coverImage.publicId": 1 }
+      ).lean();
 
-          if (!wasDeleted) {
-            await Category.findByIdAndUpdate(catId, { $inc: { booksCount: -1 } });
-          }
-          modifiedCount++;
+      // Collect image publicIds
+      const imagePublicIds = booksToDelete
+        .map((b: any) => b.coverImage?.publicId)
+        .filter(Boolean) as string[];
+
+      // Delete images asynchronously in background
+      if (imagePublicIds.length > 0) {
+        Promise.allSettled(imagePublicIds.map((pid) => deleteImage(pid))).catch(console.error);
+      }
+
+      // Count active books per category to decrement counts
+      const activeCatMap = new Map<string, number>();
+      for (const b of booksToDelete) {
+        if (!b.isDeleted && b.categoryId) {
+          const catStr = b.categoryId.toString();
+          activeCatMap.set(catStr, (activeCatMap.get(catStr) || 0) + 1);
         }
       }
+
+      // Fast deleteMany call
+      const deleteResult = await Book.deleteMany({ _id: { $in: objectIds } });
+
+      // Update category booksCounts in bulk
+      if (activeCatMap.size > 0) {
+        const bulkOps = Array.from(activeCatMap.entries()).map(([catId, count]) => ({
+          updateOne: {
+            filter: { _id: catId },
+            update: { $inc: { booksCount: -count } },
+          },
+        }));
+        await Category.bulkWrite(bulkOps);
+      }
+
       return NextResponse.json({
         success: true,
-        message: `تم حذف ${modifiedCount} كتب نهائياً بنجاح.`,
+        message: `تم حذف ${deleteResult.deletedCount} كتب نهائياً بنجاح.`,
       });
     }
 
@@ -133,30 +178,48 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      const newCategory = await Category.findById(categoryId);
-      if (!newCategory) {
-        return NextResponse.json(
-          { success: false, message: "التصنيف المحدد غير موجود" },
-          { status: 400 }
-        );
-      }
 
-      for (const id of targetIds) {
-        const book = await Book.findOne({ _id: id, isDeleted: false });
-        if (book && book.categoryId.toString() !== categoryId) {
-          const oldCategoryId = book.categoryId;
-          book.categoryId = categoryId as any;
-          book.updatedBy = user.id as any;
-          await book.save();
+      const booksToUpdate = await Book.find(
+        { _id: { $in: objectIds }, isDeleted: false },
+        { _id: 1, categoryId: 1 }
+      ).lean();
 
-          await Category.findByIdAndUpdate(oldCategoryId, { $inc: { booksCount: -1 } });
-          await Category.findByIdAndUpdate(categoryId, { $inc: { booksCount: 1 } });
-          modifiedCount++;
+      const oldCatMap = new Map<string, number>();
+      for (const b of booksToUpdate) {
+        if (b.categoryId.toString() !== categoryId) {
+          const catStr = b.categoryId.toString();
+          oldCatMap.set(catStr, (oldCatMap.get(catStr) || 0) + 1);
         }
       }
+
+      const totalMigrated = Array.from(oldCatMap.values()).reduce((a, b) => a + b, 0);
+
+      if (totalMigrated > 0) {
+        await Book.updateMany(
+          { _id: { $in: objectIds }, isDeleted: false },
+          { $set: { categoryId, updatedBy: user.id } }
+        );
+
+        const bulkOps = Array.from(oldCatMap.entries()).map(([oldCatId, count]) => ({
+          updateOne: {
+            filter: { _id: oldCatId },
+            update: { $inc: { booksCount: -count } },
+          },
+        }));
+
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: categoryId },
+            update: { $inc: { booksCount: totalMigrated } },
+          },
+        });
+
+        await Category.bulkWrite(bulkOps);
+      }
+
       return NextResponse.json({
         success: true,
-        message: `تم تحديث تصنيف ${modifiedCount} كتب بنجاح.`,
+        message: `تم تحديث تصنيف ${totalMigrated} كتب بنجاح.`,
       });
     }
 
@@ -169,7 +232,7 @@ export async function POST(request: Request) {
       }
 
       const res = await Book.updateMany(
-        { _id: { $in: targetIds }, isDeleted: false },
+        { _id: { $in: objectIds }, isDeleted: false },
         { $set: { availabilityStatus, updatedBy: user.id } }
       );
       return NextResponse.json({
@@ -181,7 +244,7 @@ export async function POST(request: Request) {
     if (action === "updateFeatured") {
       const isFeaturedBool = isFeatured === true;
       const res = await Book.updateMany(
-        { _id: { $in: targetIds }, isDeleted: false },
+        { _id: { $in: objectIds }, isDeleted: false },
         { $set: { isFeatured: isFeaturedBool, updatedBy: user.id } }
       );
       return NextResponse.json({

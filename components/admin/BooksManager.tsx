@@ -628,6 +628,28 @@ export default function BooksManager() {
     });
 
     if (result.isConfirmed) {
+      // Animated Loading Modal for Bulk Actions
+      Swal.fire({
+        title: "جاري تنفيذ الإجراء الجماعي...",
+        html: `
+          <div style="direction: rtl; padding: 8px 0; font-family: inherit;">
+            <p style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 12px;">
+              جاري معالجة وتحديث <span style="color: #d4af37; font-weight: 900;">(${count})</span> كتاب في قاعدة البيانات...
+            </p>
+            <div style="width: 100%; background-color: #e2e8f0; height: 10px; border-radius: 9999px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
+              <div style="width: 100%; background: linear-gradient(90deg, #d4af37, #f59e0b, #ef4444); height: 100%; border-radius: 9999px;"></div>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 10px;">يرجى عدم إغلاق الصفحة لحين اكتمال العملية بنجاح...</p>
+          </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
       try {
         const res = await fetch("/api/admin/books/bulk", {
           method: "POST",
@@ -647,6 +669,7 @@ export default function BooksManager() {
           }),
         });
         const data = await res.json();
+        Swal.close();
 
         if (res.ok && data.success) {
           Swal.fire({
