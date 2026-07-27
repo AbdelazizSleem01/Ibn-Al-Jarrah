@@ -604,12 +604,15 @@ function BooksSkeletonView({ viewType }: { viewType: "cards" | "table" }) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, idx) => (
-          <div key={idx} className="bg-card-bg border border-border-color rounded-xl overflow-hidden shadow-sm p-4 flex flex-col gap-3">
+          <div key={idx} className="bg-card-bg border border-border-color rounded-xl overflow-hidden shadow-sm p-4 flex flex-col gap-3 min-h-[380px]">
             <div className="aspect-[3/4] w-full skeleton rounded-lg" />
-            <div className="h-5 w-3/4 skeleton rounded" />
-            <div className="h-4 w-1/2 skeleton rounded" />
-            <div className="h-4 w-1/3 skeleton rounded mt-2" />
-            <div className="h-8 w-full skeleton rounded-lg mt-2 md:hidden" />
+            <div className="h-5 w-4/5 skeleton rounded-md" />
+            <div className="h-4 w-3/5 skeleton rounded-md" />
+            <div className="h-4 w-2/5 skeleton rounded-md" />
+            <div className="mt-auto pt-3 border-t border-border-color/40 flex items-center justify-between">
+              <div className="h-5 w-24 skeleton rounded-md" />
+              <div className="h-6 w-16 skeleton rounded-full" />
+            </div>
           </div>
         ))}
       </div>

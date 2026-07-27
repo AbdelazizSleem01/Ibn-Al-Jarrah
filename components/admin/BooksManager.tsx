@@ -17,6 +17,8 @@ import {
   FaBookOpen,
   FaChevronDown,
   FaFilePdf,
+  FaSearchPlus,
+  FaStar,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
@@ -26,6 +28,14 @@ interface Category {
   slug: string;
 }
 
+interface ModalImageItem {
+  id: string;
+  url: string;
+  secureUrl?: string;
+  publicId?: string;
+  base64?: string;
+}
+
 interface Book {
   _id: string;
   title: string;
@@ -33,19 +43,27 @@ interface Book {
   description?: string;
   shortDescription?: string;
   author?: string;
+  editorOrTranslator?: string;
   publisher?: string;
   categoryId?: {
     _id: string;
     name: string;
-  };
+  } | string;
   prices?: {
     egp?: number;
     lyd?: number;
+    usd?: number;
+    wholesale?: number;
+    profitMargin?: number;
   };
   coverImage?: {
     secureUrl?: string;
     publicId?: string;
   };
+  images?: Array<{
+    secureUrl?: string;
+    publicId?: string;
+  }>;
   isbn?: string;
   edition?: string;
   publicationYear?: number;
@@ -101,19 +119,24 @@ export default function BooksManager() {
   // Modal States
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [coverBase64, setCoverBase64] = useState<string | null>(null);
-  const [removeImageFlag, setRemoveImageFlag] = useState(false);
+  const [modalImages, setModalImages] = useState<ModalImageItem[]>([]);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
 
   // Form Field States
   const [formData, setFormData] = useState({
     title: "",
+    shortDescription: "",
     description: "",
     author: "",
+    editorOrTranslator: "",
     publisher: "",
     categoryId: "",
     priceEgp: "",
     priceLyd: "",
+    priceUsd: "",
+    priceWholesale: "",
+    profitMargin: "",
     isbn: "",
     edition: "",
     publicationYear: "",
@@ -348,52 +371,74 @@ export default function BooksManager() {
     }
   };
 
-  // Handle Cover Image upload and conversion to base64
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
+  // Handle Multiple Images upload and conversion to base64
+  const handleMultipleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    for (const file of files) {
+      if (file.size > 3 * 1024 * 1024) {
         Swal.fire({
           icon: "error",
-          title: "الملف كبير جداً",
-          text: "الحد الأقصى لحجم الصورة هو 2 ميجابايت",
+          title: "حجم الصورة كبير جداً",
+          text: `الصورة ${file.name} تتجاوز 3 ميجابايت`,
           confirmButtonText: "موافق",
           confirmButtonColor: "#d4af37",
         });
-        return;
+        continue;
       }
-
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCoverPreview(reader.result as string);
-        setCoverBase64(reader.result as string);
-        setRemoveImageFlag(false);
+        if (reader.result) {
+          const b64 = reader.result as string;
+          const newItem: ModalImageItem = {
+            id: Math.random().toString(36).substring(2, 9),
+            url: b64,
+            base64: b64,
+          };
+          setModalImages((prev) => [...prev, newItem]);
+        }
       };
       reader.readAsDataURL(file);
     }
+    if (e.target) e.target.value = "";
   };
 
-  const handleRemoveImage = () => {
-    setCoverPreview(null);
-    setCoverBase64(null);
-    setRemoveImageFlag(true);
+  // Set selected image as Primary Cover (move to index 0)
+  const handleSetAsPrimaryCover = (indexToPrimary: number) => {
+    if (indexToPrimary <= 0 || indexToPrimary >= modalImages.length) return;
+    setModalImages((prev) => {
+      const target = prev[indexToPrimary];
+      const rest = prev.filter((_, idx) => idx !== indexToPrimary);
+      return [target, ...rest];
+    });
+    setActivePreviewIndex(0);
+  };
+
+  const handleRemoveSingleImage = (indexToRemove: number) => {
+    setModalImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    setActivePreviewIndex((prev) => Math.max(0, Math.min(prev, modalImages.length - 2)));
   };
 
   // Open modal for Create Book
   const openCreateModal = () => {
     setEditingBookId(null);
-    setCoverPreview(null);
-    setCoverBase64(null);
-    setRemoveImageFlag(false);
+    setModalImages([]);
+    setActivePreviewIndex(0);
     setErrors({});
     setFormData({
       title: "",
+      shortDescription: "",
       description: "",
       author: "",
+      editorOrTranslator: "",
       publisher: "",
       categoryId: categories[0]?._id || "",
       priceEgp: "",
       priceLyd: "",
+      priceUsd: "",
+      priceWholesale: "",
+      profitMargin: "",
       isbn: "",
       edition: "",
       publicationYear: "",
@@ -410,50 +455,141 @@ export default function BooksManager() {
   };
 
   // Open modal for Editing Book
-  const openEditModal = (book: Book) => {
+  const openEditModal = async (book: Book) => {
     setEditingBookId(book._id);
-    setCoverPreview(book.coverImage?.secureUrl || null);
-    setCoverBase64(null);
-    setRemoveImageFlag(false);
     setErrors({});
-    setFormData({
-      title: book.title,
+
+    const rawImages = Array.isArray(book.images) && book.images.length > 0
+      ? book.images
+      : (book.coverImage?.secureUrl ? [book.coverImage] : []);
+
+    const initialFormattedImages: ModalImageItem[] = rawImages.map((img: any, idx: number) => ({
+      id: img.publicId || `existing-${idx}`,
+      url: img.secureUrl || "",
+      secureUrl: img.secureUrl,
+      publicId: img.publicId,
+    }));
+
+    setModalImages(initialFormattedImages);
+    setActivePreviewIndex(0);
+
+    const catId = typeof book.categoryId === "object" && book.categoryId?._id
+      ? String(book.categoryId._id)
+      : (typeof book.categoryId === "string" ? book.categoryId : categories[0]?._id || "");
+
+    const initialFormData = {
+      title: book.title || "",
+      shortDescription: book.shortDescription || "",
       description: book.description || "",
       author: book.author || "",
+      editorOrTranslator: book.editorOrTranslator || "",
       publisher: book.publisher || "",
-      categoryId: book.categoryId?._id || "",
-      priceEgp: book.prices?.egp?.toString() || "",
-      priceLyd: book.prices?.lyd?.toString() || "",
+      categoryId: catId,
+      priceEgp: book.prices?.egp !== undefined && book.prices?.egp !== null ? book.prices.egp.toString() : "",
+      priceLyd: book.prices?.lyd !== undefined && book.prices?.lyd !== null ? book.prices.lyd.toString() : "",
+      priceUsd: book.prices?.usd !== undefined && book.prices?.usd !== null ? book.prices.usd.toString() : "",
+      priceWholesale: book.prices?.wholesale !== undefined && book.prices?.wholesale !== null ? book.prices.wholesale.toString() : "",
+      profitMargin: book.prices?.profitMargin !== undefined && book.prices?.profitMargin !== null ? book.prices.profitMargin.toString() : "",
       isbn: book.isbn || "",
       edition: book.edition || "",
-      publicationYear: book.publicationYear?.toString() || "",
-      pagesCount: book.pagesCount?.toString() || "",
-      volumesCount: book.volumesCount?.toString() || "1",
+      publicationYear: book.publicationYear !== undefined && book.publicationYear !== null ? book.publicationYear.toString() : "",
+      pagesCount: book.pagesCount !== undefined && book.pagesCount !== null ? book.pagesCount.toString() : "",
+      volumesCount: book.volumesCount !== undefined && book.volumesCount !== null ? book.volumesCount.toString() : "1",
       coverType: book.coverType || "",
       size: book.size || "",
       language: book.language || "العربية",
-      availabilityStatus: book.availabilityStatus,
-      isFeatured: book.isFeatured,
+      availabilityStatus: book.availabilityStatus || "available",
+      isFeatured: !!book.isFeatured,
       internalNotes: book.internalNotes || "",
-    });
+    };
+
+    setFormData(initialFormData);
     setModalOpen(true);
+
+    // Fetch fresh and full details from server
+    try {
+      const res = await fetch(`/api/admin/books/${book._id}`);
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        const fullBook = resData.data;
+        const fullCatId = typeof fullBook.categoryId === "object" && fullBook.categoryId?._id
+          ? String(fullBook.categoryId._id)
+          : (typeof fullBook.categoryId === "string" ? fullBook.categoryId : catId);
+
+        const freshRawImages = Array.isArray(fullBook.images) && fullBook.images.length > 0
+          ? fullBook.images
+          : (fullBook.coverImage?.secureUrl ? [fullBook.coverImage] : []);
+
+        const freshFormattedImages: ModalImageItem[] = freshRawImages.map((img: any, idx: number) => ({
+          id: img.publicId || `existing-${idx}`,
+          url: img.secureUrl || "",
+          secureUrl: img.secureUrl,
+          publicId: img.publicId,
+        }));
+        setModalImages(freshFormattedImages);
+
+        setFormData({
+          title: fullBook.title || "",
+          shortDescription: fullBook.shortDescription || "",
+          description: fullBook.description || "",
+          author: fullBook.author || "",
+          editorOrTranslator: fullBook.editorOrTranslator || "",
+          publisher: fullBook.publisher || "",
+          categoryId: fullCatId,
+          priceEgp: fullBook.prices?.egp !== undefined && fullBook.prices?.egp !== null ? fullBook.prices.egp.toString() : "",
+          priceLyd: fullBook.prices?.lyd !== undefined && fullBook.prices?.lyd !== null ? fullBook.prices.lyd.toString() : "",
+          priceUsd: fullBook.prices?.usd !== undefined && fullBook.prices?.usd !== null ? fullBook.prices.usd.toString() : "",
+          priceWholesale: fullBook.prices?.wholesale !== undefined && fullBook.prices?.wholesale !== null ? fullBook.prices.wholesale.toString() : "",
+          profitMargin: fullBook.prices?.profitMargin !== undefined && fullBook.prices?.profitMargin !== null ? fullBook.prices.profitMargin.toString() : "",
+          isbn: fullBook.isbn || "",
+          edition: fullBook.edition || "",
+          publicationYear: fullBook.publicationYear !== undefined && fullBook.publicationYear !== null ? fullBook.publicationYear.toString() : "",
+          pagesCount: fullBook.pagesCount !== undefined && fullBook.pagesCount !== null ? fullBook.pagesCount.toString() : "",
+          volumesCount: fullBook.volumesCount !== undefined && fullBook.volumesCount !== null ? fullBook.volumesCount.toString() : "1",
+          coverType: fullBook.coverType || "",
+          size: fullBook.size || "",
+          language: fullBook.language || "العربية",
+          availabilityStatus: fullBook.availabilityStatus || "available",
+          isFeatured: !!fullBook.isFeatured,
+          internalNotes: fullBook.internalNotes || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching fresh book details:", err);
+    }
   };
 
   // Duplicate book function
   const handleDuplicate = (book: Book) => {
     setEditingBookId(null);
-    setCoverPreview(book.coverImage?.secureUrl || null);
-    setCoverBase64(null);
-    setRemoveImageFlag(false);
+    const rawImages = Array.isArray(book.images) && book.images.length > 0
+      ? book.images
+      : (book.coverImage?.secureUrl ? [book.coverImage] : []);
+    const dupImages: ModalImageItem[] = rawImages.map((img: any, idx: number) => ({
+      id: `dup-${idx}`,
+      url: img.secureUrl || "",
+      secureUrl: img.secureUrl,
+      publicId: img.publicId,
+    }));
+    setModalImages(dupImages);
+    setActivePreviewIndex(0);
     setErrors({});
+    const catId = typeof book.categoryId === "object" && book.categoryId?._id
+      ? String(book.categoryId._id)
+      : (typeof book.categoryId === "string" ? book.categoryId : categories[0]?._id || "");
     setFormData({
       title: `${book.title} (نسخة مكررة)`,
+      shortDescription: book.shortDescription || "",
       description: book.description || "",
       author: book.author || "",
+      editorOrTranslator: book.editorOrTranslator || "",
       publisher: book.publisher || "",
-      categoryId: book.categoryId?._id || "",
+      categoryId: catId,
       priceEgp: book.prices?.egp?.toString() || "",
       priceLyd: book.prices?.lyd?.toString() || "",
+      priceUsd: book.prices?.usd?.toString() || "",
+      priceWholesale: book.prices?.wholesale?.toString() || "",
+      profitMargin: book.prices?.profitMargin?.toString() || "",
       isbn: "", // ISBN must be unique, so keep blank
       edition: book.edition || "",
       publicationYear: book.publicationYear?.toString() || "",
@@ -479,11 +615,17 @@ export default function BooksManager() {
       ...formData,
       categoryId: formData.categoryId,
       prices: {
-        egp: formData.priceEgp && !isNaN(parseFloat(formData.priceEgp)) ? parseFloat(formData.priceEgp) : undefined,
-        lyd: formData.priceLyd && !isNaN(parseFloat(formData.priceLyd)) ? parseFloat(formData.priceLyd) : undefined,
+        egp: formData.priceEgp !== "" && formData.priceEgp !== null && !isNaN(parseFloat(formData.priceEgp)) ? parseFloat(formData.priceEgp) : undefined,
+        lyd: formData.priceLyd !== "" && formData.priceLyd !== null && !isNaN(parseFloat(formData.priceLyd)) ? parseFloat(formData.priceLyd) : undefined,
+        usd: formData.priceUsd !== "" && formData.priceUsd !== null && !isNaN(parseFloat(formData.priceUsd)) ? parseFloat(formData.priceUsd) : undefined,
+        wholesale: formData.priceWholesale !== "" && formData.priceWholesale !== null && !isNaN(parseFloat(formData.priceWholesale)) ? parseFloat(formData.priceWholesale) : undefined,
+        profitMargin: formData.profitMargin !== "" && formData.profitMargin !== null && !isNaN(parseFloat(formData.profitMargin)) ? parseFloat(formData.profitMargin) : undefined,
       },
-      coverImageBase64: coverBase64 || undefined,
-      removeImage: removeImageFlag,
+      images: modalImages.map((img) => ({
+        secureUrl: img.secureUrl,
+        publicId: img.publicId,
+        base64: img.base64,
+      })),
     };
 
     const url = editingBookId ? `/api/admin/books/${editingBookId}` : "/api/admin/books";
@@ -1086,7 +1228,7 @@ export default function BooksManager() {
                   <th className="p-3.5 font-bold whitespace-nowrap">الكتاب</th>
                   <th className="p-3.5 font-bold whitespace-nowrap">المؤلف</th>
                   <th className="p-3.5 font-bold whitespace-nowrap">التصنيف</th>
-                  <th className="p-3.5 font-bold whitespace-nowrap">السعر (جنيه)</th>
+                  <th className="p-3.5 font-bold whitespace-nowrap">السعر</th>
                   <th className="p-3.5 font-bold text-center whitespace-nowrap">حالة التوفر</th>
                   <th className="p-3.5 font-bold text-center w-36 whitespace-nowrap">إجراءات</th>
                 </tr>
@@ -1119,10 +1261,20 @@ export default function BooksManager() {
                       <span className="truncate block" title={book.author || "—"}>{book.author || "—"}</span>
                     </td>
                     <td className="p-3 text-foreground/75 max-w-[120px]">
-                      <span className="truncate block" title={book.categoryId?.name || "عام"}>{book.categoryId?.name || "عام"}</span>
+                      <span
+                        className="truncate block"
+                        title={typeof book.categoryId === "object" && book.categoryId?.name ? book.categoryId.name : "عام"}
+                      >
+                        {typeof book.categoryId === "object" && book.categoryId?.name ? book.categoryId.name : "عام"}
+                      </span>
                     </td>
                     <td className="p-3 font-bold text-primary">
-                      {book.prices?.egp !== undefined ? `${book.prices.egp} ج.م` : "—"}
+                      <div className="flex flex-col text-xs">
+                        {book.prices?.egp !== undefined && <span>{book.prices.egp} ج.م</span>}
+                        {book.prices?.lyd !== undefined && <span className="text-[10px] text-foreground/60">{book.prices.lyd} د.ل</span>}
+                        {book.prices?.usd !== undefined && <span className="text-[10px] text-emerald-600 font-semibold">${book.prices.usd}</span>}
+                        {book.prices?.egp === undefined && book.prices?.lyd === undefined && book.prices?.usd === undefined && "—"}
+                      </div>
                     </td>
                     <td className="p-3 text-center">
                       <span
@@ -1230,122 +1382,247 @@ export default function BooksManager() {
 
       {/* Add / Edit Book Modal Form */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-6 overflow-hidden">
           <div
-            className="relative w-full max-w-4xl bg-card-bg border border-border-color rounded-2xl shadow-2xl flex flex-col text-right transition-colors duration-300 max-h-[92vh] overflow-hidden"
+            className="relative w-full max-w-[1240px] w-[96vw] max-h-[92vh] bg-card-bg border border-primary/20 rounded-2xl shadow-2xl flex flex-col text-right transition-colors duration-300 overflow-hidden gold-glow font-sans my-auto"
             role="dialog"
             aria-modal="true"
           >
-            {/* Close modal - positioned inside rounded  so it stays within borders */}
+            {/* Close modal button - Positioned top-left in RTL to prevent title collision */}
             <button
+              type="button"
               onClick={() => setModalOpen(false)}
-              className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-foreground/10 hover:bg-red-500 hover:text-white text-foreground flex items-center justify-center cursor-pointer border border-border-color/40 transition-all duration-200 shadow-sm"
+              className="absolute top-4 left-4 z-30 w-9 h-9 rounded-full bg-foreground/10 hover:bg-red-500 hover:text-white text-foreground flex items-center justify-center cursor-pointer border border-border-color/40 transition-all duration-200 shadow-md"
               title="إغلاق"
             >
-              <FaTimes className="w-3.5 h-3.5" />
+              <FaTimes className="w-4 h-4" />
             </button>
 
-            {/* Form layout - scrollable inner content */}
-            <form onSubmit={handleFormSubmit} className="w-full flex flex-col md:flex-row items-stretch overflow-y-auto max-h-[92vh]">
+            {/* Form layout */}
+            <form onSubmit={handleFormSubmit} className="w-full flex flex-col md:flex-row items-stretch overflow-hidden max-h-[92vh]">
 
-              {/* Left Column: Image preview & selection */}
-              <div className="w-full md:w-2/5 p-4 md:p-6 bg-foreground/[0.02] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-center shrink-0">
-                <div className="flex flex-col items-center gap-3 md:gap-4">
-                  <span className="text-[10px] md:text-xs font-bold text-foreground/70">غلاف الكتاب (اختياري)</span>
+              {/* Left Column: Gallery & Images Management */}
+              <div className="w-full md:w-1/3 p-5 md:p-8 bg-foreground/[0.02] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-start shrink-0 overflow-y-auto">
+                <div className="flex flex-col items-center gap-4 w-full">
+                  
+                  {/* Gallery Title Header */}
+                  <div className="flex items-center justify-between w-full pb-3 border-b border-border-color/40">
+                    <span className="text-xs md:text-sm font-black text-foreground flex items-center gap-2">
+                      <FaBookOpen className="text-primary text-sm" />
+                      معرض صور الكتاب
+                    </span>
+                    <span className="text-[10px] font-extrabold bg-primary/10 text-primary px-2.5 py-1 rounded-full border border-primary/20">
+                      {modalImages.length} {modalImages.length === 1 ? "صورة" : "صور"}
+                    </span>
+                  </div>
 
-                  {/* Preview box */}
-                  <div className="w-28 md:w-48 aspect-[3/4] rounded-lg border border-border-color shadow-md bg-card-bg flex flex-col items-center justify-center overflow-hidden relative group gold-glow">
-                    {coverPreview ? (
+                  {/* Main Active Image Preview Box */}
+                  <div className="w-full max-w-[220px] md:max-w-[260px] aspect-[3/4] rounded-2xl border-2 border-border-color/80 shadow-xl bg-card-bg flex flex-col items-center justify-center overflow-hidden relative group transition-all duration-300 hover:border-primary/50 gold-glow">
+                    {modalImages.length > 0 && modalImages[activePreviewIndex] ? (
                       <>
-                        <img src={coverPreview} alt="غلاف الكتاب" className="w-full h-full object-cover" />
+                        <img
+                          src={modalImages[activePreviewIndex].url}
+                          alt="معاينة صورة الكتاب"
+                          onClick={() => setZoomImageUrl(modalImages[activePreviewIndex].url)}
+                          className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-105"
+                          title="انقر لتكبير الصورة بحجم كامل"
+                        />
+
+                        {/* Search Plus Zoom Overlay Badge */}
                         <button
                           type="button"
-                          onClick={handleRemoveImage}
-                          className="absolute bottom-2 left-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow cursor-pointer"
-                          title="إزالة الغلاف"
+                          onClick={() => setZoomImageUrl(modalImages[activePreviewIndex].url)}
+                          className="absolute top-3 left-3 bg-black/60 hover:bg-primary text-white p-2 rounded-xl backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 shadow cursor-pointer"
+                          title="تكبير الصورة"
+                        >
+                          <FaSearchPlus className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Main Cover Badge OR Set as Cover Button */}
+                        {activePreviewIndex === 0 ? (
+                          <span className="absolute top-3 right-3 bg-primary text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md border border-white/20">
+                            ★ الغلاف الرئيسي
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSetAsPrimaryCover(activePreviewIndex)}
+                            className="absolute top-3 right-3 bg-black/75 hover:bg-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-md border border-white/20 transition-all cursor-pointer backdrop-blur-sm"
+                            title="تعيين كغلاف رئيسي للكتاب"
+                          >
+                            ★ جعلها الغلاف الرئيسي
+                          </button>
+                        )}
+
+                        {/* Delete image button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSingleImage(activePreviewIndex)}
+                          className="absolute bottom-3 left-3 bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full shadow-lg opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer active:scale-95"
+                          title="حذف هذه الصورة"
                         >
                           <FaTimes className="w-3.5 h-3.5" />
                         </button>
                       </>
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-foreground/30 text-center p-4">
-                        <FaBookOpen className="text-4xl text-primary/30" />
-                        <span className="text-[10px]">لا يوجد غلاف حالياً</span>
+                      <div className="flex flex-col items-center gap-2.5 text-foreground/30 text-center p-6 select-none">
+                        <FaBookOpen className="text-5xl text-primary/30" />
+                        <span className="text-xs font-bold">لا توجد صور مضافة حالياً</span>
+                        <span className="text-[10px] text-foreground/40">اضغط أسفله لإضافة صور</span>
                       </div>
                     )}
                   </div>
 
-                  {/* File Upload Selector */}
-                  <label className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-bold text-xs shadow transition-all cursor-pointer">
-                    اختر صورة الغلاف
+                  {/* Thumbnails Gallery Strip */}
+                  {modalImages.length > 0 && (
+                    <div className="flex items-center gap-2.5 overflow-x-auto w-full py-2 px-1 justify-center hide-scrollbar">
+                      {modalImages.map((img, idx) => (
+                        <div
+                          key={img.id}
+                          onClick={() => setActivePreviewIndex(idx)}
+                          className={`relative w-14 h-20 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer transition-all duration-200 group/thumb ${
+                            activePreviewIndex === idx
+                              ? "border-primary scale-105 shadow-lg ring-2 ring-primary/30"
+                              : "border-border-color/60 opacity-70 hover:opacity-100"
+                          }`}
+                        >
+                          <img src={img.url} alt="" className="w-full h-full object-cover" />
+                          
+                          {/* Badge indicator for cover */}
+                          {idx === 0 && (
+                            <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-white text-[7px] font-extrabold text-center py-0.5">
+                              الغلاف
+                            </span>
+                          )}
+
+                          {/* Action overlay buttons on thumbnail hover */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSetAsPrimaryCover(idx);
+                                }}
+                                className="bg-primary text-white cursor-pointer w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow hover:scale-110"
+                                title="تعيين كغلاف رئيسي"
+                              >
+                                ★
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveSingleImage(idx);
+                              }}
+                              className="bg-red-600 text-white cursor-pointer w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow hover:scale-110"
+                              title="حذف"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Multiple Files Upload Selector Button */}
+                  <label className="w-full max-w-[260px] bg-primary hover:bg-primary-hover text-white px-5 py-3 rounded-xl font-black text-xs shadow-lg gold-glow transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 active:scale-95 mt-2">
+                    <FaPlus className="text-xs" />
+                    <span>إضافة صور للكتاب (واحدة أو أكثر)</span>
                     <input
                       type="file"
+                      multiple
                       accept="image/png, image/jpeg, image/jpg, image/webp"
-                      onChange={handleImageChange}
+                      onChange={handleMultipleImagesChange}
                       className="hidden"
                     />
                   </label>
-                  <span className="text-[9px] text-foreground/45">صيغ الصور: JPG, PNG, WEBP (بحد أقصى 2MB)</span>
+                  <span className="text-[10px] text-foreground/50 text-center leading-relaxed max-w-[260px]">
+                    يمكنك تحديد أي صورة وتعيينها كغلاف رئيسي للكتاب بكبسة زر ★.
+                  </span>
                 </div>
               </div>
 
               {/* Right Column: Metadata inputs */}
-              <div className="w-full md:w-3/5 p-6 md:p-8 flex flex-col gap-4 overflow-visible md:overflow-y-auto md:max-h-[85vh]">
-                <h2 className="font-black text-lg text-foreground border-r-4 border-primary pr-3 py-0.5 mb-2">
-                  {editingBookId ? "تعديل تفاصيل الكتاب" : "إضافة كتاب جديد للنشر"}
-                </h2>
+              <div className="w-full md:w-2/3 p-6 md:p-8 flex flex-col gap-6 text-right overflow-y-auto max-h-[88vh]">
+                
+                {/* Modal Title Header */}
+                <div className="border-b border-border-color/40 pb-3">
+                  <h2 className="font-black text-xl text-foreground border-r-4 border-primary pr-3 py-0.5">
+                    {editingBookId ? "تعديل تفاصيل الكتاب" : "إضافة كتاب جديد للنشر"}
+                  </h2>
+                  <p className="text-xs text-foreground/50 pr-3 mt-1">
+                    يرجى تعبئة بيانات الكتاب والأسعار بدقة للحفاظ على جودة المحتوى المعروض.
+                  </p>
+                </div>
 
-                {/* Form fields grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                {/* Form fields grid - Organized into 3 columns on desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
 
                   {/* Book Title */}
-                  <div className="flex flex-col gap-1.5 sm:col-span-2">
-                    <label className="font-bold text-foreground/75">اسم الكتاب *</label>
+                  <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
+                    <label className="font-bold text-foreground/80">اسم الكتاب *</label>
                     <input
                       type="text"
                       name="title"
                       required
                       value={formData.title}
                       onChange={handleFormChange}
-                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${errors.title ? "border-red-500" : "border-border-color"
-                        }`}
+                      className={`bg-foreground/[0.02] border rounded-xl p-3 text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 ${
+                        errors.title ? "border-red-500" : "border-border-color"
+                      }`}
+                      placeholder="أدخل عنوان الكتاب..."
                     />
                     {errors.title && <span className="text-[10px] text-red-500">{errors.title[0]}</span>}
                   </div>
 
                   {/* Author */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">المؤلف (الكاتب)</label>
+                    <label className="font-bold text-foreground/80">المؤلف (الكاتب)</label>
                     <input
                       type="text"
                       name="author"
                       value={formData.author}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Editor or Translator */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-foreground/80">المحقق / المترجم</label>
+                    <input
+                      type="text"
+                      name="editorOrTranslator"
+                      value={formData.editorOrTranslator}
+                      onChange={handleFormChange}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Publisher */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">دار النشر</label>
+                    <label className="font-bold text-foreground/80">دار النشر</label>
                     <input
                       type="text"
                       name="publisher"
                       value={formData.publisher}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Category select */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">التصنيف *</label>
+                    <label className="font-bold text-foreground/80">التصنيف *</label>
                     <select
                       name="categoryId"
                       required
                       value={formData.categoryId}
                       onChange={handleFormChange}
-                      className="bg-card-bg border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-card-bg border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary cursor-pointer font-semibold"
                     >
                       {categories.map((c) => (
                         <option key={c._id} value={c._id}>
@@ -1357,19 +1634,31 @@ export default function BooksManager() {
 
                   {/* ISBN */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">رقم ISBN</label>
+                    <label className="font-bold text-foreground/80">رقم ISBN</label>
                     <input
                       type="text"
                       name="isbn"
                       value={formData.isbn}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Edition */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-foreground/80">الطبعة (مثال: الأولى، الثانية)</label>
+                    <input
+                      type="text"
+                      name="edition"
+                      value={formData.edition}
+                      onChange={handleFormChange}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Price EGP */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">السعر بالجنيه المصري</label>
+                    <label className="font-bold text-foreground/80">السعر بالجنيه المصري</label>
                     <input
                       type="number"
                       name="priceEgp"
@@ -1377,14 +1666,13 @@ export default function BooksManager() {
                       step="0.01"
                       value={formData.priceEgp}
                       onChange={handleFormChange}
-                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${errors.prices ? "border-red-500" : "border-border-color"
-                        }`}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary font-bold text-primary"
                     />
                   </div>
 
                   {/* Price LYD */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">السعر بالدينار الليبي</label>
+                    <label className="font-bold text-foreground/80">السعر بالدينار الليبي</label>
                     <input
                       type="number"
                       name="priceLyd"
@@ -1392,19 +1680,60 @@ export default function BooksManager() {
                       step="0.01"
                       value={formData.priceLyd}
                       onChange={handleFormChange}
-                      className={`bg-foreground/[0.02] border rounded-lg p-2.5 text-xs focus:outline-none ${errors.prices ? "border-red-500" : "border-border-color"
-                        }`}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary font-bold text-primary"
+                    />
+                  </div>
+
+                  {/* Price USD */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-foreground/80">السعر بالدولار ($)</label>
+                    <input
+                      type="number"
+                      name="priceUsd"
+                      min="0"
+                      step="0.01"
+                      value={formData.priceUsd}
+                      onChange={handleFormChange}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary font-bold text-emerald-600"
+                    />
+                  </div>
+
+                  {/* Wholesale Price */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-foreground/80">سعر الجملة</label>
+                    <input
+                      type="number"
+                      name="priceWholesale"
+                      min="0"
+                      step="0.01"
+                      value={formData.priceWholesale}
+                      onChange={handleFormChange}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary font-bold"
+                    />
+                  </div>
+
+                  {/* Profit Margin */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-foreground/80">هامش الربح (%)</label>
+                    <input
+                      type="number"
+                      name="profitMargin"
+                      min="0"
+                      step="0.01"
+                      value={formData.profitMargin}
+                      onChange={handleFormChange}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary font-bold"
                     />
                   </div>
 
                   {/* Availability status */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">حالة التوفر</label>
+                    <label className="font-bold text-foreground/80">حالة التوفر</label>
                     <select
                       name="availabilityStatus"
                       value={formData.availabilityStatus}
                       onChange={handleFormChange}
-                      className="bg-card-bg border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-card-bg border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary cursor-pointer font-bold"
                     >
                       <option value="available">متوفر للطلب</option>
                       <option value="unavailable">نفد</option>
@@ -1413,99 +1742,124 @@ export default function BooksManager() {
 
                   {/* Volumes count */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">عدد المجلدات</label>
+                    <label className="font-bold text-foreground/80">عدد المجلدات</label>
                     <input
                       type="number"
                       name="volumesCount"
                       min="1"
                       value={formData.volumesCount}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Pages count */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">عدد الصفحات</label>
+                    <label className="font-bold text-foreground/80">عدد الصفحات</label>
                     <input
                       type="number"
                       name="pagesCount"
                       min="0"
                       value={formData.pagesCount}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Publication Year */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">سنة النشر</label>
+                    <label className="font-bold text-foreground/80">سنة النشر</label>
                     <input
                       type="number"
                       name="publicationYear"
                       value={formData.publicationYear}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Cover Type */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">نوع التجليد (سلوفان، فني...)</label>
+                    <label className="font-bold text-foreground/80">نوع التجليد (سلوفان، فني...)</label>
                     <input
                       type="text"
                       name="coverType"
                       value={formData.coverType}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Book Size */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-foreground/75">مقاس الكتاب (مثال: 24*17)</label>
+                    <label className="font-bold text-foreground/80">مقاس الكتاب (مثال: 24*17)</label>
                     <input
                       type="text"
                       name="size"
                       value={formData.size}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Language */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-foreground/80">اللغة</label>
+                    <input
+                      type="text"
+                      name="language"
+                      value={formData.language}
+                      onChange={handleFormChange}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Short Description */}
+                  <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
+                    <label className="font-bold text-foreground/80">نبذة مختصرة عن الكتاب</label>
+                    <input
+                      type="text"
+                      name="shortDescription"
+                      value={formData.shortDescription}
+                      onChange={handleFormChange}
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
+                      placeholder="نبذة سريعة تظهر في بطاقة الكتاب..."
                     />
                   </div>
 
                   {/* Book Description / details */}
-                  <div className="flex flex-col gap-1.5 sm:col-span-2">
-                    <label className="font-bold text-foreground/75">وصف الكتاب</label>
+                  <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
+                    <label className="font-bold text-foreground/80">وصف الكتاب الكامل</label>
                     <textarea
                       name="description"
                       rows={3}
                       value={formData.description}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Internal Notes */}
-                  <div className="flex flex-col gap-1.5 sm:col-span-2">
-                    <label className="font-bold text-foreground/75">ملاحظات داخلية (لا تظهر للزوار)</label>
+                  <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
+                    <label className="font-bold text-foreground/80">ملاحظات داخلية (لا تظهر للزوار)</label>
                     <textarea
                       name="internalNotes"
                       rows={2}
                       value={formData.internalNotes}
                       onChange={handleFormChange}
-                      className="bg-foreground/[0.02] border border-border-color rounded-lg p-2.5 text-xs focus:outline-none"
+                      className="bg-foreground/[0.02] border border-border-color rounded-xl p-3 text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
 
                   {/* Featured checkbox */}
-                  <div className="flex items-center gap-2 sm:col-span-2 pt-2">
+                  <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-3 pt-2">
                     <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-foreground select-none">
                       <input
                         type="checkbox"
                         name="isFeatured"
                         checked={formData.isFeatured}
                         onChange={handleFormChange}
-                        className="w-4 h-4 rounded border-border-color text-primary focus:ring-primary accent-primary"
+                        className="w-4.5 h-4.5 rounded border-border-color text-primary focus:ring-primary accent-primary"
                       />
                       <span>تمييز هذا الكتاب (عرضه في قسم المميز بالرئيسية)</span>
                     </label>
@@ -1513,7 +1867,7 @@ export default function BooksManager() {
 
                   {/* Validation errors summary */}
                   {errors.prices && (
-                    <span className="text-[10px] text-red-500 font-semibold sm:col-span-2">
+                    <span className="text-[10px] text-red-500 font-semibold sm:col-span-2 lg:col-span-3">
                       {errors.prices[0]}
                     </span>
                   )}
@@ -1525,14 +1879,14 @@ export default function BooksManager() {
                   <button
                     type="button"
                     onClick={() => setModalOpen(false)}
-                    className="border border-border-color hover:bg-foreground/5 text-foreground px-6 py-2.5 rounded-lg font-bold text-xs md:text-sm cursor-pointer"
+                    className="border border-border-color hover:bg-foreground/5 text-foreground px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm cursor-pointer transition-all"
                   >
                     إلغاء
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="bg-primary hover:bg-primary-hover disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-bold px-8 py-2.5 rounded-lg text-xs md:text-sm shadow-md gold-glow cursor-pointer flex items-center gap-1.5"
+                    className="bg-primary hover:bg-primary-hover disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-black px-8 py-2.5 rounded-xl text-xs md:text-sm shadow-md gold-glow cursor-pointer flex items-center gap-1.5 transition-all"
                   >
                     {submitting ? "جاري الحفظ..." : "حفظ الكتاب"}
                   </button>
@@ -1543,6 +1897,29 @@ export default function BooksManager() {
             </form>
 
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen Image Zoom Lightbox */}
+      {zoomImageUrl && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setZoomImageUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setZoomImageUrl(null)}
+            className="absolute top-5 left-5 z-10 w-11 h-11 rounded-full bg-white/10 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer border border-white/20 transition-all shadow-xl"
+            title="إغلاق التكبير"
+          >
+            <FaTimes className="w-5 h-5" />
+          </button>
+          <img
+            src={zoomImageUrl}
+            alt="صورة مكبرة"
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl border border-white/10 gold-glow select-none"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
 

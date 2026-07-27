@@ -131,12 +131,39 @@ export async function POST(request: Request) {
     // Normalized title
     const normalizedTitle = normalizeArabic(bookData.title);
 
-    // Image Upload to Cloudinary if base64 provided
-    let coverImage = undefined;
-    if (body.coverImageBase64) {
+    // Image Uploads to Cloudinary (Multiple images & primary cover supported)
+    let images: any[] = [];
+    let coverImage: any = undefined;
+
+    const incomingImages = Array.isArray(body.images) && body.images.length > 0
+      ? body.images
+      : (Array.isArray(body.newImagesBase64) && body.newImagesBase64.length > 0
+          ? body.newImagesBase64.map((b64: string) => ({ base64: b64 }))
+          : (Array.isArray(body.imagesBase64) && body.imagesBase64.length > 0
+              ? body.imagesBase64.map((b64: string) => ({ base64: b64 }))
+              : []));
+
+    if (incomingImages.length > 0) {
+      try {
+        const uploadPromises = incomingImages.map(async (item: any) => {
+          if (item.base64) {
+            return await uploadImage(item.base64);
+          }
+          return item;
+        });
+        images = await Promise.all(uploadPromises);
+        coverImage = images[0];
+      } catch (err: any) {
+        return NextResponse.json(
+          { success: false, message: err.message || "فشل رفع صور الكتاب إلى الخادم" },
+          { status: 500 }
+        );
+      }
+    } else if (body.coverImageBase64) {
       try {
         const uploadRes = await uploadImage(body.coverImageBase64);
         coverImage = uploadRes;
+        images = [uploadRes];
       } catch (err: any) {
         return NextResponse.json(
           { success: false, message: err.message || "فشل رفع غلاف الكتاب" },
@@ -151,6 +178,7 @@ export async function POST(request: Request) {
       slug,
       normalizedTitle,
       coverImage,
+      images,
       isDeleted: false,
       createdBy: user.id,
       updatedBy: user.id,

@@ -13,6 +13,9 @@ export interface IBook extends Document {
   prices: {
     egp?: number;
     lyd?: number;
+    usd?: number;
+    wholesale?: number;
+    profitMargin?: number;
   };
   coverImage?: {
     secureUrl?: string;
@@ -20,6 +23,12 @@ export interface IBook extends Document {
     width?: number;
     height?: number;
   };
+  images?: Array<{
+    secureUrl?: string;
+    publicId?: string;
+    width?: number;
+    height?: number;
+  }>;
   isbn?: string;
   edition?: string;
   publicationYear?: number;
@@ -92,6 +101,9 @@ const BookSchema = new Schema<IBook>(
     prices: {
       egp: { type: Number, min: [0, "السعر لا يمكن أن يكون سالباً"] },
       lyd: { type: Number, min: [0, "السعر لا يمكن أن يكون سالباً"] },
+      usd: { type: Number, min: [0, "السعر لا يمكن أن يكون سالباً"] },
+      wholesale: { type: Number, min: [0, "السعر لا يمكن أن يكون سالباً"] },
+      profitMargin: { type: Number, min: [0, "هامش الربح لا يمكن أن يكون سالباً"] },
     },
     coverImage: {
       secureUrl: { type: String, trim: true },
@@ -99,6 +111,14 @@ const BookSchema = new Schema<IBook>(
       width: { type: Number },
       height: { type: Number },
     },
+    images: [
+      {
+        secureUrl: { type: String, trim: true },
+        publicId: { type: String, trim: true },
+        width: { type: Number },
+        height: { type: Number },
+      },
+    ],
     isbn: {
       type: String,
       trim: true,
@@ -182,7 +202,9 @@ BookSchema.index({ isDeleted: 1, createdAt: -1 });
 BookSchema.index({ isDeleted: 1, categoryId: 1, createdAt: -1 });
 BookSchema.index({ isDeleted: 1, isFeatured: 1, createdAt: -1 });
 BookSchema.index({ isDeleted: 1, availabilityStatus: 1, createdAt: -1 });
-BookSchema.index({ title: "text", normalizedTitle: "text", author: "text", publisher: "text", description: "text" });
+if (mongoose.models.Book) {
+  delete (mongoose.models as any).Book;
+}
 
 const Book: Model<IBook> = mongoose.models.Book || mongoose.model<IBook>("Book", BookSchema);
 

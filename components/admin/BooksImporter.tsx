@@ -14,6 +14,9 @@ interface BookRow {
   isbn?: string;
   priceEgp?: number;
   priceLyd?: number;
+  priceUsd?: number;
+  priceWholesale?: number;
+  profitMargin?: number;
   edition?: string;
   publicationYear?: number;
   pagesCount?: number;
@@ -220,6 +223,9 @@ export default function BooksImporter() {
     { key: "categoryName", label: "التصنيف *", matchedKeys: ["التصنيف", "القسم", "موضوع", "category", "section"] },
     { key: "priceEgp", label: "السعر بالجنيه", matchedKeys: ["سعر جنيه", "السعر", "بعد الخصم", "سعر بالجنيه قبل", "price_egp", "price"] },
     { key: "priceLyd", label: "السعر بالدينار", matchedKeys: ["سعر دينار", "سعر بالدينار", "price_lyd"] },
+    { key: "priceUsd", label: "السعر بالدولار", matchedKeys: ["سعر دولار", "السعر بالدولار", "price_usd", "usd"] },
+    { key: "priceWholesale", label: "سعر الجملة", matchedKeys: ["سعر الجملة", "جملة", "wholesale_price", "wholesale"] },
+    { key: "profitMargin", label: "هامش الربح", matchedKeys: ["هامش الربح", "الربح", "profit_margin", "margin"] },
     { key: "isbn", label: "رقم ISBN", matchedKeys: ["isbn", "الرقم الدولي", "ISBN"] },
     { key: "coverType", label: "نوع التجليد", matchedKeys: ["التجليد", "تجليد", "cover_type"] },
     { key: "size", label: "المقاس", matchedKeys: ["المقاس", "مقاس", "size"] },

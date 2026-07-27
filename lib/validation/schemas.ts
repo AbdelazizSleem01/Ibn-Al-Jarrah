@@ -48,8 +48,23 @@ export const bookSchema = z.object({
       const num = Number(val);
       return isNaN(num) ? undefined : num;
     }, z.number().min(0, { message: "السعر يجب أن يكون 0 أو أكثر" }).optional()),
-  }).refine(data => data.egp !== undefined || data.lyd !== undefined, {
-    message: "يجب إدخال سعر واحد على الأقل (جنيه مصري أو دينار ليبي)",
+    usd: z.preprocess((val) => {
+      if (val === "" || val === null) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }, z.number().min(0, { message: "السعر يجب أن يكون 0 أو أكثر" }).optional()),
+    wholesale: z.preprocess((val) => {
+      if (val === "" || val === null) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }, z.number().min(0, { message: "سعر الجملة يجب أن يكون 0 أو أكثر" }).optional()),
+    profitMargin: z.preprocess((val) => {
+      if (val === "" || val === null) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }, z.number().min(0, { message: "هامش الربح يجب أن يكون 0 أو أكثر" }).optional()),
+  }).refine(data => data.egp !== undefined || data.lyd !== undefined || data.usd !== undefined || data.wholesale !== undefined, {
+    message: "يجب إدخال سعر واحد على الأقل",
     path: ["egp"]
   }),
   coverImage: z.object({
@@ -58,6 +73,14 @@ export const bookSchema = z.object({
     width: z.number().optional(),
     height: z.number().optional(),
   }).optional(),
+  images: z.array(
+    z.object({
+      secureUrl: z.string().optional(),
+      publicId: z.string().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+    })
+  ).optional(),
   isbn: z.string().optional(),
   edition: z.string().optional(),
   publicationYear: z.preprocess((val) => {

@@ -17,10 +17,16 @@ interface BookCardProps {
     prices?: {
       egp?: number;
       lyd?: number;
+      usd?: number;
+      wholesale?: number;
+      profitMargin?: number;
     };
     coverImage?: {
       secureUrl?: string;
     };
+    images?: Array<{
+      secureUrl?: string;
+    }>;
     availabilityStatus: "available" | "unavailable";
     isFeatured?: boolean;
   };
@@ -28,7 +34,7 @@ interface BookCardProps {
 }
 
 function BookCard({ book, onDetailsClick }: BookCardProps) {
-  const hasCover = !!book.coverImage?.secureUrl;
+  const imageUrl = book.images?.[0]?.secureUrl || book.coverImage?.secureUrl || "/images/hero-book.webp";
   const isAvailable = book.availabilityStatus === "available";
 
   return (
@@ -44,7 +50,7 @@ function BookCard({ book, onDetailsClick }: BookCardProps) {
       {/* Book Cover Image / Mockup Placeholder */}
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-foreground/5 flex items-center justify-center border-b border-border-color">
         <Image
-          src={book.coverImage?.secureUrl || "/images/hero-book.webp"}
+          src={imageUrl}
           alt={book.title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

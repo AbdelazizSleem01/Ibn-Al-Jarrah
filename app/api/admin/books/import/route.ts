@@ -133,6 +133,9 @@ export async function POST(request: Request) {
         // Parse numerical fields safely
         const egpVal = parseSafeNumber(item.prices?.egp ?? item.priceEgp ?? item["السعر بالجنيه"] ?? item["السعر"]);
         const lydVal = parseSafeNumber(item.prices?.lyd ?? item.priceLyd ?? item["السعر بالدينار"]);
+        const usdVal = parseSafeNumber(item.prices?.usd ?? item.priceUsd ?? item["السعر بالدولار"]);
+        const wholesaleVal = parseSafeNumber(item.prices?.wholesale ?? item.priceWholesale ?? item["سعر الجملة"]);
+        const profitMarginVal = parseSafeNumber(item.prices?.profitMargin ?? item.profitMargin ?? item["هامش الربح"]);
         const pubYear = parseSafeNumber(item.publicationYear ?? item["سنة النشر"]);
         const pages = parseSafeNumber(item.pagesCount ?? item["عدد الصفحات"]);
         const volumes = parseSafeNumber(item.volumesCount ?? item["عدد المجلدات"]) || 1;
@@ -155,6 +158,9 @@ export async function POST(request: Request) {
             const prices: any = duplicateBook.prices || {};
             if (egpVal !== undefined) prices.egp = egpVal;
             if (lydVal !== undefined) prices.lyd = lydVal;
+            if (usdVal !== undefined) prices.usd = usdVal;
+            if (wholesaleVal !== undefined) prices.wholesale = wholesaleVal;
+            if (profitMarginVal !== undefined) prices.profitMargin = profitMarginVal;
             duplicateBook.prices = prices;
 
             duplicateBook.edition = item.edition || duplicateBook.edition;
@@ -197,6 +203,9 @@ export async function POST(request: Request) {
         const prices: any = {};
         if (egpVal !== undefined) prices.egp = egpVal;
         if (lydVal !== undefined) prices.lyd = lydVal;
+        if (usdVal !== undefined) prices.usd = usdVal;
+        if (wholesaleVal !== undefined) prices.wholesale = wholesaleVal;
+        if (profitMarginVal !== undefined) prices.profitMargin = profitMarginVal;
 
         await Book.create({
           title,

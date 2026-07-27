@@ -127,17 +127,93 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       book.normalizedTitle = normalizeArabic(bookData.title);
     }
 
-    // Handle Image Upload / replacement
-    if (body.coverImageBase64) {
+    // Handle Images Management (Multiple images & primary cover support)
+    if (body.images !== undefined && Array.isArray(body.images)) {
+      const incomingImages: any[] = body.images;
+
+      // Identify images to delete from Cloudinary
+      const currentImages = Array.isArray(book.images) && book.images.length > 0
+        ? book.images
+        : (book.coverImage?.publicId ? [book.coverImage] : []);
+
+      const incomingPublicIds = new Set(incomingImages.map((img: any) => img.publicId).filter(Boolean));
+
+      for (const img of currentImages) {
+        if (img?.publicId && !incomingPublicIds.has(img.publicId)) {
+          await deleteImage(img.publicId);
+        }
+      }
+
+      // Process images in incoming order
+      const finalImages: any[] = [];
+      for (const item of incomingImages) {
+        if (item.base64) {
+          try {
+            const uploadRes = await uploadImage(item.base64);
+            finalImages.push(uploadRes);
+          } catch (err: any) {
+            console.error("Error uploading image in PATCH:", err);
+          }
+        } else if (item.publicId || item.secureUrl) {
+          finalImages.push({
+            secureUrl: item.secureUrl,
+            publicId: item.publicId,
+            width: item.width,
+            height: item.height,
+          });
+        }
+      }
+
+      book.images = finalImages;
+      book.coverImage = finalImages[0] || undefined;
+      book.markModified("images");
+      book.markModified("coverImage");
+
+    } else if (body.retainedImages !== undefined || body.newImagesBase64 !== undefined) {
+      const retainedImages: any[] = Array.isArray(body.retainedImages) ? body.retainedImages : [];
+      const newImagesBase64: string[] = Array.isArray(body.newImagesBase64) ? body.newImagesBase64 : [];
+
+      const currentImages = Array.isArray(book.images) && book.images.length > 0
+        ? book.images
+        : (book.coverImage?.publicId ? [book.coverImage] : []);
+
+      const retainedPublicIds = new Set(retainedImages.map((img: any) => img.publicId).filter(Boolean));
+
+      for (const img of currentImages) {
+        if (img?.publicId && !retainedPublicIds.has(img.publicId)) {
+          await deleteImage(img.publicId);
+        }
+      }
+
+      let uploadedNewImages: any[] = [];
+      if (newImagesBase64.length > 0) {
+        try {
+          const uploadPromises = newImagesBase64.map((b64) => uploadImage(b64));
+          uploadedNewImages = await Promise.all(uploadPromises);
+        } catch (err: any) {
+          return NextResponse.json(
+            { success: false, message: err.message || "فشل رفع صور الكتاب الجديدة" },
+            { status: 500 }
+          );
+        }
+      }
+
+      const finalImages = [...retainedImages, ...uploadedNewImages];
+      book.images = finalImages;
+      book.coverImage = finalImages[0] || undefined;
+      book.markModified("images");
+      book.markModified("coverImage");
+
+    } else if (body.coverImageBase64) {
       try {
         const uploadRes = await uploadImage(body.coverImageBase64);
-        
-        // Delete old image if exists
         if (book.coverImage?.publicId) {
           await deleteImage(book.coverImage.publicId);
         }
-        
         book.coverImage = uploadRes;
+        book.images = [uploadRes];
+        book.markModified("images");
+        book.markModified("coverImage");
       } catch (err: any) {
         return NextResponse.json(
           { success: false, message: err.message || "فشل رفع غلاف الكتاب الجديد" },
@@ -145,11 +221,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         );
       }
     } else if (body.removeImage === true) {
-      // Admin chose to remove image
-      if (book.coverImage?.publicId) {
+      if (Array.isArray(book.images)) {
+        for (const img of book.images) {
+          if (img?.publicId) await deleteImage(img.publicId);
+        }
+      } else if (book.coverImage?.publicId) {
         await deleteImage(book.coverImage.publicId);
       }
       book.coverImage = undefined;
+      book.images = [];
+      book.markModified("images");
+      book.markModified("coverImage");
     }
 
     // Update fields
@@ -181,6 +263,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       if ((bookData as any)[field] !== undefined) {
         (book as any)[field] = (bookData as any)[field];
       }
+    }
+    // Explicitly assign & mark prices as modified for Mongoose to save nested fields (usd, wholesale, profitMargin)
+    if (bookData.prices) {
+      book.prices = {
+        egp: bookData.prices.egp,
+        lyd: bookData.prices.lyd,
+        usd: bookData.prices.usd,
+        wholesale: bookData.prices.wholesale,
+        profitMargin: bookData.prices.profitMargin,
+      };
+      book.markModified("prices");
     }
 
     book.updatedBy = user.id as any;
@@ -224,9 +317,15 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     }
 
     if (permanent) {
-      // Hard delete: remove image and completely delete document
-      if (book.coverImage?.publicId) {
-        await deleteImage(book.coverImage.publicId);
+      // Hard delete: remove all Cloudinary images and completely delete document
+      const imagesToDelete = [...(book.images || [])];
+      if (book.coverImage?.publicId && !imagesToDelete.some(img => img.publicId === book.coverImage?.publicId)) {
+        imagesToDelete.push(book.coverImage as any);
+      }
+      for (const img of imagesToDelete) {
+        if (img?.publicId) {
+          await deleteImage(img.publicId);
+        }
       }
 
       const catId = book.categoryId;
