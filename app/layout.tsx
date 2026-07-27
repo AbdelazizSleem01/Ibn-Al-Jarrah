@@ -83,11 +83,25 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+import PublicHeader from "@/components/public/PublicHeader";
+import PublicFooter from "@/components/public/PublicFooter";
+import { getCachedSettings } from "@/lib/db/settingsCache";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let settings = null;
+  try {
+    const settingsDoc = await getCachedSettings();
+    if (settingsDoc) {
+      settings = JSON.parse(JSON.stringify(settingsDoc));
+    }
+  } catch (error) {
+    console.error("Layout settings fetch error:", error);
+  }
+
   return (
     <html
       lang="ar"
@@ -140,7 +154,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <PublicHeader settings={settings} />
+        <div className="flex-grow flex flex-col">
+          {children}
+        </div>
+        <PublicFooter settings={settings} />
       </body>
     </html>
   );

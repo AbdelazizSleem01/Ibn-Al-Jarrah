@@ -175,23 +175,13 @@ export default async function Page({ searchParams }: PageProps) {
     console.error("Books page server component error:", error);
   }
 
-  const whatsappNum = settings?.whatsapp || "201272942243";
-
   return (
-    <>
-      <Navbar settings={settings} />
-
-      <main className="flex-grow bg-background">
-        <BooksBrowser
-          initialBooks={books}
-          categories={categories}
-          pagination={pagination}
-        />
-      </main>
-
-      <WhatsappButton phone={whatsappNum} message="السلام عليكم، أريد الاستفسار عن أحد الكتب." />
-      
-      <Footer settings={settings} />
-    </>
+    <main className="flex-grow bg-background">
+      <BooksBrowser
+        initialBooks={books}
+        categories={categories}
+        pagination={pagination}
+      />
+    </main>
   );
 }

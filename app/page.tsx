@@ -62,13 +62,10 @@ export default async function Page() {
   const message = settings?.message || "علمٌ ينير الدرب… وأمةٌ تقرأ تنهض";
 
   return (
-    <>
-      <Navbar settings={settings} />
+    <main className="flex-grow">
 
-      <main className="flex-grow">
-
-        {/* Hero Banner Section */}
-        <Hero settings={settings} />
+      {/* Hero Banner Section */}
+      <Hero settings={settings} />
 
         {/* About Us (من نحن) Section */}
         <section id="about" className="py-16 bg-foreground/[0.01] border-b border-border-color/30 transition-colors duration-300">
@@ -221,10 +218,5 @@ export default async function Page() {
         </section>
 
       </main>
-
-      <WhatsappButton phone={whatsappNum} message="السلام عليكم، أريد الاستفسار عن أحد الكتب." />
-
-      <Footer settings={settings} />
-    </>
   );
 }
