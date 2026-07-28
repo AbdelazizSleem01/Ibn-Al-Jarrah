@@ -15,6 +15,7 @@ interface BooksSectionProps {
 
 export default function BooksSection({ books, title, showAllLink = false }: BooksSectionProps) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [selectedBook, setSelectedBook] = useState<any | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -23,12 +24,18 @@ export default function BooksSection({ books, title, showAllLink = false }: Book
     const bookParam = searchParams.get("book");
     if (bookParam) {
       setActiveSlug(bookParam);
+      if (books && books.length > 0) {
+        setSelectedBook(books.find((b) => b.slug === bookParam || b._id === bookParam) || null);
+      }
     } else {
       setActiveSlug(null);
+      setSelectedBook(null);
     }
-  }, [searchParams]);
+  }, [searchParams, books]);
 
-  const handleDetailsClick = (slug: string) => {
+  const handleDetailsClick = (slug: string, bookObj?: any) => {
+    const foundBook = bookObj || books.find((b) => b.slug === slug || b._id === slug) || null;
+    setSelectedBook(foundBook);
     setActiveSlug(slug);
     // Update URL query parameter without page reload
     const params = new URLSearchParams(window.location.search);
@@ -38,6 +45,7 @@ export default function BooksSection({ books, title, showAllLink = false }: Book
 
   const handleCloseModal = () => {
     setActiveSlug(null);
+    setSelectedBook(null);
     const params = new URLSearchParams(window.location.search);
     params.delete("book");
     router.push(params.toString() ? `?${params.toString()}` : window.location.pathname, { scroll: false });
@@ -75,6 +83,7 @@ export default function BooksSection({ books, title, showAllLink = false }: Book
             <BookCard
               key={book._id}
               book={book}
+              priority={false}
               onDetailsClick={handleDetailsClick}
             />
           ))}
@@ -84,6 +93,7 @@ export default function BooksSection({ books, title, showAllLink = false }: Book
         {activeSlug && (
           <BookModal
             bookSlug={activeSlug}
+            initialBook={selectedBook}
             onClose={handleCloseModal}
           />
         )}

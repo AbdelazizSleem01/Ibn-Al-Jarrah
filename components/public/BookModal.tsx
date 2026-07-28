@@ -180,7 +180,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-[1140px] w-[96vw] max-h-[92vh] bg-card-bg rounded-3xl border border-primary/20 shadow-2xl flex flex-col md:flex-row overflow-hidden font-sans gold-glow transition-all duration-300 my-auto"
+        className="relative w-full max-w-[1140px] w-[96vw] max-h-[90vh] md:max-h-[92vh] bg-card-bg rounded-3xl border border-primary/20 shadow-2xl flex flex-col md:flex-row overflow-y-auto md:overflow-hidden font-sans gold-glow transition-all duration-300 my-auto"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -237,7 +237,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
               const whatsappUrl = `https://wa.me/201272942243?text=${whatsappMessage}`;
 
               return (
-                <div className="w-full md:w-5/12 p-6 md:p-8 bg-gradient-to-b from-primary/5 via-foreground/[0.01] to-foreground/[0.03] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-start shrink-0 overflow-y-auto">
+                <div className="w-full md:w-5/12 p-4 sm:p-6 md:p-8 bg-gradient-to-b from-primary/5 via-foreground/[0.01] to-foreground/[0.03] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-start shrink-0 md:overflow-y-auto">
                   
                   {/* Gallery Title */}
                   <div className="flex items-center justify-between w-full pb-3 mb-4 border-b border-border-color/40">
@@ -253,7 +253,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
                   </div>
 
                   {/* Main Display Image Box */}
-                  <div className="relative w-full max-w-[260px] sm:max-w-[310px] md:max-w-[340px] aspect-[3/4] rounded-2xl overflow-hidden border-2 border-border-color/80 shadow-2xl bg-card-bg flex items-center justify-center gold-glow group transition-all duration-300 hover:border-primary/50">
+                  <div className="relative w-full max-w-[180px] sm:max-w-[260px] md:max-w-[340px] aspect-[3/4] rounded-2xl overflow-hidden border-2 border-border-color/80 shadow-2xl bg-card-bg flex items-center justify-center gold-glow group transition-all duration-300 hover:border-primary/50">
                     
                     <img
                       src={galleryImages[activeImageIndex] || galleryImages[0] || "/images/hero-book.webp"}
@@ -354,7 +354,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
             })()}
 
             {/* Left Column: Metadata Details */}
-            <div className="w-full md:w-7/12 p-6 md:p-8 flex flex-col gap-6 text-right overflow-y-auto max-h-[88vh]">
+            <div className="w-full md:w-7/12 p-4 sm:p-6 md:p-8 flex flex-col gap-6 text-right shrink-0 md:shrink md:overflow-y-auto md:max-h-[88vh]">
               
               {/* Category Badge & Book Title */}
               <div className="flex flex-col gap-2.5 pt-2 md:pt-0">
