@@ -145,15 +145,26 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
     updateQuery({ page: newPage });
   };
 
-  const handleDetailsClick = useCallback((slug: string) => {
+  const [selectedBook, setSelectedBook] = useState<any | null>(() => {
+    const initialBookSlug = searchParams.get("book");
+    if (initialBookSlug && initialBooks.length > 0) {
+      return initialBooks.find((b) => b.slug === initialBookSlug || b._id === initialBookSlug) || null;
+    }
+    return null;
+  });
+
+  const handleDetailsClick = useCallback((slug: string, bookObj?: any) => {
+    const foundBook = bookObj || initialBooks.find((b) => b.slug === slug || b._id === slug) || null;
+    setSelectedBook(foundBook);
     setActiveSlug(slug);
     const params = new URLSearchParams(window.location.search);
     params.set("book", slug);
     window.history.pushState(null, "", `?${params.toString()}`);
-  }, []);
+  }, [initialBooks]);
 
   const handleCloseModal = useCallback(() => {
     setActiveSlug(null);
+    setSelectedBook(null);
     const params = new URLSearchParams(window.location.search);
     params.delete("book");
     const newQuery = params.toString();
@@ -601,6 +612,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
       {activeSlug && (
         <BookModal
           bookSlug={activeSlug}
+          initialBook={selectedBook}
           onClose={handleCloseModal}
         />
       )}

@@ -25,6 +25,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 
 interface BookModalProps {
   bookSlug: string | null;
+  initialBook?: any | null;
   onClose: () => void;
 }
 
@@ -65,36 +66,41 @@ interface BookDetails {
   };
 }
 
-export default function BookModal({ bookSlug, onClose }: BookModalProps) {
+export default function BookModal({ bookSlug, initialBook, onClose }: BookModalProps) {
   const { formatBookPrice } = useCurrency();
-  const [book, setBook] = React.useState<BookDetails | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [book, setBook] = React.useState<BookDetails | null>(initialBook || null);
+  const [loading, setLoading] = React.useState(!initialBook);
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
   const [zoomImageUrl, setZoomImageUrl] = React.useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Fetch book details when slug changes
+  // Synchronize initial book data immediately for 0ms instant modal display
   useEffect(() => {
     if (!bookSlug) return;
 
-    setLoading(true);
+    if (initialBook && (initialBook.slug === bookSlug || initialBook._id === bookSlug)) {
+      setBook(initialBook);
+      setLoading(false);
+    } else if (!book) {
+      setLoading(true);
+    }
+
     setActiveImageIndex(0);
+
+    // Silent background fetch to sync full fields
     fetch(`/api/books/${encodeURIComponent(bookSlug)}`)
       .then((res) => res.json())
       .then((resData) => {
-        if (resData.success) {
+        if (resData.success && resData.data) {
           setBook(resData.data);
-        } else {
-          setBook(null);
         }
         setLoading(false);
       })
       .catch(() => {
-        setBook(null);
         setLoading(false);
       });
-  }, [bookSlug]);
+  }, [bookSlug, initialBook]);
 
   // Handle Close on Click Outside or Escape Key
   useEffect(() => {

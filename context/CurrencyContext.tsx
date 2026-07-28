@@ -52,7 +52,20 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Ignore localStorage errors
     }
 
-    // Auto detect location via API
+    // Check sessionStorage cache first to prevent repeated API calls
+    try {
+      const cachedGeo = sessionStorage.getItem("user_geo_cache");
+      if (cachedGeo) {
+        const parsed = JSON.parse(cachedGeo);
+        if (parsed && parsed.currency) {
+          setCurrencyState(parsed.currency as CurrencyCode);
+          if (parsed.countryCode) setCountryCode(parsed.countryCode);
+          return;
+        }
+      }
+    } catch {}
+
+    // Auto detect location via API once per browser session
     fetch("/api/geo")
       .then((res) => res.json())
       .then((data) => {
@@ -61,6 +74,9 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           if (data.countryCode) {
             setCountryCode(data.countryCode);
           }
+          try {
+            sessionStorage.setItem("user_geo_cache", JSON.stringify(data));
+          } catch {}
         }
       })
       .catch(() => {

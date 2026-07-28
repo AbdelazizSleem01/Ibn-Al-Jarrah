@@ -31,7 +31,7 @@ interface BookCardProps {
     availabilityStatus: "available" | "unavailable";
     isFeatured?: boolean;
   };
-  onDetailsClick: (slug: string) => void;
+  onDetailsClick: (slug: string, bookObj?: any) => void;
   priority?: boolean;
 }
 
@@ -66,7 +66,7 @@ function BookCard({ book, onDetailsClick, priority = false }: BookCardProps) {
         {/* Quick View Hover Overlay */}
         <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
           <button
-            onClick={() => onDetailsClick(book.slug)}
+            onClick={() => onDetailsClick(book.slug, book)}
             className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-lg font-bold text-sm shadow-lg transform translate-y-4 group-hover:translate-y-0 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
           >
             <FaInfoCircle />
