@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
@@ -187,6 +188,8 @@ export async function POST(request: Request) {
     // Increment category booksCount
     category.booksCount = (category.booksCount || 0) + 1;
     await category.save();
+
+    revalidatePath("/books");
 
     return NextResponse.json({
       success: true,
