@@ -103,13 +103,8 @@ function BookCard({ book, onDetailsClick, priority = false }: BookCardProps) {
         <div className="mt-auto pt-3 border-t border-border-color/50 flex items-center justify-between">
           <div className="flex flex-col text-xs font-black">
             {priceInfo.amount !== null ? (
-              <span className="text-primary font-black text-sm md:text-base flex items-center gap-1">
+              <span className="text-primary font-black text-sm md:text-base">
                 {priceInfo.formatted}
-                {priceInfo.isFallback && (
-                  <span className="text-[9px] font-normal text-foreground/50 bg-foreground/5 px-1 py-0.5 rounded">
-                    (بديل)
-                  </span>
-                )}
               </span>
             ) : (
               <span className="text-foreground/50 text-[10px] font-normal">سعر غير محدد</span>

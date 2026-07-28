@@ -116,43 +116,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         };
       }
 
-      // Rule 1: International Visitors / USD Target
-      if (targetCurrency === "USD") {
-        if (prices.usd !== undefined && prices.usd !== null && prices.usd > 0) {
-          return {
-            amount: prices.usd,
-            currency: "USD",
-            symbol: "$",
-            label: "دولار أمريكي",
-            formatted: `$${prices.usd}`,
-            isFallback: false,
-          };
-        }
-        // Fallback rule for USD: If no USD price available, fall back to EGP (Egyptian Pound)
-        if (prices.egp !== undefined && prices.egp !== null && prices.egp > 0) {
-          return {
-            amount: prices.egp,
-            currency: "EGP",
-            symbol: "ج.م",
-            label: "جنيه مصري",
-            formatted: `${prices.egp} ج.م`,
-            isFallback: true,
-          };
-        }
-        // Fallback 2 to LYD if available
-        if (prices.lyd !== undefined && prices.lyd !== null && prices.lyd > 0) {
-          return {
-            amount: prices.lyd,
-            currency: "LYD",
-            symbol: "د.ل",
-            label: "دينار ليبي",
-            formatted: `${prices.lyd} د.ل`,
-            isFallback: true,
-          };
-        }
-      }
-
-      // Rule 2: Egypt Visitors / EGP Target
+      // Rule 1: Egypt Visitors / EGP Target -> Show EGP ONLY
       if (targetCurrency === "EGP") {
         if (prices.egp !== undefined && prices.egp !== null && prices.egp > 0) {
           return {
@@ -164,29 +128,17 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             isFallback: false,
           };
         }
-        if (prices.usd !== undefined && prices.usd !== null && prices.usd > 0) {
-          return {
-            amount: prices.usd,
-            currency: "USD",
-            symbol: "$",
-            label: "دولار أمريكي",
-            formatted: `$${prices.usd}`,
-            isFallback: true,
-          };
-        }
-        if (prices.lyd !== undefined && prices.lyd !== null && prices.lyd > 0) {
-          return {
-            amount: prices.lyd,
-            currency: "LYD",
-            symbol: "د.ل",
-            label: "دينار ليبي",
-            formatted: `${prices.lyd} د.ل`,
-            isFallback: true,
-          };
-        }
+        return {
+          amount: null,
+          currency: "EGP",
+          symbol: "ج.م",
+          label: "جنيه مصري",
+          formatted: "سعر غير محدد",
+          isFallback: false,
+        };
       }
 
-      // Rule 3: Libya Visitors / LYD Target
+      // Rule 2: Libya Visitors / LYD Target -> Show LYD ONLY
       if (targetCurrency === "LYD") {
         if (prices.lyd !== undefined && prices.lyd !== null && prices.lyd > 0) {
           return {
@@ -198,6 +150,29 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             isFallback: false,
           };
         }
+        return {
+          amount: null,
+          currency: "LYD",
+          symbol: "د.ل",
+          label: "دينار ليبي",
+          formatted: "سعر غير محدد",
+          isFallback: false,
+        };
+      }
+
+      // Rule 3: Any Other Country / USD Target -> Show USD, if no USD price available fall back to EGP ONLY
+      if (targetCurrency === "USD") {
+        if (prices.usd !== undefined && prices.usd !== null && prices.usd > 0) {
+          return {
+            amount: prices.usd,
+            currency: "USD",
+            symbol: "$",
+            label: "دولار أمريكي",
+            formatted: `$${prices.usd}`,
+            isFallback: false,
+          };
+        }
+        // Fallback: If no USD price available, fall back to EGP (Egyptian Pound)
         if (prices.egp !== undefined && prices.egp !== null && prices.egp > 0) {
           return {
             amount: prices.egp,
@@ -208,16 +183,14 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             isFallback: true,
           };
         }
-        if (prices.usd !== undefined && prices.usd !== null && prices.usd > 0) {
-          return {
-            amount: prices.usd,
-            currency: "USD",
-            symbol: "$",
-            label: "دولار أمريكي",
-            formatted: `$${prices.usd}`,
-            isFallback: true,
-          };
-        }
+        return {
+          amount: null,
+          currency: "USD",
+          symbol: "$",
+          label: "دولار أمريكي",
+          formatted: "سعر غير محدد",
+          isFallback: false,
+        };
       }
 
       return {

@@ -374,41 +374,16 @@ export default function BookModal({ bookSlug, onClose }: BookModalProps) {
                 const primaryPrice = formatBookPrice(book.prices);
                 return (
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-foreground/[0.02] border border-primary/20 p-5 rounded-2xl shadow-sm gold-glow">
-                    <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm font-bold">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold">
                       {primaryPrice.amount !== null ? (
                         <div className="flex items-center gap-2">
                           <span className="text-foreground/70">السعر:</span>
                           <span className="text-primary font-black text-xl md:text-2xl">
                             {primaryPrice.formatted}
                           </span>
-                          {primaryPrice.isFallback && (
-                            <span className="text-[10px] font-semibold text-foreground/50 bg-foreground/5 px-2 py-0.5 rounded-full border border-border-color/40">
-                              (السعر المتاح)
-                            </span>
-                          )}
                         </div>
                       ) : (
                         <span className="text-foreground/50 text-xs">سعر غير محدد</span>
-                      )}
-
-                      {/* Display secondary prices if available */}
-                      {book.prices?.egp !== undefined && primaryPrice.currency !== "EGP" && (
-                        <div className="flex items-center gap-1 text-xs border-r border-border-color/60 pr-4">
-                          <span className="text-foreground/70">المصري:</span>
-                          <span className="text-foreground/90 font-extrabold">{book.prices.egp} ج.م</span>
-                        </div>
-                      )}
-                      {book.prices?.lyd !== undefined && primaryPrice.currency !== "LYD" && (
-                        <div className="flex items-center gap-1 text-xs border-r border-border-color/60 pr-4">
-                          <span className="text-foreground/70">الليبي:</span>
-                          <span className="text-amber-600 font-extrabold">{book.prices.lyd} د.ل</span>
-                        </div>
-                      )}
-                      {book.prices?.usd !== undefined && primaryPrice.currency !== "USD" && (
-                        <div className="flex items-center gap-1 text-xs border-r border-border-color/60 pr-4">
-                          <span className="text-foreground/70">الدولار:</span>
-                          <span className="text-emerald-600 font-extrabold">${book.prices.usd}</span>
-                        </div>
                       )}
                     </div>
 
