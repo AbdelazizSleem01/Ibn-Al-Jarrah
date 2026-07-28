@@ -2,17 +2,12 @@ import React, { Suspense } from "react";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
-import SiteSettings from "@/models/SiteSettings";
 import { getCachedSettings } from "@/lib/db/settingsCache";
 import { getCachedCategories } from "@/lib/db/categoryCache";
-import Navbar from "@/components/public/Navbar";
 import Hero from "@/components/public/Hero";
 import BooksSection from "@/components/public/BooksSection";
 import HomeCategories from "@/components/public/HomeCategories";
-import WhatsappButton from "@/components/public/WhatsappButton";
-import Footer from "@/components/public/Footer";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import Link from "next/link";
 import { FaPhoneAlt, FaFacebook, FaWhatsapp, FaInfoCircle, FaMapMarkerAlt, FaEnvelope } from "react-icons/fa";
 
 import type { Metadata } from "next";

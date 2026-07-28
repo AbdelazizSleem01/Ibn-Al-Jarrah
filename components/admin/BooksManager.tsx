@@ -946,14 +946,6 @@ export default function BooksManager() {
             className="hidden"
           />
 
-          <button
-            onClick={() => pdfInputRef.current?.click()}
-            className="flex items-center justify-center gap-1.5 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex-1 sm:flex-none order-2 sm:order-none shadow-sm"
-            title="استخراج دقيق لتفاصيل الكتاب وغلافه من ملف PDF"
-          >
-            <FaFilePdf className="text-sm" />
-            استخراج من PDF
-          </button>
 
           <button
             onClick={openCreateModal}
