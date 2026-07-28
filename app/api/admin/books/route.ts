@@ -54,10 +54,11 @@ export async function GET(request: Request) {
       query.availabilityStatus = availability;
     }
 
-    // Execute queries in parallel
+    // Execute queries in parallel with selected lightweight fields for table list
     const [totalResults, books] = await Promise.all([
       Book.countDocuments(query),
       Book.find(query)
+        .select("-description -internalNotes")
         .populate("categoryId", "name slug")
         .sort({ createdAt: -1 })
         .skip(skip)

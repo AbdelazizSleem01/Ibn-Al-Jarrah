@@ -44,6 +44,7 @@ export async function GET() {
       ]),
       Category.countDocuments(),
       Book.find({ isDeleted: false })
+        .select("title author categoryId prices availabilityStatus coverImage createdAt")
         .populate("categoryId", "name slug")
         .sort({ createdAt: -1 })
         .limit(5)
