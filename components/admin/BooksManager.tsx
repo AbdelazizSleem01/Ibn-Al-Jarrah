@@ -21,6 +21,7 @@ import {
   FaStar,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
+import { compressImage } from "@/lib/utils/imageCompressor";
 
 interface Category {
   _id: string;
@@ -371,35 +372,33 @@ export default function BooksManager() {
     }
   };
 
-  // Handle Multiple Images upload and conversion to base64
-  const handleMultipleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Multiple Images upload, 5MB limit validation, and automatic canvas compression
+  const handleMultipleImagesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
     for (const file of files) {
-      if (file.size > 3 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         Swal.fire({
           icon: "error",
           title: "حجم الصورة كبير جداً",
-          text: `الصورة ${file.name} تتجاوز 3 ميجابايت`,
+          text: `الصورة ${file.name} تتجاوز 5 ميجابايت`,
           confirmButtonText: "موافق",
           confirmButtonColor: "#d4af37",
         });
         continue;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          const b64 = reader.result as string;
-          const newItem: ModalImageItem = {
-            id: Math.random().toString(36).substring(2, 9),
-            url: b64,
-            base64: b64,
-          };
-          setModalImages((prev) => [...prev, newItem]);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedB64 = await compressImage(file, 1600, 1600, 0.82);
+        const newItem: ModalImageItem = {
+          id: Math.random().toString(36).substring(2, 9),
+          url: compressedB64,
+          base64: compressedB64,
+        };
+        setModalImages((prev) => [...prev, newItem]);
+      } catch (err) {
+        console.error("Image compression error:", err);
+      }
     }
     if (e.target) e.target.value = "";
   };

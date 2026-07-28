@@ -1,5 +1,6 @@
 "use client";
 
+import { compressImage } from "@/lib/utils/imageCompressor";
 import React, { useState, useEffect } from "react";
 import {
   FaUserCog, FaBuilding, FaGlobe, FaSave, FaTimes, FaCamera,
@@ -119,26 +120,27 @@ export default function SettingsManager() {
   };
 
   // Logo file upload handler
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         Swal.fire({
           icon: "error",
           title: "الملف كبير جداً",
-          text: "الحد الأقصى لحجم الشعار هو 1 ميجابايت",
+          text: "الحد الأقصى لحجم الشعار هو 5 ميجابايت",
           confirmButtonText: "موافق",
           confirmButtonColor: "#d4af37",
         });
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-        setLogoBase64(reader.result as string);
+      try {
+        const compressedB64 = await compressImage(file, 800, 800, 0.85);
+        setLogoPreview(compressedB64);
+        setLogoBase64(compressedB64);
         setRemoveLogoFlag(false);
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error("Logo compression error:", err);
+      }
     }
   };
 
