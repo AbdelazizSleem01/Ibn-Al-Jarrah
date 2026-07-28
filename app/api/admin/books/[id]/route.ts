@@ -138,31 +138,36 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
       const incomingPublicIds = new Set(incomingImages.map((img: any) => img.publicId).filter(Boolean));
 
-      for (const img of currentImages) {
-        if (img?.publicId && !incomingPublicIds.has(img.publicId)) {
-          await deleteImage(img.publicId);
-        }
-      }
+      // Delete removed images in parallel
+      const deletePromises = currentImages
+        .filter((img): img is typeof img & { publicId: string } => Boolean(img?.publicId && !incomingPublicIds.has(img.publicId)))
+        .map((img) => deleteImage(img.publicId));
+      await Promise.all(deletePromises);
 
-      // Process images in incoming order
-      const finalImages: any[] = [];
-      for (const item of incomingImages) {
-        if (item.base64) {
-          try {
-            const uploadRes = await uploadImage(item.base64);
-            finalImages.push(uploadRes);
-          } catch (err: any) {
-            console.error("Error uploading image in PATCH:", err);
+      // Process new and existing images in parallel
+      const rawFinalImages = await Promise.all(
+        incomingImages.map(async (item: any) => {
+          if (item.base64) {
+            try {
+              return await uploadImage(item.base64);
+            } catch (err: any) {
+              console.error("Error uploading image in PATCH:", err);
+              return null;
+            }
           }
-        } else if (item.publicId || item.secureUrl) {
-          finalImages.push({
-            secureUrl: item.secureUrl,
-            publicId: item.publicId,
-            width: item.width,
-            height: item.height,
-          });
-        }
-      }
+          if (item.publicId || item.secureUrl) {
+            return {
+              secureUrl: item.secureUrl,
+              publicId: item.publicId,
+              width: item.width,
+              height: item.height,
+            };
+          }
+          return null;
+        })
+      );
+
+      const finalImages = rawFinalImages.filter((item): item is NonNullable<typeof item> => item !== null);
 
       book.images = finalImages;
       book.coverImage = finalImages[0] || undefined;

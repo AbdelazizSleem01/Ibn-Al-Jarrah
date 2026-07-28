@@ -389,7 +389,7 @@ export default function BooksManager() {
         continue;
       }
       try {
-        const result = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, targetSizeKB: 250 });
+        const result = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, targetSizeKB: 160 });
         const compressedB64 = result.compressedImage;
         const newItem: ModalImageItem = {
           id: Math.random().toString(36).substring(2, 9),
@@ -621,11 +621,17 @@ export default function BooksManager() {
         wholesale: formData.priceWholesale !== "" && formData.priceWholesale !== null && !isNaN(parseFloat(formData.priceWholesale)) ? parseFloat(formData.priceWholesale) : undefined,
         profitMargin: formData.profitMargin !== "" && formData.profitMargin !== null && !isNaN(parseFloat(formData.profitMargin)) ? parseFloat(formData.profitMargin) : undefined,
       },
-      images: modalImages.map((img) => ({
-        secureUrl: img.secureUrl,
-        publicId: img.publicId,
-        base64: img.base64,
-      })),
+      images: modalImages.map((img) => {
+        if (img.secureUrl && img.publicId) {
+          return {
+            secureUrl: img.secureUrl,
+            publicId: img.publicId,
+          };
+        }
+        return {
+          base64: img.base64,
+        };
+      }),
     };
 
     const url = editingBookId ? `/api/admin/books/${editingBookId}` : "/api/admin/books";

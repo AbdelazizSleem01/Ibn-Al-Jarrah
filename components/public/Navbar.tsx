@@ -13,10 +13,7 @@ import {
   FaBookOpen,
   FaEnvelope,
 } from "react-icons/fa";
-
 import { toggleThemeWithNoFlash } from "@/lib/utils/theme";
-
-import CurrencySelector from "@/components/public/CurrencySelector";
 
 interface NavbarProps {
   settings?: {
@@ -112,8 +109,6 @@ export default function Navbar({ settings }: NavbarProps) {
 
         {/* Action Buttons: Currency Selector, Dark Mode & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
-          {/* Currency Selector */}
-          <CurrencySelector />
 
           {/* Instant CSS-Driven Theme Toggle */}
           <button
