@@ -126,7 +126,8 @@ export default async function RootLayout({
             `,
           }}
         />
-        {/* Explicit Favicon Links for Google Search Crawler */}
+        {/* Explicit Favicon Links for Google Search Crawler & Browsers */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon-96x96.png" sizes="96x96" type="image/png" />
         <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
