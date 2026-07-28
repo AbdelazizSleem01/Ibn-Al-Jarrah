@@ -80,7 +80,7 @@ export default function BookModal({ bookSlug, onClose }: BookModalProps) {
 
     setLoading(true);
     setActiveImageIndex(0);
-    fetch(`/api/books/${bookSlug}`)
+    fetch(`/api/books/${encodeURIComponent(bookSlug)}`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.success) {

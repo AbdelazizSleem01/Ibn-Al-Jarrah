@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
+import Category from "@/models/Category";
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -8,13 +9,24 @@ interface RouteParams {
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { slug } = await params;
+    const { slug: rawSlug } = await params;
     await dbConnect();
 
-    // Query by slug or fall back to ID if slug matches MongoDB ObjectId regex
-    const query = slug.match(/^[0-9a-fA-F]{24}$/)
-      ? { _id: slug, isDeleted: false }
-      : { slug, isDeleted: false };
+    // Referencing Category model ensures Mongoose registers the schema before populate
+    void Category;
+
+    let decodedSlug = rawSlug;
+    try {
+      decodedSlug = decodeURIComponent(rawSlug);
+    } catch {
+      // Fallback if decode fails
+    }
+
+    // Query by decoded slug, raw URL-encoded slug, or ObjectId
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(rawSlug) || /^[0-9a-fA-F]{24}$/.test(decodedSlug);
+    const query = isObjectId
+      ? { _id: rawSlug.match(/^[0-9a-fA-F]{24}$/) ? rawSlug : decodedSlug, isDeleted: false }
+      : { $or: [{ slug: decodedSlug }, { slug: rawSlug }], isDeleted: false };
 
     const book = await Book.findOne(query)
       .populate("categoryId", "name slug icon")
@@ -32,10 +44,10 @@ export async function GET(request: Request, { params }: RouteParams) {
       message: "تم جلب تفاصيل الكتاب بنجاح",
       data: book,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Book Detail GET Error:", error);
     return NextResponse.json(
-      { success: false, message: "حدث خطأ أثناء جلب تفاصيل الكتاب" },
+      { success: false, message: error?.message || "حدث خطأ أثناء جلب تفاصيل الكتاب" },
       { status: 500 }
     );
   }
