@@ -80,13 +80,13 @@ export async function GET(request: Request) {
       ];
     }
 
-    // 8. Price filters (EGP or LYD)
-    const currency = searchParams.get("currency") || "egp";
+    // 8. Price filters (EGP, LYD, or USD)
+    const currency = (searchParams.get("currency") || "egp").toLowerCase();
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
 
     if (minPrice || maxPrice) {
-      const priceField = currency === "lyd" ? "prices.lyd" : "prices.egp";
+      const priceField = currency === "usd" ? "prices.usd" : currency === "lyd" ? "prices.lyd" : "prices.egp";
       query[priceField] = {};
       if (minPrice) {
         query[priceField].$gte = parseFloat(minPrice);
@@ -111,10 +111,10 @@ export async function GET(request: Request) {
         sortQuery = { title: -1 };
         break;
       case "price-asc":
-        sortQuery = currency === "lyd" ? { "prices.lyd": 1 } : { "prices.egp": 1 };
+        sortQuery = currency === "usd" ? { "prices.usd": 1 } : currency === "lyd" ? { "prices.lyd": 1 } : { "prices.egp": 1 };
         break;
       case "price-desc":
-        sortQuery = currency === "lyd" ? { "prices.lyd": -1 } : { "prices.egp": -1 };
+        sortQuery = currency === "usd" ? { "prices.usd": -1 } : currency === "lyd" ? { "prices.lyd": -1 } : { "prices.egp": -1 };
         break;
       case "newest":
       default:

@@ -166,9 +166,9 @@ export default async function Page({ searchParams }: PageProps) {
     }
 
     // Price filters
-    const currency = params.currency || "egp";
+    const currency = (params.currency || "egp").toLowerCase();
     if (params.minPrice || params.maxPrice) {
-      const priceField = currency === "lyd" ? "prices.lyd" : "prices.egp";
+      const priceField = currency === "usd" ? "prices.usd" : currency === "lyd" ? "prices.lyd" : "prices.egp";
       query[priceField] = {};
       if (params.minPrice) {
         query[priceField].$gte = parseFloat(params.minPrice);
@@ -193,10 +193,10 @@ export default async function Page({ searchParams }: PageProps) {
         sortQuery = { title: -1 };
         break;
       case "price-asc":
-        sortQuery = currency === "lyd" ? { "prices.lyd": 1 } : { "prices.egp": 1 };
+        sortQuery = currency === "usd" ? { "prices.usd": 1 } : currency === "lyd" ? { "prices.lyd": 1 } : { "prices.egp": 1 };
         break;
       case "price-desc":
-        sortQuery = currency === "lyd" ? { "prices.lyd": -1 } : { "prices.egp": -1 };
+        sortQuery = currency === "usd" ? { "prices.usd": -1 } : currency === "lyd" ? { "prices.lyd": -1 } : { "prices.egp": -1 };
         break;
       case "newest":
       default:

@@ -86,6 +86,7 @@ export async function generateMetadata(): Promise<Metadata> {
 import PublicHeader from "@/components/public/PublicHeader";
 import PublicFooter from "@/components/public/PublicFooter";
 import { getCachedSettings } from "@/lib/db/settingsCache";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 
 export default async function RootLayout({
   children,
@@ -155,11 +156,13 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <PublicHeader settings={settings} />
-        <div className="flex-grow flex flex-col">
-          {children}
-        </div>
-        <PublicFooter settings={settings} />
+        <CurrencyProvider>
+          <PublicHeader settings={settings} />
+          <div className="flex-grow flex flex-col">
+            {children}
+          </div>
+          <PublicFooter settings={settings} />
+        </CurrencyProvider>
       </body>
     </html>
   );

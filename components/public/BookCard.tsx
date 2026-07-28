@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import Image from "next/image";
 import { FaBookOpen, FaUser, FaTag, FaInfoCircle } from "react-icons/fa";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface BookCardProps {
   book: {
@@ -35,6 +36,8 @@ interface BookCardProps {
 }
 
 function BookCard({ book, onDetailsClick, priority = false }: BookCardProps) {
+  const { formatBookPrice } = useCurrency();
+  const priceInfo = formatBookPrice(book.prices);
   const imageUrl = book.images?.[0]?.secureUrl || book.coverImage?.secureUrl || "/images/hero-book.webp";
   const isAvailable = book.availabilityStatus === "available";
 
@@ -99,17 +102,16 @@ function BookCard({ book, onDetailsClick, priority = false }: BookCardProps) {
         {/* Price & Availability Section */}
         <div className="mt-auto pt-3 border-t border-border-color/50 flex items-center justify-between">
           <div className="flex flex-col text-xs font-black">
-            {book.prices?.egp !== undefined && (
-              <span className="text-foreground">
-                {book.prices.egp} <span className="text-[10px] font-normal text-foreground/60">جنيه مصري</span>
+            {priceInfo.amount !== null ? (
+              <span className="text-primary font-black text-sm md:text-base flex items-center gap-1">
+                {priceInfo.formatted}
+                {priceInfo.isFallback && (
+                  <span className="text-[9px] font-normal text-foreground/50 bg-foreground/5 px-1 py-0.5 rounded">
+                    (بديل)
+                  </span>
+                )}
               </span>
-            )}
-            {book.prices?.lyd !== undefined && (
-              <span className="text-foreground mt-0.5">
-                {book.prices.lyd} <span className="text-[10px] font-normal text-foreground/60">دينار ليبي</span>
-              </span>
-            )}
-            {book.prices?.egp === undefined && book.prices?.lyd === undefined && (
+            ) : (
               <span className="text-foreground/50 text-[10px] font-normal">سعر غير محدد</span>
             )}
           </div>

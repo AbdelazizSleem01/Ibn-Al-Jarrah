@@ -389,7 +389,8 @@ export default function BooksManager() {
         continue;
       }
       try {
-        const compressedB64 = await compressImage(file, 1600, 1600, 0.82);
+        const result = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, targetSizeKB: 250 });
+        const compressedB64 = result.compressedImage;
         const newItem: ModalImageItem = {
           id: Math.random().toString(36).substring(2, 9),
           url: compressedB64,
@@ -1381,9 +1382,9 @@ export default function BooksManager() {
 
       {/* Add / Edit Book Modal Form */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-6 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-6 overflow-hidden">
           <div
-            className="relative w-full max-w-[1240px] w-[96vw] max-h-[92vh] bg-card-bg border border-primary/20 rounded-2xl shadow-2xl flex flex-col text-right transition-colors duration-300 overflow-hidden gold-glow font-sans my-auto"
+            className="relative w-full max-w-[1240px] w-[96vw] max-h-[90vh] md:max-h-[92vh] bg-card-bg border border-primary/20 rounded-2xl shadow-2xl flex flex-col text-right transition-colors duration-300 overflow-y-auto md:overflow-hidden gold-glow font-sans my-auto"
             role="dialog"
             aria-modal="true"
           >
@@ -1391,17 +1392,17 @@ export default function BooksManager() {
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="absolute top-4 left-4 z-30 w-9 h-9 rounded-full bg-foreground/10 hover:bg-red-500 hover:text-white text-foreground flex items-center justify-center cursor-pointer border border-border-color/40 transition-all duration-200 shadow-md"
+              className="absolute top-3 left-3 md:top-4 md:left-4 z-30 w-8 h-8 md:w-9 md:h-9 rounded-full bg-foreground/10 hover:bg-red-500 hover:text-white text-foreground flex items-center justify-center cursor-pointer border border-border-color/40 transition-all duration-200 shadow-md"
               title="إغلاق"
             >
-              <FaTimes className="w-4 h-4" />
+              <FaTimes className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </button>
 
             {/* Form layout */}
-            <form onSubmit={handleFormSubmit} className="w-full flex flex-col md:flex-row items-stretch overflow-hidden max-h-[92vh]">
+            <form onSubmit={handleFormSubmit} className="w-full flex flex-col md:flex-row items-stretch overflow-y-auto md:overflow-hidden max-h-none md:max-h-[92vh]">
 
               {/* Left Column: Gallery & Images Management */}
-              <div className="w-full md:w-1/3 p-5 md:p-8 bg-foreground/[0.02] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-start shrink-0 overflow-y-auto">
+              <div className="w-full md:w-1/3 p-4 sm:p-5 md:p-8 bg-foreground/[0.02] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-start shrink-0 md:overflow-y-auto max-h-none md:max-h-[88vh]">
                 <div className="flex flex-col items-center gap-4 w-full">
                   
                   {/* Gallery Title Header */}
@@ -1545,7 +1546,7 @@ export default function BooksManager() {
               </div>
 
               {/* Right Column: Metadata inputs */}
-              <div className="w-full md:w-2/3 p-6 md:p-8 flex flex-col gap-6 text-right overflow-y-auto max-h-[88vh]">
+              <div className="w-full md:w-2/3 p-4 sm:p-6 md:p-8 flex flex-col gap-5 md:gap-6 text-right md:overflow-y-auto max-h-none md:max-h-[88vh]">
                 
                 {/* Modal Title Header */}
                 <div className="border-b border-border-color/40 pb-3">

@@ -21,6 +21,7 @@ const BookModal = dynamic(() => import("./BookModal"), {
   ),
 });
 import { FaThLarge, FaList, FaFilter, FaTimes, FaUndo, FaSearch, FaChevronDown, FaChevronLeft, FaChevronRight, FaInfoCircle } from "react-icons/fa";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface Category {
   _id: string;
@@ -40,6 +41,7 @@ interface BooksBrowserProps {
 }
 
 export default function BooksBrowser({ initialBooks, categories, pagination }: BooksBrowserProps) {
+  const { formatBookPrice } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -524,7 +526,7 @@ export default function BooksBrowser({ initialBooks, categories, pagination }: B
                       </span>
                     </td>
                     <td className="p-3.5 font-bold text-primary">
-                      {book.prices?.egp !== undefined ? `${book.prices.egp} ج.م` : "—"}
+                      {formatBookPrice(book.prices).formatted}
                     </td>
                     <td className="p-3.5 text-center">
                       <span

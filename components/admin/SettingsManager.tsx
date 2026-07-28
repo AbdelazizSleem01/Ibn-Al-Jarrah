@@ -134,7 +134,8 @@ export default function SettingsManager() {
         return;
       }
       try {
-        const compressedB64 = await compressImage(file, 800, 800, 0.85);
+        const result = await compressImage(file, { maxWidth: 800, maxHeight: 800, targetSizeKB: 250 });
+        const compressedB64 = result.compressedImage;
         setLogoPreview(compressedB64);
         setLogoBase64(compressedB64);
         setRemoveLogoFlag(false);
