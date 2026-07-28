@@ -10,6 +10,8 @@ import WhatsappButton from "@/components/public/WhatsappButton";
 import Footer from "@/components/public/Footer";
 import { normalizeArabic } from "@/lib/utils/normalize";
 
+import type { Metadata } from "next";
+
 export const revalidate = 0;
 
 interface PageProps {
@@ -28,6 +30,57 @@ interface PageProps {
     sort?: string;
     currency?: string;
   }>;
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  let title = "مكتبة الكتب الإسلامية والشرعية | دار ابن الجراح";
+  let description = "تصفح مكتبة دار ابن الجراح الكبرى واكتشف أحدث المطبوعات والكتب الشرعية والإسلامية بالفقه والعقيدة والتفسير والحديث بأفضل الأسعار.";
+
+  try {
+    if (params.category) {
+      await dbConnect();
+      const cat = await Category.findOne({
+        $or: [{ slug: params.category }, { name: params.category }],
+      }).lean();
+      if (cat) {
+        title = `كتب ${cat.name} | دار ابن الجراح للنشر والتوزيع`;
+        if (cat.description) description = cat.description;
+      }
+    } else if (params.search) {
+      title = `نتائج البحث عن "${params.search}" | دار ابن الجراح`;
+      description = `عرض نتائج البحث عن "${params.search}" في كتب ومطبوعات دار ابن الجراح.`;
+    }
+  } catch (e) {}
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: "https://al-jarrah.vercel.app/books",
+    },
+    openGraph: {
+      title,
+      description,
+      url: "https://al-jarrah.vercel.app/books",
+      siteName: "دار ابن الجراح",
+      type: "website",
+      images: [
+        {
+          url: "https://al-jarrah.vercel.app/images/logo.webp",
+          width: 640,
+          height: 640,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["https://al-jarrah.vercel.app/images/logo.webp"],
+    },
+  };
 }
 
 export default async function Page({ searchParams }: PageProps) {

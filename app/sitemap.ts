@@ -4,7 +4,7 @@ import Book from "@/models/Book";
 import Category from "@/models/Category";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ibn-aljarrah.com";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://al-jarrah.vercel.app";
 
   // Base routes
   const routes = [

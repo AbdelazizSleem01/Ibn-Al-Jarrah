@@ -14,8 +14,52 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import Link from "next/link";
 import { FaPhoneAlt, FaFacebook, FaWhatsapp, FaInfoCircle, FaMapMarkerAlt, FaEnvelope } from "react-icons/fa";
 
+import type { Metadata } from "next";
+
 // Enable ISR caching (revalidate every 60 seconds) to drastically improve home page load speed on Vercel
 export const revalidate = 60;
+
+export async function generateMetadata(): Promise<Metadata> {
+  let settings: any = null;
+  try {
+    const settingsDoc = await getCachedSettings();
+    if (settingsDoc) settings = JSON.parse(JSON.stringify(settingsDoc));
+  } catch (e) {}
+
+  const title = settings?.seo?.title || settings?.title || "مؤسسة دار ابن الجراح العالمية للنشر والتوزيع | ملاذ طالب العلم الشرعي";
+  const description = settings?.seo?.description || settings?.description || "مؤسسة متخصصة في نشر وتوزيع الكتب الإسلامية والشرعية، وتيسير العلم الشرعي لطالب العلم بأفضل الأسعار وأعلى جودة.";
+  const keywords = settings?.seo?.keywords || "دار ابن الجراح, كتب شرعية, نشر وتوزيع, طالب العلم, فقه, عقيدة, تفسير, كتب إسلامية";
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: "https://al-jarrah.vercel.app",
+    },
+    openGraph: {
+      title,
+      description,
+      url: "https://al-jarrah.vercel.app",
+      siteName: "دار ابن الجراح",
+      type: "website",
+      images: [
+        {
+          url: "https://al-jarrah.vercel.app/images/logo.webp",
+          width: 640,
+          height: 640,
+          alt: "شعار دار ابن الجراح",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["https://al-jarrah.vercel.app/images/logo.webp"],
+    },
+  };
+}
 
 export default async function Page() {
   let settings: any = null;

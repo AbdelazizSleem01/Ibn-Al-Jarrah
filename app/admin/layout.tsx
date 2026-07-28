@@ -1,9 +1,13 @@
-import React from "react";
+import type { Metadata } from "next";
 import AdminLayout from "@/components/admin/AdminLayout";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "لوحة تحكم المشرف - دار ابن الجراح",
-  robots: "noindex, nofollow",
+  description: "لوحة تحكم إدارة المطبوعات والكتب والتصنيفات لمؤسسة دار ابن الجراح للنشر والتوزيع.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
