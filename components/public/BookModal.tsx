@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FaTimes,
   FaShareAlt,
@@ -68,12 +69,32 @@ interface BookDetails {
 
 export default function BookModal({ bookSlug, initialBook, onClose }: BookModalProps) {
   const { formatBookPrice } = useCurrency();
+  const [mounted, setMounted] = useState(false);
   const [book, setBook] = React.useState<BookDetails | null>(initialBook || null);
   const [loading, setLoading] = React.useState(!initialBook);
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
   const [zoomImageUrl, setZoomImageUrl] = React.useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock both documentElement & body overflow when modal is active
+  useEffect(() => {
+    if (bookSlug) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    } else {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+  }, [bookSlug]);
 
   // Synchronize initial book data immediately for 0ms instant modal display
   useEffect(() => {
@@ -171,16 +192,16 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
     }
   };
 
-  if (!bookSlug) return null;
+  if (!bookSlug || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-6 overflow-hidden"
+      className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-6 overflow-hidden no-scrollbar animate-fadeIn"
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-[1140px] w-[96vw] max-h-[90vh] md:max-h-[92vh] bg-card-bg rounded-3xl border border-primary/20 shadow-2xl flex flex-col md:flex-row overflow-y-auto md:overflow-hidden font-sans gold-glow transition-all duration-300 my-auto"
+        className="relative w-full max-w-[1140px] w-[96vw] max-h-[90vh] md:max-h-[92vh] bg-card-bg rounded-3xl border border-primary/20 shadow-2xl flex flex-col md:flex-row overflow-y-auto md:overflow-hidden font-sans gold-glow transition-all duration-300 my-auto no-scrollbar"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -527,6 +548,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
           />
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

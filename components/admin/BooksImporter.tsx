@@ -451,9 +451,11 @@ export default function BooksImporter() {
     <div className="flex flex-col gap-6 text-right transition-colors duration-300">
 
       {/* Header */}
-      <div>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <FaFileImport className="w-5 h-5" />
+        </div>
         <h1 className="text-xl md:text-2xl font-black text-foreground">استيراد القوائم والكتب</h1>
-        <p className="text-xs text-foreground/60 mt-1">رفع قوائم كتب بصيغة إكسيل أو نصوص JSON لمطابقتها واستيرادها</p>
       </div>
 
       {/* Mode selectors */}

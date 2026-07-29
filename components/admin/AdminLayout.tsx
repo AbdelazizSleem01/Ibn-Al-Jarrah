@@ -17,6 +17,10 @@ import {
   FaUser,
   FaTimes,
   FaHome,
+  FaShoppingBag,
+  FaBell,
+  FaClock,
+  FaTruck,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
@@ -24,7 +28,9 @@ import { toggleThemeWithNoFlash } from "@/lib/utils/theme";
 
 const menuItems = [
   { label: "نظرة عامة", href: "/admin", icon: FaChartPie },
+  { label: "إدارة الطلبات", href: "/admin/orders", icon: FaShoppingBag },
   { label: "إدارة الكتب", href: "/admin/books", icon: FaBook },
+  { label: "أسعار الشحن", href: "/admin/shipping", icon: FaTruck },
   { label: "إدارة التصنيفات", href: "/admin/categories", icon: FaTags },
   { label: "استيراد الكتب", href: "/admin/import", icon: FaFileImport },
   { label: "الإعدادات", href: "/admin/settings", icon: FaCog },
@@ -43,7 +49,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [adminName, setAdminName] = useState("المسؤول");
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  // Load preferences on mount
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [latestOrders, setLatestOrders] = useState<any[]>([]);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+
+  const fetchNotifications = () => {
+    fetch("/api/admin/orders/notifications")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setUnreadCount(data.unreadCount || 0);
+          setPendingCount(data.pendingCount || 0);
+          setLatestOrders(data.latestPendingOrders || []);
+        }
+      })
+      .catch(() => {});
+  };
+
+  // Load preferences and notifications on mount & poll
   useEffect(() => {
     // 1. Sidebar collapse state
     const savedCollapse = localStorage.getItem("admin_sidebar_collapsed");
@@ -69,11 +93,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         if (data.success) {
           setAdminName(data.data.name);
         } else {
-          // Redirect to login if unauthorized
           router.push("/login");
         }
       })
       .catch(() => router.push("/login"));
+
+    // 4. Initial notifications fetch & interval polling
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 20000);
+    return () => clearInterval(interval);
   }, [router]);
 
   const toggleSidebar = () => {
@@ -265,8 +293,70 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
 
-          {/* Left Side: Actions (Theme & Home) */}
+          {/* Left Side: Actions (Notifications, Theme & Home) */}
           <div className="flex items-center gap-3 border-r border-border-color pr-3">
+            
+            {/* Orders Notification Bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                type="button"
+                className="relative p-2 rounded-full border-2 border-border-color bg-card-bg hover:border-primary/60 cursor-pointer transition-colors duration-150 group shadow-sm text-foreground/80 hover:text-primary"
+                title="تنبيهات الطلبات الجديدة"
+              >
+                <FaBell className="w-4 h-4" />
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow animate-pulse">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Dropdown Menu */}
+              {showNotifDropdown && (
+                <div className="absolute left-0 mt-2 w-72 md:w-80 bg-card-bg border border-primary/35 rounded-2xl shadow-2xl p-3 z-10 text-right animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-primary/35 pb-2 px-1">
+                    <span className="font-extrabold text-xs text-foreground">الطلبات الجديدة (قيد الانتظار)</span>
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                      {pendingCount} طلب
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-primary/60  max-h-60 overflow-y-auto my-2">
+                    {latestOrders.length === 0 ? (
+                      <p className="text-center text-xs text-foreground/50 py-4">لا توجد طلبات جديدة حالياً</p>
+                    ) : (
+                      latestOrders.map((ord) => (
+                        <Link
+                          key={ord._id}
+                          href="/admin/orders"
+                          onClick={() => setShowNotifDropdown(false)}
+                          className="block p-2 hover:bg-muted/50 transition text-xs space-y-1"
+                        >
+                          <div className="flex justify-between font-bold">
+                            <span className="text-primary font-mono">{ord.orderNumber}</span>
+                            <span className="text-foreground/90">{ord.grandTotal} {ord.currency}</span>
+                          </div>
+                          <div className="flex justify-between text-[11px] text-foreground/70">
+                            <span className="truncate max-w-[140px]">{ord.customerName}</span>
+                            <span className="text-amber-500 font-bold">قيد الانتظار</span>
+                          </div>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+
+                  <Link
+                    href="/admin/orders"
+                    onClick={() => setShowNotifDropdown(false)}
+                    className="block w-full py-2 bg-primary text-primary-foreground font-bold text-xs text-center rounded-xl hover:opacity-90 transition shadow-sm"
+                  >
+                    عرض كفافة الطلبات ➔
+                  </Link>
+                </div>
+              )}
+            </div>
+
             {/* Instant CSS-Driven Theme Switcher */}
             <button
               onClick={toggleTheme}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaTimes } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaTimes, FaTags } from "react-icons/fa";
 import IconRenderer from "@/components/ui/IconRenderer";
 import Swal from "sweetalert2";
 
@@ -365,9 +365,11 @@ export default function CategoriesManager() {
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <FaTags className="w-5 h-5" />
+          </div>
           <h1 className="text-xl md:text-2xl font-black text-foreground">إدارة تصنيفات الكتب</h1>
-          <p className="text-xs text-foreground/60 mt-1">عرض وتعديل وحذف أقسام وتصنيفات المطبوعات</p>
         </div>
 
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto mt-4 sm:mt-0 self-start">
@@ -462,7 +464,8 @@ export default function CategoriesManager() {
       {/* Categories Table */}
       <div className="bg-card-bg border border-border-color rounded-2xl shadow-sm overflow-hidden transition-colors duration-300">
         {loading ? (
-          <div className="p-12 text-center text-xs text-foreground/50 skeleton">
+          <div className="p-16 text-center text-foreground/60 text-xs flex flex-col items-center gap-3">
+            <span className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             جاري جلب التصنيفات...
           </div>
         ) : filteredCategories.length === 0 ? (

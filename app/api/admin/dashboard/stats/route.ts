@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
+import Order from "@/models/Order";
 import { getAuthUser } from "@/lib/auth/token";
 
 export async function GET() {
@@ -16,7 +17,7 @@ export async function GET() {
 
     await dbConnect();
 
-    // 1. Calculate all Book counts in a single aggregation pipeline facet, parallelized with Category count and recent books find.
+    // 1. Book & Category Stats
     const [statsData, totalCategories, recentBooks] = await Promise.all([
       Book.aggregate([
         {
@@ -59,10 +60,84 @@ export async function GET() {
     const noImageBooks = facet.noImageBooks?.[0]?.count || 0;
     const softDeletedBooks = facet.softDeletedBooks?.[0]?.count || 0;
 
+    // 2. Order & Sales Analytics
+    const [ordersSummary, recentOrders, topSellingItems] = await Promise.all([
+      Order.aggregate([
+        {
+          $facet: {
+            totalOrders: [{ $count: "count" }],
+            pendingOrders: [{ $match: { orderStatus: "pending" } }, { $count: "count" }],
+            deliveredOrders: [{ $match: { orderStatus: "delivered" } }, { $count: "count" }],
+            cancelledOrders: [{ $match: { orderStatus: "cancelled" } }, { $count: "count" }],
+            
+            // Financial calculations ONLY for confirmed/approved/delivered orders (excluding pending and cancelled)
+            financials: [
+              { $match: { orderStatus: { $nin: ["pending", "cancelled"] } } },
+              {
+                $group: {
+                  _id: "$currency",
+                  totalRevenue: { $sum: "$grandTotal" },
+                  totalProfit: { $sum: "$totalProfit" },
+                  itemsSold: {
+                    $sum: {
+                      $reduce: {
+                        input: "$items",
+                        initialValue: 0,
+                        in: { $add: ["$$value", "$$this.quantity"] },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ]),
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+      Order.aggregate([
+        { $match: { orderStatus: { $nin: ["pending", "cancelled"] } } },
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: "$items.bookId",
+            title: { $first: "$items.title" },
+            slug: { $first: "$items.slug" },
+            coverImage: { $first: "$items.coverImage" },
+            totalQuantity: { $sum: "$items.quantity" },
+            totalSalesValue: { $sum: "$items.totalPrice" },
+          },
+        },
+        { $sort: { totalQuantity: -1 } },
+        { $limit: 5 },
+      ]),
+    ]);
+
+    const orderFacet = ordersSummary[0] || {};
+    const totalOrders = orderFacet.totalOrders?.[0]?.count || 0;
+    const pendingOrders = orderFacet.pendingOrders?.[0]?.count || 0;
+    const deliveredOrders = orderFacet.deliveredOrders?.[0]?.count || 0;
+    const cancelledOrders = orderFacet.cancelledOrders?.[0]?.count || 0;
+
+    let totalBooksSold = 0;
+    let totalRevenueEGP = 0;
+    let totalProfitEGP = 0;
+
+    (orderFacet.financials || []).forEach((fin: any) => {
+      totalBooksSold += fin.itemsSold || 0;
+      if (fin._id === "EGP" || !fin._id) {
+        totalRevenueEGP += fin.totalRevenue || 0;
+        totalProfitEGP += fin.totalProfit || 0;
+      }
+    });
+
     return NextResponse.json({
       success: true,
-      message: "تم جلب إحصائيات لوحة التحكم بنجاح",
+      message: "تم جلب إحصائيات لوحة التحكم والمبيعات بنجاح",
       data: {
+        // Book stats
         totalBooks,
         totalCategories,
         availableBooks,
@@ -71,6 +146,17 @@ export async function GET() {
         noImageBooks,
         softDeletedBooks,
         recentBooks,
+
+        // Sales & Order analytics
+        totalOrders,
+        pendingOrders,
+        deliveredOrders,
+        cancelledOrders,
+        totalBooksSold,
+        totalRevenueEGP,
+        totalProfitEGP,
+        recentOrders,
+        topSellingItems,
       },
     });
   } catch (error) {

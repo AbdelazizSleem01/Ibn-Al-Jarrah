@@ -261,9 +261,9 @@ export default function SettingsManager() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6 text-right">
-        <div className="h-8 w-48 skeleton rounded" />
-        <div className="h-96 skeleton rounded-xl" />
+      <div className="p-16 text-center text-foreground/60 text-xs flex flex-col items-center gap-3">
+        <span className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        جاري جلب الإعدادات...
       </div>
     );
   }
@@ -272,13 +272,11 @@ export default function SettingsManager() {
     <div className="flex flex-col gap-6 text-right transition-colors duration-300">
 
       {/* Header */}
-      {/* Header */}
       <div className="flex items-center gap-3">
-        <FaCog className="text-3xl md:text-4xl text-primary animate-spin-slow" />
-        <div>
-          <h1 className="text-xl md:text-2xl font-black text-foreground">إعدادات الموقع والحساب</h1>
-          <p className="text-xs text-foreground/60 mt-1">تحديث إعدادات الهوية البصرية، بيانات الاتصال، والأمان</p>
+        <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <FaCog className="w-5 h-5" />
         </div>
+        <h1 className="text-xl md:text-2xl font-black text-foreground">إعدادات الموقع والحساب</h1>
       </div>
 
       {/* Tabs */}
