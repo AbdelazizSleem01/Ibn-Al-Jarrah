@@ -253,14 +253,14 @@ export default function AnalyticsPage() {
     return Math.max(100, ...timelineData.map((d) => d.revenue));
   }, [timelineData]);
 
-  // SVG Chart Geometry - Clear 25px gap after Y-axis text column before first point starts
+  // SVG Chart Geometry - Dedicated Y-axis text column with Y-axis vertical divider line
   const svgWidth = 1000;
   const svgHeight = 280;
-  const paddingX = 90; // Y-axis text is placed at 65px (end), so grid/curve starts at 90px with a 25px clear gap
-  const paddingR = 25; // Last point ends at 975px
+  const paddingX = 110; // Dedicated Y-axis column (0-95px), vertical line at 110px
+  const paddingR = 30; // Ends last point at 970px
   const paddingTop = 35;
   const paddingBottom = 45;
-  const plotWidth = svgWidth - paddingX - paddingR; // 1000 - 90 - 25 = 885
+  const plotWidth = svgWidth - paddingX - paddingR; // 1000 - 110 - 30 = 860
   const plotHeight = svgHeight - paddingTop - paddingBottom;
   const y0 = svgHeight - paddingBottom;
 
@@ -476,7 +476,18 @@ export default function AnalyticsPage() {
                 </linearGradient>
               </defs>
 
-              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels - Clear Gap Before Lines Start */}
+              {/* Vertical Y-Axis Divider Line separating text from chart curve */}
+              <line
+                x1={paddingX}
+                y1={paddingTop - 10}
+                x2={paddingX}
+                y2={y0 + 5}
+                stroke="currentColor"
+                className="text-border-color/40"
+                strokeWidth="1.5"
+              />
+
+              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels */}
               {ySteps.map((step, idx) => {
                 const gridY = paddingTop + (1 - step) * plotHeight;
                 const valueLabel = Math.round(maxRevenue * step);
@@ -489,11 +500,11 @@ export default function AnalyticsPage() {
                       y2={gridY}
                       stroke="currentColor"
                       strokeDasharray="4 4"
-                      className="text-border-color/50"
+                      className="text-border-color/40"
                       strokeWidth="1"
                     />
                     <text
-                      x={65}
+                      x={paddingX - 15}
                       y={gridY + 4}
                       textAnchor="end"
                       fill="currentColor"
@@ -649,7 +660,7 @@ export default function AnalyticsPage() {
           {/* Order Status Breakdown */}
           <div className="bg-card-bg border border-border-color rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
             <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2 border-b border-border-color/40 pb-3">
-              <FaChartPie className="text-primary" /> توزع حالات الطلبات الواردة
+              <FaChartPie className="text-primary" /> توزر حالات الطلبات الواردة
             </h3>
 
             {loading ? (
