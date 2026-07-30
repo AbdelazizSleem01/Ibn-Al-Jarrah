@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   FaChartLine,
+  FaChartBar,
   FaMoneyBillWave,
   FaShoppingBag,
   FaBoxOpen,
@@ -19,6 +20,7 @@ import {
   FaArrowUp,
   FaCalendarAlt,
   FaWallet,
+  FaEye,
 } from "react-icons/fa";
 
 interface AnalyticsData {
@@ -93,8 +95,10 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState("30d");
+  const [chartMode, setChartMode] = useState<"area" | "bar">("area");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hoveredPoint, setHoveredPoint] = useState<any | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -120,10 +124,89 @@ export default function AnalyticsPage() {
     { key: "all", label: "كافة الأوقات" },
   ];
 
-  // Calculate max revenue for trend chart scaling
-  const maxTrendRevenue = data?.dailyTrend && data.dailyTrend.length > 0
-    ? Math.max(...data.dailyTrend.map((d) => d.revenue), 100)
-    : 100;
+  // Generate full continuous timeline array so line graph never looks empty
+  const timelineData = useMemo(() => {
+    if (!data) return [];
+    const map = new Map<string, { revenue: number; profit: number; ordersCount: number }>();
+    data.dailyTrend.forEach((d) => {
+      map.set(d._id, { revenue: d.revenue, profit: d.profit, ordersCount: d.ordersCount });
+    });
+
+    const numPoints = period === "7d" ? 7 : period === "30d" ? 14 : period === "90d" ? 24 : 30;
+    const result: Array<{ date: string; label: string; revenue: number; profit: number; ordersCount: number }> = [];
+
+    const today = new Date();
+    for (let i = numPoints - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      const label = dateStr.slice(5); // "MM-DD"
+
+      const existing = map.get(dateStr) || { revenue: 0, profit: 0, ordersCount: 0 };
+      result.push({
+        date: dateStr,
+        label,
+        revenue: existing.revenue,
+        profit: existing.profit,
+        ordersCount: existing.ordersCount,
+      });
+    }
+
+    return result;
+  }, [data, period]);
+
+  // Max Revenue scaling
+  const maxRevenue = useMemo(() => {
+    return Math.max(100, ...timelineData.map((d) => d.revenue));
+  }, [timelineData]);
+
+  // SVG Chart Geometry
+  const svgWidth = 1000;
+  const svgHeight = 280;
+  const paddingX = 60;
+  const paddingTop = 30;
+  const paddingBottom = 45;
+  const plotWidth = svgWidth - paddingX * 2;
+  const plotHeight = svgHeight - paddingTop - paddingBottom;
+  const y0 = svgHeight - paddingBottom;
+
+  const svgPoints = useMemo(() => {
+    if (timelineData.length === 0) return [];
+    return timelineData.map((d, i) => {
+      const x = paddingX + (i / Math.max(1, timelineData.length - 1)) * plotWidth;
+      const y = y0 - (d.revenue / maxRevenue) * plotHeight;
+      return { x, y, data: d };
+    });
+  }, [timelineData, maxRevenue, plotWidth, plotHeight, y0]);
+
+  // Smooth Bezier Curve Calculation
+  const { pathD, areaD } = useMemo(() => {
+    if (svgPoints.length === 0) return { pathD: "", areaD: "" };
+    if (svgPoints.length === 1) {
+      const p = svgPoints[0];
+      return {
+        pathD: `M ${paddingX} ${p.y} L ${svgWidth - paddingX} ${p.y}`,
+        areaD: `M ${paddingX} ${p.y} L ${svgWidth - paddingX} ${p.y} L ${svgWidth - paddingX} ${y0} L ${paddingX} ${y0} Z`,
+      };
+    }
+
+    let pD = `M ${svgPoints[0].x} ${svgPoints[0].y}`;
+    for (let i = 0; i < svgPoints.length - 1; i++) {
+      const p0 = svgPoints[i];
+      const p1 = svgPoints[i + 1];
+      const cx = (p0.x + p1.x) / 2;
+      pD += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+
+    const lastP = svgPoints[svgPoints.length - 1];
+    const firstP = svgPoints[0];
+    const aD = `${pD} L ${lastP.x} ${y0} L ${firstP.x} ${y0} Z`;
+
+    return { pathD: pD, areaD: aD };
+  }, [svgPoints, y0]);
+
+  // Y-Axis Grid Steps
+  const ySteps = [1, 0.75, 0.5, 0.25, 0];
 
   return (
     <div className="flex flex-col gap-6 text-right transition-colors duration-300 font-sans pb-12">
@@ -240,67 +323,187 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main Section 1: Interactive Sales & Revenue Trend Chart */}
-      <div className="bg-card-bg border border-border-color rounded-3xl p-5 sm:p-6 shadow-sm space-y-4 transition-colors">
+      <div className="bg-card-bg border border-border-color rounded-3xl p-5 sm:p-6 shadow-sm space-y-4 transition-colors relative overflow-hidden">
         <div className="flex items-center justify-between border-b border-border-color/40 pb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
               <FaChartLine />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm sm:text-base text-foreground">مسار المبيعات والإيرادات اليومية</h3>
-              <p className="text-[11px] text-foreground/50">تطور المبيعات اليومية المحصلة خلال الفترات المحددة</p>
+              <h3 className="font-extrabold text-sm sm:text-base text-foreground">الرسم البياني لمسار المبيعات والإيرادات اليومية</h3>
+              <p className="text-[11px] text-foreground/50">تطور المبيعات اليومية المحصلة والمنحنى المالي خلال الفترة</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-bold">
-            <span className="flex items-center gap-1.5 text-primary">
-              <span className="w-3 h-3 rounded-full bg-primary inline-block" /> الإيرادات اليومية (EGP)
-            </span>
+          <div className="flex items-center gap-3 text-xs font-bold">
+            {/* Chart Mode Toggle */}
+            <div className="flex items-center gap-1 bg-foreground/5 p-1 rounded-xl border border-border-color/30">
+              <button
+                type="button"
+                onClick={() => setChartMode("area")}
+                className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                  chartMode === "area" ? "bg-primary text-white shadow-sm" : "text-foreground/70 hover:text-foreground"
+                }`}
+              >
+                <FaChartLine className="w-3.5 h-3.5" /> منحنى سلس
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartMode("bar")}
+                className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                  chartMode === "bar" ? "bg-primary text-white shadow-sm" : "text-foreground/70 hover:text-foreground"
+                }`}
+              >
+                <FaChartBar className="w-3.5 h-3.5" /> أعمدة بيانية
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* SVG Custom Responsive Bar/Area Chart */}
+        {/* SVG Interactive Area & Line Chart */}
         {loading ? (
-          <div className="h-64 flex items-center justify-center text-xs text-foreground/50">
+          <div className="h-72 flex items-center justify-center text-xs text-foreground/50">
             <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin ml-2" />
-            جاري معالجة الرسم البياني للمبيعات...
-          </div>
-        ) : !data?.dailyTrend || data.dailyTrend.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-xs text-foreground/50 gap-2">
-            <FaCalendarAlt className="w-8 h-8 text-foreground/20" />
-            لا توجد مبيعات مسجلة في هذه الفترة الزمنية.
+            جاري رسم البيانات البيانية...
           </div>
         ) : (
-          <div className="space-y-2">
-            {/* Visual Bar Chart */}
-            <div className="h-56 sm:h-64 flex items-end justify-between gap-1.5 pt-6 pb-2 px-2 overflow-x-auto no-scrollbar">
-              {data.dailyTrend.map((point, idx) => {
-                const heightPercent = Math.max(12, Math.round((point.revenue / maxTrendRevenue) * 100));
-                return (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 min-w-[28px] group relative">
-                    
-                    {/* Hover Tooltip */}
-                    <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none bg-black/90 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-primary/30 z-20 whitespace-nowrap shadow-xl text-center">
-                      <div>{point._id}</div>
-                      <div className="text-primary font-mono">{point.revenue} ج.م ({point.ordersCount} طلب)</div>
-                    </div>
+          <div className="relative w-full overflow-hidden">
+            {chartMode === "area" ? (
+              <div className="relative w-full">
+                <svg
+                  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                  className="w-full h-64 sm:h-72 select-none overflow-visible"
+                >
+                  <defs>
+                    {/* Linear Gradient for Area Fill */}
+                    <linearGradient id="chartGoldGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#d4af37" stopOpacity="0.45" />
+                      <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.1" />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
 
-                    {/* Bar Container */}
-                    <div className="w-full bg-foreground/5 rounded-t-xl overflow-hidden h-full flex items-end">
-                      <div
-                        style={{ height: `${heightPercent}%` }}
-                        className="w-full bg-gradient-to-t from-primary/70 to-primary rounded-t-xl transition-all duration-500 group-hover:brightness-125 group-hover:shadow-lg"
-                      />
-                    </div>
+                  {/* Horizontal Grid Lines & Y-Axis Labels */}
+                  {ySteps.map((step, idx) => {
+                    const gridY = paddingTop + (1 - step) * plotHeight;
+                    const valueLabel = Math.round(maxRevenue * step);
+                    return (
+                      <g key={idx}>
+                        <line
+                          x1={paddingX}
+                          y1={gridY}
+                          x2={svgWidth - paddingX}
+                          y2={gridY}
+                          stroke="currentColor"
+                          strokeDasharray="4 4"
+                          className="text-border-color/40"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={paddingX - 10}
+                          y={gridY + 4}
+                          textAnchor="end"
+                          className="fill-foreground/45 text-[11px] font-mono"
+                        >
+                          {valueLabel} ج.م
+                        </text>
+                      </g>
+                    );
+                  })}
 
-                    {/* X-Axis Date snippet */}
-                    <span className="text-[9px] font-mono text-foreground/50 truncate w-full text-center group-hover:text-primary transition-colors">
-                      {point._id.slice(5)}
-                    </span>
+                  {/* Area Polygon Fill */}
+                  {areaD && (
+                    <path
+                      d={areaD}
+                      fill="url(#chartGoldGradient)"
+                      className="transition-all duration-700"
+                    />
+                  )}
+
+                  {/* Smooth Bezier Line */}
+                  {pathD && (
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke="#d4af37"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="transition-all duration-700 drop-shadow-md"
+                    />
+                  )}
+
+                  {/* Data Points / Circles */}
+                  {svgPoints.map((pt, idx) => {
+                    const isHovered = hoveredPoint?.date === pt.data.date;
+                    const hasRevenue = pt.data.revenue > 0;
+                    return (
+                      <g
+                        key={idx}
+                        className="cursor-pointer group"
+                        onMouseEnter={() => setHoveredPoint(pt.data)}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                      >
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={isHovered ? "7" : hasRevenue ? "5" : "3.5"}
+                          fill={hasRevenue ? "#d4af37" : "currentColor"}
+                          className={`${hasRevenue ? "stroke-card-bg text-primary" : "text-border-color/60"} transition-all duration-200`}
+                          strokeWidth="2"
+                        />
+                        {/* Date Label on X-Axis */}
+                        <text
+                          x={pt.x}
+                          y={svgHeight - 12}
+                          textAnchor="middle"
+                          className={`text-[10px] font-mono transition-colors ${isHovered ? "fill-primary font-bold" : "fill-foreground/50"}`}
+                        >
+                          {pt.data.label}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Floating Interactive Tooltip */}
+                {hoveredPoint && (
+                  <div className="absolute top-2 right-1/2 translate-x-1/2 bg-black/90 text-white text-xs font-bold px-4 py-2 rounded-2xl border border-primary/40 shadow-2xl backdrop-blur-md z-30 animate-fadeIn text-center space-y-0.5">
+                    <div className="text-primary font-mono text-[11px]">{hoveredPoint.date}</div>
+                    <div className="text-sm font-black">{hoveredPoint.revenue} ج.م إيرادات</div>
+                    <div className="text-[11px] text-emerald-400 font-medium">أرباح: +{hoveredPoint.profit} ج.م ({hoveredPoint.ordersCount} طلب)</div>
                   </div>
-                );
-              })}
-            </div>
+                )}
+              </div>
+            ) : (
+              /* Visual Bar Chart View */
+              <div className="h-64 sm:h-72 flex items-end justify-between gap-1.5 pt-8 pb-4 px-4 overflow-x-auto no-scrollbar">
+                {timelineData.map((point, idx) => {
+                  const heightPercent = Math.max(8, Math.round((point.revenue / maxRevenue) * 100));
+                  return (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 min-w-[28px] group relative">
+                      {/* Tooltip */}
+                      <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none bg-black/90 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-primary/30 z-20 whitespace-nowrap shadow-xl text-center">
+                        <div>{point.date}</div>
+                        <div className="text-primary font-mono">{point.revenue} ج.م ({point.ordersCount} طلب)</div>
+                      </div>
+
+                      {/* Bar */}
+                      <div className="w-full bg-foreground/5 rounded-t-xl overflow-hidden h-full flex items-end">
+                        <div
+                          style={{ height: `${heightPercent}%` }}
+                          className="w-full bg-gradient-to-t from-primary/70 to-primary rounded-t-xl transition-all duration-500 group-hover:brightness-125 group-hover:shadow-lg"
+                        />
+                      </div>
+
+                      <span className="text-[9px] font-mono text-foreground/50 truncate w-full text-center group-hover:text-primary transition-colors">
+                        {point.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
