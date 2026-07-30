@@ -19,6 +19,7 @@ import {
   FaFilePdf,
   FaSearchPlus,
   FaStar,
+  FaEye,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { compressImage } from "@/lib/utils/imageCompressor";
@@ -119,6 +120,7 @@ export default function BooksManager() {
 
   // Modal States
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewingBook, setViewingBook] = useState<Book | null>(null);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [modalImages, setModalImages] = useState<ModalImageItem[]>([]);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
@@ -1309,6 +1311,13 @@ export default function BooksManager() {
                         ) : (
                           <>
                             <button
+                              onClick={() => setViewingBook(book)}
+                              className="p-2 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white transition-colors cursor-pointer"
+                              title="معاينة تفاصيل الكتاب الكاملة"
+                            >
+                              <FaEye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
                               onClick={() => openEditModal(book)}
                               className="p-2 rounded bg-primary/10 hover:bg-primary text-primary hover:text-white transition-colors cursor-pointer"
                               title="تعديل الكتاب"
@@ -1921,6 +1930,245 @@ export default function BooksManager() {
             className="max-h-[90vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl border border-white/10 gold-glow select-none"
             onClick={(e) => e.stopPropagation()}
           />
+        </div>
+      )}
+
+      {/* Comprehensive Book Details Modal */}
+      {viewingBook && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm overflow-hidden animate-fadeIn font-sans text-right"
+          onClick={() => setViewingBook(null)}
+        >
+          <div 
+            className="w-full max-w-3xl bg-card-bg border border-border-color/40 rounded-2xl sm:rounded-3xl shadow-2xl text-right text-foreground max-h-[92vh] flex flex-col overflow-hidden my-auto gold-glow"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border-color/30 bg-foreground/[0.02] shrink-0 gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                  <FaBookOpen className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-black text-sm sm:text-base text-foreground truncate" title={viewingBook.title}>
+                    {viewingBook.title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-foreground/60 mt-0.5 flex-wrap">
+                    <span>المؤلف: <strong className="text-foreground">{viewingBook.author || "غير محدد"}</strong></span>
+                    {viewingBook.publisher && <span>• الناشر: <strong className="text-foreground">{viewingBook.publisher}</strong></span>}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setViewingBook(null)}
+                className="w-8 h-8 rounded-full bg-foreground/10 hover:bg-red-500 hover:text-white text-foreground flex items-center justify-center cursor-pointer transition border border-border-color/40 shrink-0"
+                aria-label="إغلاق"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-4 sm:p-6 space-y-5 overflow-y-auto no-scrollbar flex-1 text-xs sm:text-sm">
+              
+              {/* Main Banner / Cover & Quick Summary */}
+              <div className="flex flex-col md:flex-row gap-5 p-4 rounded-2xl bg-foreground/[0.02] border border-border-color/30">
+                {/* Cover Image Box */}
+                <div className="relative group w-32 h-44 sm:w-36 sm:h-48 rounded-xl overflow-hidden border-2 border-primary/30 bg-foreground/5 shadow-md shrink-0 mx-auto md:mx-0">
+                  <img 
+                    src={viewingBook.coverImage?.secureUrl || "/images/hero-book.webp"} 
+                    alt={viewingBook.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {viewingBook.isFeatured && (
+                    <span className="absolute top-2 right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                      <FaStar className="w-2.5 h-2.5" /> مميز
+                    </span>
+                  )}
+                </div>
+
+                {/* Quick Info Column */}
+                <div className="flex-1 space-y-3 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                      {typeof viewingBook.categoryId === "object" && viewingBook.categoryId?.name ? viewingBook.categoryId.name : "عام"}
+                    </span>
+
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                      viewingBook.availabilityStatus === "available" 
+                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" 
+                        : "bg-red-500/10 text-red-500 border border-red-500/20"
+                    }`}>
+                      {viewingBook.availabilityStatus === "available" ? "متوفر للطلب ✓" : "نفد حالياً ✗"}
+                    </span>
+
+                    {viewingBook.isbn && (
+                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-foreground/5 text-foreground/70 border border-border-color/40" dir="ltr">
+                        ISBN: {viewingBook.isbn}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Short Description snippet */}
+                  {viewingBook.shortDescription && (
+                    <p className="text-foreground/80 text-xs sm:text-sm leading-relaxed bg-card-bg/60 p-3 rounded-xl border border-border-color/20">
+                      {viewingBook.shortDescription}
+                    </p>
+                  )}
+
+                  {/* Additional Info Pills */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div className="p-2.5 rounded-xl bg-foreground/[0.03] border border-border-color/20">
+                      <span className="text-foreground/60 block text-[11px]">المحقق / المترجم:</span>
+                      <strong className="text-foreground truncate block mt-0.5">{viewingBook.editorOrTranslator || "—"}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-foreground/[0.03] border border-border-color/20">
+                      <span className="text-foreground/60 block text-[11px]">دار النشر:</span>
+                      <strong className="text-foreground truncate block mt-0.5">{viewingBook.publisher || "—"}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-foreground/[0.03] border border-border-color/20">
+                      <span className="text-foreground/60 block text-[11px]">سنة النشر:</span>
+                      <strong className="text-foreground font-mono truncate block mt-0.5">{viewingBook.publicationYear || "—"}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Breakdown Cards */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-xs text-primary uppercase">أسعار البيع والهامش</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-right">
+                    <span className="text-[11px] text-amber-600 font-bold block">بالجنيه المصري (EGP)</span>
+                    <span className="text-base sm:text-lg font-black text-amber-700 font-mono mt-0.5 block">
+                      {viewingBook.prices?.egp !== undefined ? `${viewingBook.prices.egp} ج.م` : "—"}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-right">
+                    <span className="text-[11px] text-blue-600 font-bold block">بالدينار الليبي (LYD)</span>
+                    <span className="text-base sm:text-lg font-black text-blue-700 font-mono mt-0.5 block">
+                      {viewingBook.prices?.lyd !== undefined ? `${viewingBook.prices.lyd} د.ل` : "—"}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-right">
+                    <span className="text-[11px] text-emerald-600 font-bold block">بالدولار (USD)</span>
+                    <span className="text-base sm:text-lg font-black text-emerald-700 font-mono mt-0.5 block">
+                      {viewingBook.prices?.usd !== undefined ? `$${viewingBook.prices.usd}` : "—"}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-right">
+                    <span className="text-[11px] text-purple-600 font-bold block">سعر الجملة</span>
+                    <span className="text-base sm:text-lg font-black text-purple-700 font-mono mt-0.5 block">
+                      {viewingBook.prices?.wholesale !== undefined ? `${viewingBook.prices.wholesale} ج.م` : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Physical Specs Grid */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-xs text-primary uppercase">المواصفات الفنية للنسخة</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-2xl bg-foreground/[0.02] border border-border-color/20 text-xs">
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">الطبعة:</span>
+                    <strong className="text-foreground mt-0.5 block">{viewingBook.edition || "الأولى"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">عدد الصفحات:</span>
+                    <strong className="text-foreground font-mono mt-0.5 block">{viewingBook.pagesCount || "—"} صفحة</strong>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">عدد المجلدات:</span>
+                    <strong className="text-foreground font-mono mt-0.5 block">{viewingBook.volumesCount || 1} مجلد</strong>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">نوع التجليد / الغلاف:</span>
+                    <strong className="text-foreground mt-0.5 block">{viewingBook.coverType || "ورقي / مجلد"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">قياس الكتاب:</span>
+                    <strong className="text-foreground mt-0.5 block">{viewingBook.size || "—"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">لغة الكتاب:</span>
+                    <strong className="text-foreground mt-0.5 block">{viewingBook.language || "العربية"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">هامش الربح المتوقع:</span>
+                    <strong className="text-emerald-600 font-mono font-bold mt-0.5 block">{viewingBook.prices?.profitMargin || 0}%</strong>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60 block text-[11px]">الرقم التعريفي (Slug):</span>
+                    <strong className="text-foreground font-mono text-[10px] mt-0.5 block truncate" title={viewingBook.slug}>{viewingBook.slug}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Full Description Section */}
+              {viewingBook.description && (
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-xs text-primary uppercase">نبذة وتفاصيل الكتاب الكاملة</h4>
+                  <div className="p-4 rounded-2xl bg-foreground/[0.02] border border-border-color/20 text-foreground/90 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
+                    {viewingBook.description}
+                  </div>
+                </div>
+              )}
+
+              {/* Gallery Images Section */}
+              {viewingBook.images && viewingBook.images.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-bold text-xs text-primary uppercase">معرض الصور الإضافية للكتاب</h4>
+                  <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+                    {viewingBook.images.map((img, idx) => (
+                      img.secureUrl && (
+                        <div key={idx} className="w-20 h-24 rounded-xl overflow-hidden border border-border-color/40 bg-foreground/5 shrink-0 shadow-sm">
+                          <img src={img.secureUrl} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Internal Admin Notes */}
+              {viewingBook.internalNotes && (
+                <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs space-y-1">
+                  <span className="font-bold text-red-500 block">ملاحظات إدارية داخلية (سرية):</span>
+                  <p className="text-foreground/80">{viewingBook.internalNotes}</p>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Action Footer */}
+            <div className="flex items-center justify-between gap-3 p-4 border-t border-border-color/30 bg-foreground/[0.02] shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const b = viewingBook;
+                  setViewingBook(null);
+                  openEditModal(b);
+                }}
+                className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md hover:bg-primary/90 transition cursor-pointer"
+              >
+                <FaEdit className="w-4 h-4" /> تعديل بيانات الكتاب
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewingBook(null)}
+                className="px-4 py-2 bg-foreground/5 hover:bg-foreground/10 text-foreground font-bold text-xs rounded-xl border border-border-color/30 transition cursor-pointer"
+              >
+                إغلاق النافذة
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 
