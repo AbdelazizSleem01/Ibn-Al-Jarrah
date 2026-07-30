@@ -144,7 +144,7 @@ function BookCard({ book, onDetailsClick, priority = false }: BookCardProps) {
                   e.stopPropagation();
                   setShowCheckout(true);
                 }}
-                className="w-full flex-1 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground hover:opacity-90 px-3 py-2 rounded-lg font-bold text-xs shadow transition-all cursor-pointer gold-glow"
+                className="w-full flex-1 flex items-center justify-center gap-1.5 bg-primary text-white hover:opacity-90 px-3 py-2 rounded-lg font-bold text-xs shadow transition-all cursor-pointer gold-glow"
               >
                 <FaBookOpen className="text-xs" />
                 طلب الكتاب

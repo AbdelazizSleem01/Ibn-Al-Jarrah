@@ -253,6 +253,7 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
         title: "يرجى ملء الحقول المطلوبة بشكل صحيح",
         showConfirmButton: false,
         timer: 3000,
+        width: "420px"
         
       });
     }

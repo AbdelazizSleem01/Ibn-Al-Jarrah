@@ -932,13 +932,13 @@ export default function BooksManager() {
             {showDeleted ? "عرض الكتب النشطة" : "سلة المحذوفات"}
           </button>
 
-          <button
+          {/* <button
             onClick={handleExport}
             className="flex items-center justify-center gap-1.5 bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border-color px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex-1 sm:flex-none order-3 sm:order-none"
           >
             <FaFileExport />
             تصدير النتائج
-          </button>
+          </button> */}
 
           <input
             type="file"
