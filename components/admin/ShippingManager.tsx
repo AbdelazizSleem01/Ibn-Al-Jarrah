@@ -203,21 +203,7 @@ export default function ShippingManager() {
 
       {/* Logic Information Card */}
       <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-primary/10 text-primary mt-0.5">
-            <FaInfoCircle className="w-5 h-5" />
-          </div>
-          <div className="space-y-1">
-            <span className="font-bold text-foreground block">معادلة الشحن الذكية في النظام:</span>
-            <p className="text-foreground/70 leading-relaxed">
-              • النسخة العادية من أي كتاب تحسب **1 كجم**.
-              <br />
-              • الكتاب متعدد المجلدات يحسب عدد مجلداته **كجم**.
-              <br />
-              • الشحن الكلي للمحافظة = <span className="font-bold text-primary">سعر الكيلو الأول + ((إجمالي أوزان الكتب والمجلدات - 1) × سعر الكيلو الزائد)</span>.
-            </p>
-          </div>
-        </div>
+       
         <div className="px-4 py-2 bg-card-bg rounded-xl border border-border-color font-bold text-primary shrink-0">
           إجمالي المحافظات: {rates.length}
         </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   FaChartPie,
+  FaChartBar,
   FaBook,
   FaTags,
   FaFileImport,
@@ -28,6 +29,7 @@ import { toggleThemeWithNoFlash } from "@/lib/utils/theme";
 
 const menuItems = [
   { label: "نظرة عامة", href: "/admin", icon: FaChartPie },
+  { label: "التقارير والإحصائيات", href: "/admin/analytics", icon: FaChartBar },
   { label: "إدارة الكتب", href: "/admin/books", icon: FaBook },
   { label: "إدارة التصنيفات", href: "/admin/categories", icon: FaTags },
   { label: "إدارة الطلبات", href: "/admin/orders", icon: FaShoppingBag },
