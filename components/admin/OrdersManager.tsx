@@ -16,6 +16,7 @@ import {
   FaMoneyBillWave,
   FaReceipt,
   FaTimes,
+  FaChevronDown,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -84,6 +85,7 @@ export default function OrdersManager() {
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -336,19 +338,56 @@ export default function OrdersManager() {
                       </td>
 
                       {/* Order Status selector */}
-                      <td className="p-4">
-                        <select
-                          value={order.orderStatus}
-                          onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
-                          className={`text-xs font-bold px-3 py-1.5 rounded-xl outline-none cursor-pointer ${statusInfo.color}`}
-                        >
-                          <option value="pending">قيد الانتظار</option>
-                          <option value="confirmed">تم التأكيد</option>
-                          <option value="processing">قيد التجهيز</option>
-                          <option value="shipped">جاري الشحن</option>
-                          <option value="delivered">تم التسليم</option>
-                          <option value="cancelled">ملغي</option>
-                        </select>
+                      <td className="p-4 relative">
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenDropdownId(openDropdownId === order._id ? null : order._id)}
+                            className={`flex items-center gap-1.5 text-[11px] font-black px-3 py-2 rounded-xl border outline-none cursor-pointer transition-all hover:brightness-95 select-none ${statusInfo.color}`}
+                          >
+                            <statusInfo.icon className="w-3.5 h-3.5 shrink-0" />
+                            <span>{statusInfo.label}</span>
+                            <FaChevronDown className="w-2.5 h-2.5 shrink-0 opacity-60 transition-transform duration-200" style={{ transform: openDropdownId === order._id ? "rotate(180deg)" : "none" }} />
+                          </button>
+
+                          {openDropdownId === order._id && (
+                            <>
+                              {/* Invisible Backdrop to close on click outside */}
+                              <div 
+                                className="fixed inset-0 z-20 cursor-default" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdownId(null);
+                                }}
+                              />
+                              <div className="absolute right-0 top-full mt-1.5 w-36 rounded-2xl bg-card-bg border border-border-color/80 shadow-xl overflow-hidden py-1.5 z-30 animate-fadeIn text-right">
+                                {Object.entries(STATUS_LABELS).map(([statusKey, info]) => {
+                                  const IconComponent = info.icon;
+                                  const isSelected = order.orderStatus === statusKey;
+                                  return (
+                                    <button
+                                      key={statusKey}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleUpdateStatus(order._id, statusKey);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className={`w-full px-3 py-2.5 text-right text-[11px] font-bold flex items-center gap-2 transition-all hover:bg-foreground/[0.03] cursor-pointer ${
+                                        isSelected 
+                                          ? "text-primary bg-primary/5" 
+                                          : "text-foreground/80 hover:text-primary"
+                                      }`}
+                                    >
+                                      <IconComponent className={`w-3.5 h-3.5 ${isSelected ? "text-primary" : "text-foreground/45"}`} />
+                                      <span>{info.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </td>
 
                       {/* Actions */}
