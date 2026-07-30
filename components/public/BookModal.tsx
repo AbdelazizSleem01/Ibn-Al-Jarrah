@@ -255,7 +255,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
               const whatsappMessage = encodeURIComponent(
                 `السلام عليكم، أريد طلب كتاب: "${book.title}"`
               );
-              const whatsappUrl = `https://wa.me/201272942243?text=${whatsappMessage}`;
+              const whatsappUrl = `https://wa.me/201023553474?text=${whatsappMessage}`;
 
               return (
                 <div className="w-full md:w-5/12 p-4 sm:p-6 md:p-8 bg-gradient-to-b from-primary/5 via-foreground/[0.01] to-foreground/[0.03] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-start shrink-0 md:overflow-y-auto">
