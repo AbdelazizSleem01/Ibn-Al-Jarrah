@@ -253,11 +253,11 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
         title: "يرجى ملء الحقول المطلوبة بشكل صحيح",
         showConfirmButton: false,
         timer: 3000,
+        
       });
     }
   };
 
-  // Order Submission Handler
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -750,11 +750,8 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       {/* Customer Name */}
                       <div>
-                        <label className="block text-xs font-bold text-foreground/80 mb-1.5 flex items-center justify-between">
-                          <span>الاسم بالكامل <span className="text-red-500">*</span></span>
-                          {errors.customerName && (
-                            <span className="text-[10px] font-black text-red-500 animate-fadeIn">{errors.customerName}</span>
-                          )}
+                        <label className="block text-xs font-bold text-foreground/80 mb-1.5">
+                          الاسم بالكامل <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <FaUser className={`absolute right-3.5 top-3.5 w-3.5 h-3.5 transition-colors ${errors.customerName ? "text-red-500" : "text-primary/70"}`} />
@@ -780,15 +777,15 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                             }`}
                           />
                         </div>
+                        {errors.customerName && (
+                          <p className="text-[10px] font-black text-red-500 mt-1 mr-1 animate-fadeIn">{errors.customerName}</p>
+                        )}
                       </div>
 
                       {/* Customer Phone */}
                       <div>
-                        <label className="block text-xs font-bold text-foreground/80 mb-1.5 flex items-center justify-between">
-                          <span>رقم الهاتف (واتساب) <span className="text-red-500">*</span></span>
-                          {errors.customerPhone && (
-                            <span className="text-[10px] font-black text-red-500 animate-fadeIn">{errors.customerPhone}</span>
-                          )}
+                        <label className="block text-xs font-bold text-foreground/80 mb-1.5">
+                          رقم الهاتف (واتساب) <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                           <FaPhone className={`absolute right-3.5 top-3.5 w-3.5 h-3.5 transition-colors ${errors.customerPhone ? "text-red-500" : "text-primary/70"}`} />
@@ -815,6 +812,9 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                             dir="ltr"
                           />
                         </div>
+                        {errors.customerPhone && (
+                          <p className="text-[10px] font-black text-red-500 mt-1 mr-1 animate-fadeIn">{errors.customerPhone}</p>
+                        )}
                       </div>
 
                       {/* Customer Alt Phone */}
@@ -947,11 +947,8 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
 
                     {/* Detailed Address */}
                     <div>
-                      <label className="block text-xs font-bold text-foreground/80 mb-1.5 flex items-center justify-between">
-                        <span>العنوان التفصيلي <span className="text-red-500">*</span></span>
-                        {errors.detailedAddress && (
-                          <span className="text-[10px] font-black text-red-500 animate-fadeIn">{errors.detailedAddress}</span>
-                        )}
+                      <label className="block text-xs font-bold text-foreground/80 mb-1.5">
+                        العنوان التفصيلي <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <FaMapMarkerAlt className={`absolute right-3.5 top-3.5 w-3.5 h-3.5 transition-colors ${errors.detailedAddress ? "text-red-500" : "text-primary/70"}`} />
@@ -977,6 +974,9 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                           }`}
                         />
                       </div>
+                      {errors.detailedAddress && (
+                        <p className="text-[10px] font-black text-red-500 mt-1 mr-1 animate-fadeIn">{errors.detailedAddress}</p>
+                      )}
                     </div>
 
                     {/* Order Notes */}
@@ -1026,7 +1026,7 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                     <button
                       type="button"
                       onClick={handleValidateStep2}
-                      className="flex-1 py-3 px-6 rounded-2xl bg-primary hover:bg-primary-hover text-white font-extrabold text-xs transition-all shadow-md gold-glow flex items-center justify-center gap-2 cursor-pointer"
+                      className="flex-1 py-3 px-6  rounded-2xl bg-primary hover:bg-primary-hover text-white font-extrabold text-xs transition-all shadow-md gold-glow flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <span>المتابعة للدفع والتأكيد</span>
                       <FaArrowLeft className="w-3.5 h-3.5" />

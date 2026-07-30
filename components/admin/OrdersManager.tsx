@@ -258,7 +258,7 @@ export default function OrdersManager() {
             <p className="font-bold text-sm">لا توجد طلبات مطابقة للبحث</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-h-[460px]">
             <table className="w-full text-right text-xs">
               <thead className="bg-foreground/[0.02] border-b border-border-color/30 text-foreground/70 font-extrabold">
                 <tr>
@@ -272,7 +272,7 @@ export default function OrdersManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-color/30">
-                {orders.map((order) => {
+                {orders.map((order, idx) => {
                   const statusInfo = STATUS_LABELS[order.orderStatus] || STATUS_LABELS.pending;
 
                   return (
@@ -338,7 +338,7 @@ export default function OrdersManager() {
                       </td>
 
                       {/* Order Status selector */}
-                      <td className="p-4 relative">
+                      <td className={`p-4 relative ${openDropdownId === order._id ? "z-30" : ""}`}>
                         <div className="relative">
                           <button
                             type="button"
@@ -360,31 +360,38 @@ export default function OrdersManager() {
                                   setOpenDropdownId(null);
                                 }}
                               />
-                              <div className="absolute right-0 top-full mt-1.5 w-36 rounded-2xl bg-card-bg border border-border-color/80 shadow-xl overflow-hidden py-1.5 z-30 animate-fadeIn text-right">
-                                {Object.entries(STATUS_LABELS).map(([statusKey, info]) => {
-                                  const IconComponent = info.icon;
-                                  const isSelected = order.orderStatus === statusKey;
-                                  return (
-                                    <button
-                                      key={statusKey}
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleUpdateStatus(order._id, statusKey);
-                                        setOpenDropdownId(null);
-                                      }}
-                                      className={`w-full px-3 py-2.5 text-right text-[11px] font-bold flex items-center gap-2 transition-all hover:bg-foreground/[0.03] cursor-pointer ${
-                                        isSelected 
-                                          ? "text-primary bg-primary/5" 
-                                          : "text-foreground/80 hover:text-primary"
-                                      }`}
-                                    >
-                                      <IconComponent className={`w-3.5 h-3.5 ${isSelected ? "text-primary" : "text-foreground/45"}`} />
-                                      <span>{info.label}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
+                              {(() => {
+                                const openUpwards = idx >= orders.length - 2 && orders.length > 2;
+                                return (
+                                  <div className={`absolute right-0 mt-1.5 w-36 rounded-2xl bg-card-bg border border-border-color/80 shadow-xl overflow-hidden py-1.5 z-30 animate-fadeIn text-right ${
+                                    openUpwards ? "bottom-full mb-1.5 mt-auto" : "top-full mt-1.5"
+                                  }`}>
+                                    {Object.entries(STATUS_LABELS).map(([statusKey, info]) => {
+                                      const IconComponent = info.icon;
+                                      const isSelected = order.orderStatus === statusKey;
+                                      return (
+                                        <button
+                                          key={statusKey}
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUpdateStatus(order._id, statusKey);
+                                            setOpenDropdownId(null);
+                                          }}
+                                          className={`w-full px-3 py-2.5 text-right text-[11px] font-bold flex items-center gap-2 transition-all hover:bg-foreground/[0.03] cursor-pointer ${
+                                            isSelected 
+                                              ? "text-primary bg-primary/5" 
+                                              : "text-foreground/80 hover:text-primary"
+                                          }`}
+                                        >
+                                          <IconComponent className={`w-3.5 h-3.5 ${isSelected ? "text-primary" : "text-foreground/45"}`} />
+                                          <span>{info.label}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </>
                           )}
                         </div>
