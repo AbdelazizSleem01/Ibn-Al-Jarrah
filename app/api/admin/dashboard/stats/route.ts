@@ -5,6 +5,9 @@ import Category from "@/models/Category";
 import Order from "@/models/Order";
 import { getAuthUser } from "@/lib/auth/token";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const user = await getAuthUser();
@@ -17,8 +20,15 @@ export async function GET() {
 
     await dbConnect();
 
-    // 1. Book & Category Stats
-    const [statsData, totalCategories, recentBooks] = await Promise.all([
+    // Execute ALL 6 queries concurrently in parallel with projection for maximum performance
+    const [
+      bookFacetData,
+      totalCategories,
+      recentBooks,
+      ordersFacetData,
+      recentOrders,
+      topSellingItems,
+    ] = await Promise.all([
       Book.aggregate([
         {
           $facet: {
@@ -50,18 +60,6 @@ export async function GET() {
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
-    ]);
-
-    const facet = statsData[0] || {};
-    const totalBooks = facet.totalBooks?.[0]?.count || 0;
-    const availableBooks = facet.availableBooks?.[0]?.count || 0;
-    const unavailableBooks = facet.unavailableBooks?.[0]?.count || 0;
-    const featuredBooks = facet.featuredBooks?.[0]?.count || 0;
-    const noImageBooks = facet.noImageBooks?.[0]?.count || 0;
-    const softDeletedBooks = facet.softDeletedBooks?.[0]?.count || 0;
-
-    // 2. Order & Sales Analytics
-    const [ordersSummary, recentOrders, topSellingItems] = await Promise.all([
       Order.aggregate([
         {
           $facet: {
@@ -69,8 +67,7 @@ export async function GET() {
             pendingOrders: [{ $match: { orderStatus: "pending" } }, { $count: "count" }],
             deliveredOrders: [{ $match: { orderStatus: "delivered" } }, { $count: "count" }],
             cancelledOrders: [{ $match: { orderStatus: "cancelled" } }, { $count: "count" }],
-            
-            // Financial calculations ONLY for confirmed/approved/delivered orders (excluding pending and cancelled)
+
             financials: [
               { $match: { orderStatus: { $nin: ["pending", "cancelled"] } } },
               {
@@ -94,6 +91,7 @@ export async function GET() {
         },
       ]),
       Order.find()
+        .select("orderNumber customerName governorate grandTotal orderStatus paymentStatus currency createdAt")
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
@@ -115,7 +113,15 @@ export async function GET() {
       ]),
     ]);
 
-    const orderFacet = ordersSummary[0] || {};
+    const facet = bookFacetData[0] || {};
+    const totalBooks = facet.totalBooks?.[0]?.count || 0;
+    const availableBooks = facet.availableBooks?.[0]?.count || 0;
+    const unavailableBooks = facet.unavailableBooks?.[0]?.count || 0;
+    const featuredBooks = facet.featuredBooks?.[0]?.count || 0;
+    const noImageBooks = facet.noImageBooks?.[0]?.count || 0;
+    const softDeletedBooks = facet.softDeletedBooks?.[0]?.count || 0;
+
+    const orderFacet = ordersFacetData[0] || {};
     const totalOrders = orderFacet.totalOrders?.[0]?.count || 0;
     const pendingOrders = orderFacet.pendingOrders?.[0]?.count || 0;
     const deliveredOrders = orderFacet.deliveredOrders?.[0]?.count || 0;
@@ -133,32 +139,36 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "تم جلب إحصائيات لوحة التحكم والمبيعات بنجاح",
-      data: {
-        // Book stats
-        totalBooks,
-        totalCategories,
-        availableBooks,
-        unavailableBooks,
-        featuredBooks,
-        noImageBooks,
-        softDeletedBooks,
-        recentBooks,
-
-        // Sales & Order analytics
-        totalOrders,
-        pendingOrders,
-        deliveredOrders,
-        cancelledOrders,
-        totalBooksSold,
-        totalRevenueEGP,
-        totalProfitEGP,
-        recentOrders,
-        topSellingItems,
+    return NextResponse.json(
+      {
+        success: true,
+        message: "تم جلب إحصائيات لوحة التحكم والمبيعات بنجاح",
+        data: {
+          totalBooks,
+          totalCategories,
+          availableBooks,
+          unavailableBooks,
+          featuredBooks,
+          noImageBooks,
+          softDeletedBooks,
+          recentBooks,
+          totalOrders,
+          pendingOrders,
+          deliveredOrders,
+          cancelledOrders,
+          totalBooksSold,
+          totalRevenueEGP,
+          totalProfitEGP,
+          recentOrders,
+          topSellingItems,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Dashboard Stats GET Error:", error);
     return NextResponse.json(
