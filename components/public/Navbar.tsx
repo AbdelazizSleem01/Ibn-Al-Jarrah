@@ -12,6 +12,7 @@ import {
   FaHome,
   FaBookOpen,
   FaEnvelope,
+  FaTruck,
 } from "react-icons/fa";
 import { toggleThemeWithNoFlash } from "@/lib/utils/theme";
 
@@ -53,6 +54,7 @@ export default function Navbar({ settings }: NavbarProps) {
     { label: "الرئيسية", href: "/", icon: <FaHome className="text-[16px]" /> },
     { label: "الكتب", href: "/books", icon: <FaBookOpen className="text-[16px]" /> },
     { label: "تواصل معنا", href: "/#contact", icon: <FaEnvelope className="text-[16px]" /> },
+    { label: "تتبع طلبك", href: "/track", icon: <FaTruck className="text-[16px]" /> },
   ];
 
   const brandName = settings?.title || "مؤسسة دار ابن الجراح ";

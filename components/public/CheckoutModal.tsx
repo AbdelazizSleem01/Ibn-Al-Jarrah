@@ -425,7 +425,7 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                   const cgov = String(createdOrder.governorate || governorate);
                   const caddr = String(createdOrder.detailedAddress || detailedAddress);
                   const total = `${createdOrder.grandTotal || grandTotal} ${currency}`;
-                  const logoUrl = window.location.origin + "/icon-192.png";
+                  const logoUrl = window.location.origin + "/images/logo.webp";
                   const now = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
 
                   const makeRow = (lbl: string, val: string, bg: string) =>
