@@ -253,13 +253,14 @@ export default function AnalyticsPage() {
     return Math.max(100, ...timelineData.map((d) => d.revenue));
   }, [timelineData]);
 
-  // SVG Chart Geometry - Full width responsive calculation
+  // SVG Chart Geometry - Clear 25px gap after Y-axis text column before first point starts
   const svgWidth = 1000;
   const svgHeight = 280;
-  const paddingX = 65;
+  const paddingX = 90; // Y-axis text is placed at 65px (end), so grid/curve starts at 90px with a 25px clear gap
+  const paddingR = 25; // Last point ends at 975px
   const paddingTop = 35;
   const paddingBottom = 45;
-  const plotWidth = svgWidth - paddingX - 15;
+  const plotWidth = svgWidth - paddingX - paddingR; // 1000 - 90 - 25 = 885
   const plotHeight = svgHeight - paddingTop - paddingBottom;
   const y0 = svgHeight - paddingBottom;
 
@@ -278,8 +279,8 @@ export default function AnalyticsPage() {
     if (svgPoints.length === 1) {
       const p = svgPoints[0];
       return {
-        pathD: `M ${paddingX} ${p.y} L ${svgWidth - 15} ${p.y}`,
-        areaD: `M ${paddingX} ${p.y} L ${svgWidth - 15} ${p.y} L ${svgWidth - 15} ${y0} L ${paddingX} ${y0} Z`,
+        pathD: `M ${paddingX} ${p.y} L ${svgWidth - paddingR} ${p.y}`,
+        areaD: `M ${paddingX} ${p.y} L ${svgWidth - paddingR} ${p.y} L ${svgWidth - paddingR} ${y0} L ${paddingX} ${y0} Z`,
       };
     }
 
@@ -296,7 +297,7 @@ export default function AnalyticsPage() {
     const aD = `${pD} L ${lastP.x} ${y0} L ${firstP.x} ${y0} Z`;
 
     return { pathD: pD, areaD: aD };
-  }, [svgPoints, y0]);
+  }, [svgPoints, y0, paddingR]);
 
   // Y-Axis Grid Steps
   const ySteps = [1, 0.75, 0.5, 0.25, 0];
@@ -475,7 +476,7 @@ export default function AnalyticsPage() {
                 </linearGradient>
               </defs>
 
-              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels at Left Edge */}
+              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels - Clear Gap Before Lines Start */}
               {ySteps.map((step, idx) => {
                 const gridY = paddingTop + (1 - step) * plotHeight;
                 const valueLabel = Math.round(maxRevenue * step);
@@ -484,7 +485,7 @@ export default function AnalyticsPage() {
                     <line
                       x1={paddingX}
                       y1={gridY}
-                      x2={svgWidth - 15}
+                      x2={svgWidth - paddingR}
                       y2={gridY}
                       stroke="currentColor"
                       strokeDasharray="4 4"
@@ -492,7 +493,7 @@ export default function AnalyticsPage() {
                       strokeWidth="1"
                     />
                     <text
-                      x={paddingX - 10}
+                      x={65}
                       y={gridY + 4}
                       textAnchor="end"
                       fill="currentColor"
@@ -721,7 +722,7 @@ export default function AnalyticsPage() {
           {loading ? (
             <div className="py-12 text-center text-xs text-foreground/50">جاري التحميل...</div>
           ) : !data?.governorateSales || data.governorateSales.length === 0 ? (
-            <div className="py-12 text-center text-xs text-foreground/50">لا توجد بيانات شحن للمافظات في هذه الفترة</div>
+            <div className="py-12 text-center text-xs text-foreground/50">لا توجد بيانات شحن للمحافظات في هذه الفترة</div>
           ) : (
             <div className="space-y-4 text-xs">
               {data.governorateSales.map((gov, idx) => {
