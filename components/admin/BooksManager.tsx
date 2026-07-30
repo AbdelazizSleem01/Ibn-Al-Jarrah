@@ -16,6 +16,8 @@ import {
   FaTimes,
   FaBookOpen,
   FaChevronDown,
+  FaChevronLeft,
+  FaChevronRight,
   FaFilePdf,
   FaSearchPlus,
   FaStar,
@@ -121,6 +123,7 @@ export default function BooksManager() {
   // Modal States
   const [modalOpen, setModalOpen] = useState(false);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
+  const [viewingGalleryIndex, setViewingGalleryIndex] = useState(0);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [modalImages, setModalImages] = useState<ModalImageItem[]>([]);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
@@ -1311,7 +1314,7 @@ export default function BooksManager() {
                         ) : (
                           <>
                             <button
-                              onClick={() => setViewingBook(book)}
+                              onClick={() => { setViewingBook(book); setViewingGalleryIndex(0); }}
                               className="p-2 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white transition-colors cursor-pointer"
                               title="معاينة تفاصيل الكتاب الكاملة"
                             >
@@ -2119,21 +2122,103 @@ export default function BooksManager() {
                 </div>
               )}
 
-              {/* Gallery Images Section */}
-              {viewingBook.images && viewingBook.images.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-bold text-xs text-primary uppercase">معرض الصور الإضافية للكتاب</h4>
-                  <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-                    {viewingBook.images.map((img, idx) => (
-                      img.secureUrl && (
-                        <div key={idx} className="w-20 h-24 rounded-xl overflow-hidden border border-border-color/40 bg-foreground/5 shrink-0 shadow-sm">
-                          <img src={img.secureUrl} alt="" className="w-full h-full object-cover" />
-                        </div>
-                      )
-                    ))}
+              {/* Single Image Interactive Carousel */}
+              {(() => {
+                const galleryList = [
+                  ...(viewingBook.coverImage?.secureUrl ? [viewingBook.coverImage.secureUrl] : []),
+                  ...(viewingBook.images?.map((img) => img.secureUrl).filter(Boolean) as string[]),
+                ];
+
+                if (galleryList.length === 0) return null;
+
+                const currentIndex = Math.min(viewingGalleryIndex, galleryList.length - 1);
+                const currentImg = galleryList[currentIndex] || galleryList[0];
+
+                const handlePrev = () => {
+                  setViewingGalleryIndex((prev) => (prev > 0 ? prev - 1 : galleryList.length - 1));
+                };
+
+                const handleNext = () => {
+                  setViewingGalleryIndex((prev) => (prev < galleryList.length - 1 ? prev + 1 : 0));
+                };
+
+                return (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs text-primary uppercase">معرض صور الكتاب ({galleryList.length})</h4>
+                      {galleryList.length > 1 && (
+                        <span className="text-[11px] font-bold text-foreground/60 bg-foreground/5 px-2.5 py-0.5 rounded-full border border-border-color/30">
+                          صورة {currentIndex + 1} من {galleryList.length}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="relative group w-full h-64 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-border-color/30 bg-black/40 flex items-center justify-center p-2 shadow-inner">
+                      {/* Main Displayed Image */}
+                      <img
+                        src={currentImg}
+                        alt={`صورة الكتاب ${currentIndex + 1}`}
+                        className="max-h-full max-w-full object-contain rounded-xl shadow-lg transition-all duration-300 cursor-zoom-in"
+                        onClick={() => setZoomImageUrl(currentImg)}
+                      />
+
+                      {/* Zoom Hint Badge */}
+                      <button
+                        type="button"
+                        onClick={() => setZoomImageUrl(currentImg)}
+                        className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-white/20 backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                      >
+                        <FaSearchPlus className="w-3 h-3 text-primary" /> انقر للتكبير
+                      </button>
+
+                      {/* Carousel Arrow Controls (Only if > 1 image) */}
+                      {galleryList.length > 1 && (
+                        <>
+                          {/* Right Arrow Button */}
+                          <button
+                            type="button"
+                            onClick={handlePrev}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-primary text-white border border-white/20 backdrop-blur-md flex items-center justify-center cursor-pointer transition-all shadow-xl hover:scale-110 active:scale-95"
+                            title="الصورة السابقة"
+                          >
+                            <FaChevronRight className="w-4 h-4" />
+                          </button>
+
+                          {/* Left Arrow Button */}
+                          <button
+                            type="button"
+                            onClick={handleNext}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-primary text-white border border-white/20 backdrop-blur-md flex items-center justify-center cursor-pointer transition-all shadow-xl hover:scale-110 active:scale-95"
+                            title="الصورة التالية"
+                          >
+                            <FaChevronLeft className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Mini Thumbnails Selector Strip (Only if > 1 image) */}
+                    {galleryList.length > 1 && (
+                      <div className="flex items-center justify-center gap-2 overflow-x-auto py-1 no-scrollbar">
+                        {galleryList.map((imgUrl, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setViewingGalleryIndex(idx)}
+                            className={`w-12 h-14 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                              idx === currentIndex
+                                ? "border-primary scale-105 shadow-md"
+                                : "border-border-color/40 opacity-50 hover:opacity-100"
+                            }`}
+                          >
+                            <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Internal Admin Notes */}
               {viewingBook.internalNotes && (
