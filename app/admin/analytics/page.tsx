@@ -253,10 +253,10 @@ export default function AnalyticsPage() {
     return Math.max(100, ...timelineData.map((d) => d.revenue));
   }, [timelineData]);
 
-  // SVG Chart Geometry with zero empty margin on left
+  // SVG Chart Geometry - Full width responsive calculation
   const svgWidth = 1000;
   const svgHeight = 280;
-  const paddingX = 35;
+  const paddingX = 65;
   const paddingTop = 35;
   const paddingBottom = 45;
   const plotWidth = svgWidth - paddingX - 15;
@@ -416,7 +416,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main Section 1: Interactive Sales & Revenue Trend Chart */}
-      <div className="bg-card-bg border border-border-color rounded-3xl p-5 sm:p-6 shadow-sm space-y-4 transition-colors relative overflow-hidden">
+      <div className="bg-card-bg w-full border border-border-color rounded-3xl p-5 sm:p-6 shadow-sm space-y-4 transition-colors relative overflow-hidden">
         <div className="flex items-center justify-between border-b border-border-color/40 pb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
@@ -463,7 +463,8 @@ export default function AnalyticsPage() {
           <div className="relative w-full overflow-hidden">
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              className="w-full h-64 sm:h-72 select-none overflow-visible"
+              preserveAspectRatio="none"
+              className="w-full h-64 sm:h-72 select-none block"
             >
               <defs>
                 {/* Linear Gradient for Fill */}
@@ -491,7 +492,7 @@ export default function AnalyticsPage() {
                       strokeWidth="1"
                     />
                     <text
-                      x={paddingX - 6}
+                      x={paddingX - 10}
                       y={gridY + 4}
                       textAnchor="end"
                       fill="currentColor"
@@ -720,7 +721,7 @@ export default function AnalyticsPage() {
           {loading ? (
             <div className="py-12 text-center text-xs text-foreground/50">جاري التحميل...</div>
           ) : !data?.governorateSales || data.governorateSales.length === 0 ? (
-            <div className="py-12 text-center text-xs text-foreground/50">لا توجد بيانات شحن للمحافظات في هذه الفترة</div>
+            <div className="py-12 text-center text-xs text-foreground/50">لا توجد بيانات شحن للمافظات في هذه الفترة</div>
           ) : (
             <div className="space-y-4 text-xs">
               {data.governorateSales.map((gov, idx) => {
