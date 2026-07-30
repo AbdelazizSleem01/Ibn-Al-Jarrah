@@ -1916,7 +1916,7 @@ export default function BooksManager() {
       {/* Fullscreen Image Zoom Lightbox */}
       {zoomImageUrl && (
         <div
-          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+          className="fixed inset-0 z-[999999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn font-sans"
           onClick={() => setZoomImageUrl(null)}
         >
           <button
