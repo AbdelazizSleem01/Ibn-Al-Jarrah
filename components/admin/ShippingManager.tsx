@@ -182,7 +182,7 @@ export default function ShippingManager() {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
@@ -201,16 +201,8 @@ export default function ShippingManager() {
         </button>
       </div>
 
-      {/* Logic Information Card */}
-      <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
-       
-        <div className="px-4 py-2 bg-card-bg rounded-xl border border-border-color font-bold text-primary shrink-0">
-          إجمالي المحافظات: {rates.length}
-        </div>
-      </div>
-
       {/* Search Input Filter */}
-      <div className="relative">
+      <div className="relative flex items-center gap-2">
         <FaSearch className="absolute right-4 top-3.5 text-foreground/40 w-4 h-4" />
         <input
           type="text"
@@ -239,11 +231,10 @@ export default function ShippingManager() {
             return (
               <div
                 key={item._id}
-                className={`p-5 rounded-3xl border transition-all space-y-4 ${
-                  item.isActive
+                className={`p-5 rounded-3xl border transition-all space-y-4 ${item.isActive
                     ? "bg-card-bg border-border-color shadow-sm hover:border-primary/40"
                     : "bg-card-bg/50 border-red-500/20 opacity-60"
-                }`}
+                  }`}
               >
                 {/* Card Title & Status Badge */}
                 <div className="flex items-center justify-between">
@@ -254,11 +245,10 @@ export default function ShippingManager() {
 
                   <button
                     onClick={() => handleToggleActive(item)}
-                    className={`px-3 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
-                      item.isActive
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${item.isActive
                         ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
                         : "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                    }`}
+                      }`}
                   >
                     {item.isActive ? "نشط بالشحن" : "معطل"}
                   </button>
@@ -362,11 +352,10 @@ export default function ShippingManager() {
                 <button
                   key={pg}
                   onClick={() => setCurrentPage(pg)}
-                  className={`w-8 h-8 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                    pg === safePage
+                  className={`w-8 h-8 rounded-lg text-xs font-black transition-all cursor-pointer ${pg === safePage
                       ? "bg-primary text-white shadow-md gold-glow"
                       : "border border-border-color hover:border-primary/40 hover:bg-foreground/5 text-foreground/70"
-                  }`}
+                    }`}
                 >
                   {pg}
                 </button>

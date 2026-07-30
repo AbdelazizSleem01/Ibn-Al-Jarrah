@@ -124,7 +124,6 @@ export default function AnalyticsPage() {
     { key: "all", label: "كافة الأوقات" },
   ];
 
-  // Continuous timeline generation reflecting selected period filter
   const timelineData = useMemo(() => {
     if (!data) return [];
 
@@ -253,25 +252,25 @@ export default function AnalyticsPage() {
     return Math.max(100, ...timelineData.map((d) => d.revenue));
   }, [timelineData]);
 
-  // SVG Chart Geometry - Dedicated Y-axis text column with Y-axis vertical divider line
-  const svgWidth = 1000;
-  const svgHeight = 280;
-  const paddingX = 110; // Dedicated Y-axis column (0-95px), vertical line at 110px
-  const paddingR = 30; // Ends last point at 970px
+  const svgWidth = 1050;
+  const svgHeight = 300;
+  const axisX = 40;
+  const plotStartX = axisX + 55;
+  const plotEndX = svgWidth - 50;
   const paddingTop = 35;
   const paddingBottom = 45;
-  const plotWidth = svgWidth - paddingX - paddingR; // 1000 - 110 - 30 = 860
+  const plotWidth = plotEndX - plotStartX;
   const plotHeight = svgHeight - paddingTop - paddingBottom;
   const y0 = svgHeight - paddingBottom;
 
   const svgPoints = useMemo(() => {
     if (timelineData.length === 0) return [];
     return timelineData.map((d, i) => {
-      const x = paddingX + (i / Math.max(1, timelineData.length - 1)) * plotWidth;
+      const x = plotStartX + (i / Math.max(1, timelineData.length - 1)) * plotWidth;
       const y = y0 - (d.revenue / maxRevenue) * plotHeight;
       return { x, y, data: d };
     });
-  }, [timelineData, maxRevenue, plotWidth, plotHeight, y0]);
+  }, [timelineData, maxRevenue, plotStartX, plotWidth, plotHeight, y0]);
 
   // Smooth Bezier Curve Calculation
   const { pathD, areaD } = useMemo(() => {
@@ -279,8 +278,8 @@ export default function AnalyticsPage() {
     if (svgPoints.length === 1) {
       const p = svgPoints[0];
       return {
-        pathD: `M ${paddingX} ${p.y} L ${svgWidth - paddingR} ${p.y}`,
-        areaD: `M ${paddingX} ${p.y} L ${svgWidth - paddingR} ${p.y} L ${svgWidth - paddingR} ${y0} L ${paddingX} ${y0} Z`,
+        pathD: `M ${plotStartX} ${p.y} L ${plotEndX} ${p.y}`,
+        areaD: `M ${plotStartX} ${p.y} L ${plotEndX} ${p.y} L ${plotEndX} ${y0} L ${plotStartX} ${y0} Z`,
       };
     }
 
@@ -297,14 +296,14 @@ export default function AnalyticsPage() {
     const aD = `${pD} L ${lastP.x} ${y0} L ${firstP.x} ${y0} Z`;
 
     return { pathD: pD, areaD: aD };
-  }, [svgPoints, y0, paddingR]);
+  }, [svgPoints, y0, plotStartX, plotEndX]);
 
   // Y-Axis Grid Steps
   const ySteps = [1, 0.75, 0.5, 0.25, 0];
 
   return (
     <div className="flex flex-col gap-6 text-right transition-colors duration-300 font-sans pb-12">
-      
+
       {/* Top Header & Period Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -325,11 +324,10 @@ export default function AnalyticsPage() {
             <button
               key={p.key}
               onClick={() => setPeriod(p.key)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                period === p.key
-                  ? "bg-primary text-white shadow-md gold-glow"
-                  : "text-foreground/75 hover:bg-foreground/5 hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${period === p.key
+                ? "bg-primary text-white shadow-md gold-glow"
+                : "text-foreground/75 hover:bg-foreground/5 hover:text-foreground"
+                }`}
             >
               {p.label}
             </button>
@@ -339,7 +337,7 @@ export default function AnalyticsPage() {
 
       {/* KPI Cards Hero Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         {/* Total Revenue Card */}
         <div className="bg-card-bg border border-border-color rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-sm hover:border-primary/40 transition-all duration-300 gold-glow">
           <div className="flex items-center justify-between">
@@ -435,18 +433,16 @@ export default function AnalyticsPage() {
               <button
                 type="button"
                 onClick={() => setChartMode("area")}
-                className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                  chartMode === "area" ? "bg-primary text-white shadow-sm" : "text-foreground/70 hover:text-foreground"
-                }`}
+                className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${chartMode === "area" ? "bg-primary text-white shadow-sm" : "text-foreground/70 hover:text-foreground"
+                  }`}
               >
                 <FaChartLine className="w-3.5 h-3.5" /> منحنى سلس
               </button>
               <button
                 type="button"
                 onClick={() => setChartMode("bar")}
-                className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                  chartMode === "bar" ? "bg-primary text-white shadow-sm" : "text-foreground/70 hover:text-foreground"
-                }`}
+                className={`px-3 py-1 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${chartMode === "bar" ? "bg-primary text-white shadow-sm" : "text-foreground/70 hover:text-foreground"
+                  }`}
               >
                 <FaChartBar className="w-3.5 h-3.5" /> أعمدة بيانية
               </button>
@@ -465,7 +461,7 @@ export default function AnalyticsPage() {
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
               preserveAspectRatio="none"
-              className="w-full h-64 sm:h-72 select-none block"
+              className="w-full h-64 sm:h-84 select-none block"
             >
               <defs>
                 {/* Linear Gradient for Fill */}
@@ -476,35 +472,35 @@ export default function AnalyticsPage() {
                 </linearGradient>
               </defs>
 
-              {/* Vertical Y-Axis Divider Line separating text from chart curve */}
+              {/* Vertical Y-Axis Line */}
               <line
-                x1={paddingX}
-                y1={paddingTop - 10}
-                x2={paddingX}
-                y2={y0 + 5}
+                x1={axisX}
+                y1={paddingTop - 5}
+                x2={axisX}
+                y2={y0}
                 stroke="currentColor"
-                className="text-border-color/40"
+                className="text-border-color/60"
                 strokeWidth="1.5"
               />
 
-              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels */}
+              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels at Left Edge */}
               {ySteps.map((step, idx) => {
                 const gridY = paddingTop + (1 - step) * plotHeight;
                 const valueLabel = Math.round(maxRevenue * step);
                 return (
                   <g key={idx}>
                     <line
-                      x1={paddingX}
+                      x1={axisX}
                       y1={gridY}
-                      x2={svgWidth - paddingR}
+                      x2={svgWidth - 20}
                       y2={gridY}
                       stroke="currentColor"
                       strokeDasharray="4 4"
-                      className="text-border-color/40"
+                      className="text-border-color/50"
                       strokeWidth="1"
                     />
                     <text
-                      x={paddingX - 15}
+                      x={axisX - 12}
                       y={gridY + 4}
                       textAnchor="end"
                       fill="currentColor"
@@ -566,9 +562,8 @@ export default function AnalyticsPage() {
                           y={svgHeight - 12}
                           textAnchor="middle"
                           fill="currentColor"
-                          className={`text-[11px] font-mono font-bold transition-colors ${
-                            isHovered ? "text-primary font-black" : "text-slate-700 dark:text-slate-200 font-bold"
-                          }`}
+                          className={`text-[11px] font-mono font-bold transition-colors ${isHovered ? "text-primary font-black" : "text-slate-700 dark:text-slate-200 font-bold"
+                            }`}
                         >
                           {pt.data.label}
                         </text>
@@ -626,9 +621,8 @@ export default function AnalyticsPage() {
                           y={svgHeight - 12}
                           textAnchor="middle"
                           fill="currentColor"
-                          className={`text-[11px] font-mono font-bold transition-colors ${
-                            isHovered ? "text-primary font-black" : "text-slate-700 dark:text-slate-200 font-bold"
-                          }`}
+                          className={`text-[11px] font-mono font-bold transition-colors ${isHovered ? "text-primary font-black" : "text-slate-700 dark:text-slate-200 font-bold"
+                            }`}
                         >
                           {pt.data.label}
                         </text>
@@ -653,14 +647,14 @@ export default function AnalyticsPage() {
 
       {/* Main Section 2: Two Column Grid (Order Distribution & Governorates) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Left Column: Order Status & Payment Breakdown */}
         <div className="space-y-6">
-          
+
           {/* Order Status Breakdown */}
           <div className="bg-card-bg border border-border-color rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
             <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2 border-b border-border-color/40 pb-3">
-              <FaChartPie className="text-primary" /> توزر حالات الطلبات الواردة
+              <FaChartPie className="text-primary" /> توزع حالات الطلبات الواردة
             </h3>
 
             {loading ? (
@@ -733,7 +727,7 @@ export default function AnalyticsPage() {
           {loading ? (
             <div className="py-12 text-center text-xs text-foreground/50">جاري التحميل...</div>
           ) : !data?.governorateSales || data.governorateSales.length === 0 ? (
-            <div className="py-12 text-center text-xs text-foreground/50">لا توجد بيانات شحن للمحافظات في هذه الفترة</div>
+            <div className="py-12 text-center text-xs text-foreground/50">لا توجد بيانات شحن للمافظات في هذه الفترة</div>
           ) : (
             <div className="space-y-4 text-xs">
               {data.governorateSales.map((gov, idx) => {
@@ -771,7 +765,7 @@ export default function AnalyticsPage() {
 
       {/* Main Section 3: Top Best Selling Books & Catalog Health Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Top Selling Books (2 Columns Span) */}
         <div className="lg:col-span-2 bg-card-bg border border-border-color rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-border-color/40 pb-3">
