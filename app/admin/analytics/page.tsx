@@ -124,23 +124,116 @@ export default function AnalyticsPage() {
     { key: "all", label: "كافة الأوقات" },
   ];
 
-  // Generate full continuous timeline array so line graph & bars never look empty
+  // Continuous timeline generation reflecting selected period filter
   const timelineData = useMemo(() => {
     if (!data) return [];
+
+    if (period === "1y" || period === "all") {
+      const monthMap = new Map<string, { revenue: number; profit: number; ordersCount: number }>();
+      (data.dailyTrend || []).forEach((d) => {
+        const monthKey = d._id.slice(0, 7); // "YYYY-MM"
+        const existing = monthMap.get(monthKey) || { revenue: 0, profit: 0, ordersCount: 0 };
+        monthMap.set(monthKey, {
+          revenue: existing.revenue + d.revenue,
+          profit: existing.profit + d.profit,
+          ordersCount: existing.ordersCount + d.ordersCount,
+        });
+      });
+
+      const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+      const currentYear = new Date().getFullYear();
+      const result: Array<{ date: string; label: string; revenue: number; profit: number; ordersCount: number }> = [];
+
+      if (period === "1y") {
+        for (let m = 0; m < 12; m++) {
+          const monthNum = String(m + 1).padStart(2, "0");
+          const monthKey = `${currentYear}-${monthNum}`;
+          const existing = monthMap.get(monthKey) || { revenue: 0, profit: 0, ordersCount: 0 };
+          result.push({
+            date: monthKey,
+            label: monthNames[m],
+            revenue: existing.revenue,
+            profit: existing.profit,
+            ordersCount: existing.ordersCount,
+          });
+        }
+      } else {
+        const sortedKeys = Array.from(monthMap.keys()).sort();
+        if (sortedKeys.length === 0) {
+          for (let m = 0; m < 12; m++) {
+            const monthNum = String(m + 1).padStart(2, "0");
+            const monthKey = `${currentYear}-${monthNum}`;
+            result.push({ date: monthKey, label: monthNames[m], revenue: 0, profit: 0, ordersCount: 0 });
+          }
+        } else {
+          sortedKeys.forEach((key) => {
+            const [y, m] = key.split("-");
+            const mIdx = parseInt(m, 10) - 1;
+            const existing = monthMap.get(key)!;
+            result.push({
+              date: key,
+              label: `${monthNames[mIdx] || m} ${y.slice(2)}`,
+              revenue: existing.revenue,
+              profit: existing.profit,
+              ordersCount: existing.ordersCount,
+            });
+          });
+        }
+      }
+      return result;
+    }
+
+    if (period === "90d") {
+      const map = new Map<string, { revenue: number; profit: number; ordersCount: number }>();
+      (data.dailyTrend || []).forEach((d) => {
+        map.set(d._id, { revenue: d.revenue, profit: d.profit, ordersCount: d.ordersCount });
+      });
+
+      const result: Array<{ date: string; label: string; revenue: number; profit: number; ordersCount: number }> = [];
+      const today = new Date();
+      // 12 checkpoint weeks for 90 days
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i * 7);
+        const dateStr = d.toISOString().split("T")[0];
+        const label = dateStr.slice(5);
+
+        let revenue = 0;
+        let profit = 0;
+        let ordersCount = 0;
+
+        for (let offset = 0; offset < 7; offset++) {
+          const subD = new Date(d);
+          subD.setDate(d.getDate() - offset);
+          const subKey = subD.toISOString().split("T")[0];
+          const existing = map.get(subKey);
+          if (existing) {
+            revenue += existing.revenue;
+            profit += existing.profit;
+            ordersCount += existing.ordersCount;
+          }
+        }
+
+        result.push({ date: dateStr, label, revenue, profit, ordersCount });
+      }
+      return result;
+    }
+
+    // Default for 7d and 30d
     const map = new Map<string, { revenue: number; profit: number; ordersCount: number }>();
-    data.dailyTrend.forEach((d) => {
+    (data.dailyTrend || []).forEach((d) => {
       map.set(d._id, { revenue: d.revenue, profit: d.profit, ordersCount: d.ordersCount });
     });
 
-    const numPoints = period === "7d" ? 7 : period === "30d" ? 14 : period === "90d" ? 24 : 30;
+    const numDays = period === "7d" ? 7 : 30;
     const result: Array<{ date: string; label: string; revenue: number; profit: number; ordersCount: number }> = [];
-
     const today = new Date();
-    for (let i = numPoints - 1; i >= 0; i--) {
+
+    for (let i = numDays - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(today.getDate() - i);
       const dateStr = d.toISOString().split("T")[0];
-      const label = dateStr.slice(5); // "MM-DD"
+      const label = dateStr.slice(5);
 
       const existing = map.get(dateStr) || { revenue: 0, profit: 0, ordersCount: 0 };
       result.push({
@@ -160,13 +253,13 @@ export default function AnalyticsPage() {
     return Math.max(100, ...timelineData.map((d) => d.revenue));
   }, [timelineData]);
 
-  // SVG Chart Geometry
+  // SVG Chart Geometry with zero empty margin on left
   const svgWidth = 1000;
   const svgHeight = 280;
-  const paddingX = 65;
+  const paddingX = 35;
   const paddingTop = 35;
   const paddingBottom = 45;
-  const plotWidth = svgWidth - paddingX - 25;
+  const plotWidth = svgWidth - paddingX - 15;
   const plotHeight = svgHeight - paddingTop - paddingBottom;
   const y0 = svgHeight - paddingBottom;
 
@@ -185,8 +278,8 @@ export default function AnalyticsPage() {
     if (svgPoints.length === 1) {
       const p = svgPoints[0];
       return {
-        pathD: `M ${paddingX} ${p.y} L ${svgWidth - 25} ${p.y}`,
-        areaD: `M ${paddingX} ${p.y} L ${svgWidth - 25} ${p.y} L ${svgWidth - 25} ${y0} L ${paddingX} ${y0} Z`,
+        pathD: `M ${paddingX} ${p.y} L ${svgWidth - 15} ${p.y}`,
+        areaD: `M ${paddingX} ${p.y} L ${svgWidth - 15} ${p.y} L ${svgWidth - 15} ${y0} L ${paddingX} ${y0} Z`,
       };
     }
 
@@ -381,7 +474,7 @@ export default function AnalyticsPage() {
                 </linearGradient>
               </defs>
 
-              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels */}
+              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels at Left Edge */}
               {ySteps.map((step, idx) => {
                 const gridY = paddingTop + (1 - step) * plotHeight;
                 const valueLabel = Math.round(maxRevenue * step);
@@ -390,7 +483,7 @@ export default function AnalyticsPage() {
                     <line
                       x1={paddingX}
                       y1={gridY}
-                      x2={svgWidth - 25}
+                      x2={svgWidth - 15}
                       y2={gridY}
                       stroke="currentColor"
                       strokeDasharray="4 4"
@@ -398,7 +491,7 @@ export default function AnalyticsPage() {
                       strokeWidth="1"
                     />
                     <text
-                      x={paddingX - 10}
+                      x={paddingX - 6}
                       y={gridY + 4}
                       textAnchor="end"
                       fill="currentColor"
@@ -478,7 +571,7 @@ export default function AnalyticsPage() {
                   {svgPoints.map((pt, idx) => {
                     const isHovered = hoveredPoint?.date === pt.data.date;
                     const hasRevenue = pt.data.revenue > 0;
-                    const barWidth = Math.max(12, Math.min(32, (plotWidth / svgPoints.length) * 0.65));
+                    const barWidth = Math.max(10, Math.min(32, (plotWidth / svgPoints.length) * 0.65));
                     const barX = pt.x - barWidth / 2;
                     const barHeight = Math.max(4, y0 - pt.y);
 
