@@ -118,6 +118,7 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
   const [loading, setLoading] = useState(false);
   const [copiedNumber, setCopiedNumber] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<any | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setMounted(true);
@@ -216,37 +217,59 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
     setTimeout(() => setCopiedNumber(false), 2500);
   };
 
+  // Real-time Field Validator
+  const validateFields = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!customerName.trim()) {
+      newErrors.customerName = "اسم العميل مطلوب بالكامل";
+    } else if (customerName.trim().split(" ").filter(Boolean).length < 2) {
+      newErrors.customerName = "يرجى كتابة الاسم ثنائياً على الأقل";
+    }
+
+    if (!customerPhone.trim()) {
+      newErrors.customerPhone = "رقم الهاتف مطلوب للتواصل";
+    } else if (!/^[0-9+ ]{10,15}$/.test(customerPhone.trim().replace(/\s+/g, ""))) {
+      newErrors.customerPhone = "يرجى إدخال رقم هاتف صحيح (من 10 إلى 15 رقم)";
+    }
+
+    if (!detailedAddress.trim()) {
+      newErrors.detailedAddress = "العنوان التفصيلي مطلوب لتوصيل الطلب بدقة";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // Step 2 Validation Handler
   const handleValidateStep2 = () => {
-    if (!customerName.trim()) {
-      Swal.fire({ title: "تنبيه", text: "يرجى كتابة الاسم بالكامل", icon: "warning", confirmButtonColor: "#d4af37" });
-      return;
+    if (validateFields()) {
+      setStep(3);
+    } else {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "warning",
+        title: "يرجى ملء الحقول المطلوبة بشكل صحيح",
+        showConfirmButton: false,
+        timer: 3000,
+      });
     }
-    if (!customerPhone.trim() || customerPhone.length < 10) {
-      Swal.fire({ title: "تنبيه", text: "يرجى كتابة رقم هاتف صحيح للتواصل (10 أرقام على الأقل)", icon: "warning", confirmButtonColor: "#d4af37" });
-      return;
-    }
-    if (!detailedAddress.trim()) {
-      Swal.fire({ title: "تنبيه", text: "يرجى كتابة العنوان التفصيلي لتوصيل الطلب", icon: "warning", confirmButtonColor: "#d4af37" });
-      return;
-    }
-    setStep(3);
   };
 
   // Order Submission Handler
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!customerName.trim()) {
-      Swal.fire({ title: "تنبيه", text: "يرجى كتابة الاسم بالكامل", icon: "warning", confirmButtonColor: "#d4af37" });
-      return;
-    }
-    if (!customerPhone.trim() || customerPhone.length < 10) {
-      Swal.fire({ title: "تنبيه", text: "يرجى كتابة رقم هاتف صحيح للتواصل", icon: "warning", confirmButtonColor: "#d4af37" });
-      return;
-    }
-    if (!detailedAddress.trim()) {
-      Swal.fire({ title: "تنبيه", text: "يرجى كتابة العنوان التفصيلي لتوصيل الطلب", icon: "warning", confirmButtonColor: "#d4af37" });
+    if (!validateFields()) {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "warning",
+        title: "يرجى ملء البيانات المطلوبة بشكل صحيح قبل الإرسال",
+        showConfirmButton: false,
+        timer: 3000,
+      });
       return;
     }
 
@@ -727,36 +750,68 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       {/* Customer Name */}
                       <div>
-                        <label className="block text-xs font-bold text-foreground/80 mb-1.5">
-                          الاسم بالكامل <span className="text-red-500">*</span>
+                        <label className="block text-xs font-bold text-foreground/80 mb-1.5 flex items-center justify-between">
+                          <span>الاسم بالكامل <span className="text-red-500">*</span></span>
+                          {errors.customerName && (
+                            <span className="text-[10px] font-black text-red-500 animate-fadeIn">{errors.customerName}</span>
+                          )}
                         </label>
                         <div className="relative">
-                          <FaUser className="absolute right-3.5 top-3.5 text-primary/70 w-3.5 h-3.5" />
+                          <FaUser className={`absolute right-3.5 top-3.5 w-3.5 h-3.5 transition-colors ${errors.customerName ? "text-red-500" : "text-primary/70"}`} />
                           <input
                             type="text"
                             required
                             value={customerName}
-                            onChange={(e) => setCustomerName(e.target.value)}
+                            onChange={(e) => {
+                              setCustomerName(e.target.value);
+                              if (errors.customerName) {
+                                setErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next.customerName;
+                                  return next;
+                                });
+                              }
+                            }}
                             placeholder="أدخل اسمك الكريم"
-                            className="w-full pr-10 pl-3 py-2.5 text-xs rounded-xl bg-foreground/[0.04] border border-gray-300 dark:border-white/20 focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none transition font-medium text-foreground shadow-xs"
+                            className={`w-full pr-10 pl-3 py-2.5 text-xs rounded-xl bg-foreground/[0.04] border outline-none focus:ring-2 transition-all font-medium text-foreground shadow-xs ${
+                              errors.customerName
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20 ring-2 ring-red-500/10"
+                                : "border-gray-300 dark:border-white/20 focus:border-primary focus:ring-primary/30"
+                            }`}
                           />
                         </div>
                       </div>
 
                       {/* Customer Phone */}
                       <div>
-                        <label className="block text-xs font-bold text-foreground/80 mb-1.5">
-                          رقم الهاتف (واتساب) <span className="text-red-500">*</span>
+                        <label className="block text-xs font-bold text-foreground/80 mb-1.5 flex items-center justify-between">
+                          <span>رقم الهاتف (واتساب) <span className="text-red-500">*</span></span>
+                          {errors.customerPhone && (
+                            <span className="text-[10px] font-black text-red-500 animate-fadeIn">{errors.customerPhone}</span>
+                          )}
                         </label>
                         <div className="relative">
-                          <FaPhone className="absolute right-3.5 top-3.5 text-primary/70 w-3.5 h-3.5" />
+                          <FaPhone className={`absolute right-3.5 top-3.5 w-3.5 h-3.5 transition-colors ${errors.customerPhone ? "text-red-500" : "text-primary/70"}`} />
                           <input
                             type="tel"
                             required
                             value={customerPhone}
-                            onChange={(e) => setCustomerPhone(e.target.value)}
+                            onChange={(e) => {
+                              setCustomerPhone(e.target.value);
+                              if (errors.customerPhone) {
+                                setErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next.customerPhone;
+                                  return next;
+                                });
+                              }
+                            }}
                             placeholder="01xxxxxxxxx"
-                            className="w-full pr-10 pl-3 py-2.5 text-xs rounded-xl bg-foreground/[0.04] border border-gray-300 dark:border-white/20 focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none transition text-left font-mono shadow-xs"
+                            className={`w-full pr-10 pl-3 py-2.5 text-xs rounded-xl bg-foreground/[0.04] border outline-none focus:ring-2 transition-all text-left font-mono text-foreground shadow-xs ${
+                              errors.customerPhone
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20 ring-2 ring-red-500/10"
+                                : "border-gray-300 dark:border-white/20 focus:border-primary focus:ring-primary/30"
+                            }`}
                             dir="ltr"
                           />
                         </div>
@@ -892,18 +947,34 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
 
                     {/* Detailed Address */}
                     <div>
-                      <label className="block text-xs font-bold text-foreground/80 mb-1.5">
-                        العنوان التفصيلي <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-foreground/80 mb-1.5 flex items-center justify-between">
+                        <span>العنوان التفصيلي <span className="text-red-500">*</span></span>
+                        {errors.detailedAddress && (
+                          <span className="text-[10px] font-black text-red-500 animate-fadeIn">{errors.detailedAddress}</span>
+                        )}
                       </label>
                       <div className="relative">
-                        <FaMapMarkerAlt className="absolute right-3.5 top-3.5 text-primary/70 w-3.5 h-3.5" />
+                        <FaMapMarkerAlt className={`absolute right-3.5 top-3.5 w-3.5 h-3.5 transition-colors ${errors.detailedAddress ? "text-red-500" : "text-primary/70"}`} />
                         <input
                           type="text"
                           required
                           value={detailedAddress}
-                          onChange={(e) => setDetailedAddress(e.target.value)}
+                          onChange={(e) => {
+                            setDetailedAddress(e.target.value);
+                            if (errors.detailedAddress) {
+                              setErrors((prev) => {
+                                const next = { ...prev };
+                                delete next.detailedAddress;
+                                return next;
+                              });
+                            }
+                          }}
                           placeholder="اسم الشارع، رقم العمارة، الشقة، علامة مميزة"
-                          className="w-full pr-10 pl-3 py-2.5 text-xs rounded-xl bg-foreground/[0.04] border border-gray-300 dark:border-white/20 focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none transition font-medium text-foreground shadow-xs"
+                          className={`w-full pr-10 pl-3 py-2.5 text-xs rounded-xl bg-foreground/[0.04] border outline-none focus:ring-2 transition-all font-medium text-foreground shadow-xs ${
+                            errors.detailedAddress
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-500/20 ring-2 ring-red-500/10"
+                              : "border-gray-300 dark:border-white/20 focus:border-primary focus:ring-primary/30"
+                          }`}
                         />
                       </div>
                     </div>
@@ -1190,11 +1261,11 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                   </div>
 
                   {/* Step 3 Action Buttons */}
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-2 sm:gap-3 pt-2">
                     <button
                       type="button"
                       onClick={() => setStep(2)}
-                      className="px-5 py-3.5 rounded-2xl border border-border-color/60 hover:bg-foreground/5 text-foreground font-extrabold text-xs transition-all cursor-pointer flex items-center gap-1.5"
+                      className="px-4 sm:px-6 py-3 rounded-2xl border border-border-color/60 hover:bg-foreground/5 text-foreground font-extrabold text-xs transition-all cursor-pointer flex items-center gap-1 shrink-0"
                     >
                       <FaArrowRight className="w-3 h-3" />
                       السابق
@@ -1203,17 +1274,17 @@ export default function CheckoutModal({ book, isOpen, onClose }: CheckoutModalPr
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex-1 py-3.5 px-6 rounded-2xl bg-primary hover:bg-primary-hover text-white font-extrabold text-xs sm:text-sm transition-all shadow-lg gold-glow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      className="flex-1 py-3 px-3 sm:px-6 rounded-2xl bg-primary hover:bg-primary-hover text-white font-black text-[11px] sm:text-xs md:text-sm transition-all shadow-lg gold-glow flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                       {loading ? (
                         <>
-                          <FaSpinner className="w-4 h-4 animate-spin" />
-                          <span>جاري تسجيل الطلب...</span>
+                          <FaSpinner className="w-3.5 h-3.5 animate-spin" />
+                          <span>جاري التسجيل...</span>
                         </>
                       ) : (
                         <>
-                          <FaCheckCircle className="w-4 h-4" />
-                          <span>تأكيد وإرسال الطلب الآن ({grandTotal} {currency})</span>
+                          <FaCheckCircle className="w-3.5 h-3.5" />
+                          <span>تأكيد الطلب الآن ({grandTotal} {currency})</span>
                         </>
                       )}
                     </button>
