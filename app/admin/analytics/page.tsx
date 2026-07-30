@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
     { key: "all", label: "كافة الأوقات" },
   ];
 
-  // Generate full continuous timeline array so line graph never looks empty
+  // Generate full continuous timeline array so line graph & bars never look empty
   const timelineData = useMemo(() => {
     if (!data) return [];
     const map = new Map<string, { revenue: number; profit: number; ordersCount: number }>();
@@ -163,10 +163,10 @@ export default function AnalyticsPage() {
   // SVG Chart Geometry
   const svgWidth = 1000;
   const svgHeight = 280;
-  const paddingX = 60;
-  const paddingTop = 30;
+  const paddingX = 65;
+  const paddingTop = 35;
   const paddingBottom = 45;
-  const plotWidth = svgWidth - paddingX * 2;
+  const plotWidth = svgWidth - paddingX - 25;
   const plotHeight = svgHeight - paddingTop - paddingBottom;
   const y0 = svgHeight - paddingBottom;
 
@@ -185,8 +185,8 @@ export default function AnalyticsPage() {
     if (svgPoints.length === 1) {
       const p = svgPoints[0];
       return {
-        pathD: `M ${paddingX} ${p.y} L ${svgWidth - paddingX} ${p.y}`,
-        areaD: `M ${paddingX} ${p.y} L ${svgWidth - paddingX} ${p.y} L ${svgWidth - paddingX} ${y0} L ${paddingX} ${y0} Z`,
+        pathD: `M ${paddingX} ${p.y} L ${svgWidth - 25} ${p.y}`,
+        areaD: `M ${paddingX} ${p.y} L ${svgWidth - 25} ${p.y} L ${svgWidth - 25} ${y0} L ${paddingX} ${y0} Z`,
       };
     }
 
@@ -360,7 +360,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* SVG Interactive Area & Line Chart */}
+        {/* SVG Interactive Area & Line & Bar Chart */}
         {loading ? (
           <div className="h-72 flex items-center justify-center text-xs text-foreground/50">
             <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin ml-2" />
@@ -368,49 +368,50 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <div className="relative w-full overflow-hidden">
-            {chartMode === "area" ? (
-              <div className="relative w-full">
-                <svg
-                  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                  className="w-full h-64 sm:h-72 select-none overflow-visible"
-                >
-                  <defs>
-                    {/* Linear Gradient for Area Fill */}
-                    <linearGradient id="chartGoldGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#d4af37" stopOpacity="0.45" />
-                      <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.1" />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
+            <svg
+              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+              className="w-full h-64 sm:h-72 select-none overflow-visible"
+            >
+              <defs>
+                {/* Linear Gradient for Fill */}
+                <linearGradient id="chartGoldGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#d4af37" stopOpacity="0.55" />
+                  <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
 
-                  {/* Horizontal Grid Lines & Y-Axis Labels */}
-                  {ySteps.map((step, idx) => {
-                    const gridY = paddingTop + (1 - step) * plotHeight;
-                    const valueLabel = Math.round(maxRevenue * step);
-                    return (
-                      <g key={idx}>
-                        <line
-                          x1={paddingX}
-                          y1={gridY}
-                          x2={svgWidth - paddingX}
-                          y2={gridY}
-                          stroke="currentColor"
-                          strokeDasharray="4 4"
-                          className="text-border-color/40"
-                          strokeWidth="1"
-                        />
-                        <text
-                          x={paddingX - 10}
-                          y={gridY + 4}
-                          textAnchor="end"
-                          className="fill-foreground/45 text-[11px] font-mono"
-                        >
-                          {valueLabel} ج.م
-                        </text>
-                      </g>
-                    );
-                  })}
+              {/* Horizontal Grid Lines & Y-Axis High-Contrast Labels */}
+              {ySteps.map((step, idx) => {
+                const gridY = paddingTop + (1 - step) * plotHeight;
+                const valueLabel = Math.round(maxRevenue * step);
+                return (
+                  <g key={idx}>
+                    <line
+                      x1={paddingX}
+                      y1={gridY}
+                      x2={svgWidth - 25}
+                      y2={gridY}
+                      stroke="currentColor"
+                      strokeDasharray="4 4"
+                      className="text-border-color/50"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={paddingX - 10}
+                      y={gridY + 4}
+                      textAnchor="end"
+                      className="fill-foreground font-black text-[12px] font-mono"
+                    >
+                      {valueLabel} ج.م
+                    </text>
+                  </g>
+                );
+              })}
 
+              {/* Area Curve Mode */}
+              {chartMode === "area" && (
+                <>
                   {/* Area Polygon Fill */}
                   {areaD && (
                     <path
@@ -452,56 +453,88 @@ export default function AnalyticsPage() {
                           className={`${hasRevenue ? "stroke-card-bg text-primary" : "text-border-color/60"} transition-all duration-200`}
                           strokeWidth="2"
                         />
-                        {/* Date Label on X-Axis */}
+                        {/* High Contrast Date Label on X-Axis */}
                         <text
                           x={pt.x}
                           y={svgHeight - 12}
                           textAnchor="middle"
-                          className={`text-[10px] font-mono transition-colors ${isHovered ? "fill-primary font-bold" : "fill-foreground/50"}`}
+                          className={`text-[11px] font-mono font-bold transition-colors ${
+                            isHovered ? "fill-primary font-black" : "fill-foreground/90"
+                          }`}
                         >
                           {pt.data.label}
                         </text>
                       </g>
                     );
                   })}
-                </svg>
+                </>
+              )}
 
-                {/* Floating Interactive Tooltip */}
-                {hoveredPoint && (
-                  <div className="absolute top-2 right-1/2 translate-x-1/2 bg-black/90 text-white text-xs font-bold px-4 py-2 rounded-2xl border border-primary/40 shadow-2xl backdrop-blur-md z-30 animate-fadeIn text-center space-y-0.5">
-                    <div className="text-primary font-mono text-[11px]">{hoveredPoint.date}</div>
-                    <div className="text-sm font-black">{hoveredPoint.revenue} ج.م إيرادات</div>
-                    <div className="text-[11px] text-emerald-400 font-medium">أرباح: +{hoveredPoint.profit} ج.م ({hoveredPoint.ordersCount} طلب)</div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Visual Bar Chart View */
-              <div className="h-64 sm:h-72 flex items-end justify-between gap-1.5 pt-8 pb-4 px-4 overflow-x-auto no-scrollbar">
-                {timelineData.map((point, idx) => {
-                  const heightPercent = Math.max(8, Math.round((point.revenue / maxRevenue) * 100));
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 min-w-[28px] group relative">
-                      {/* Tooltip */}
-                      <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none bg-black/90 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-primary/30 z-20 whitespace-nowrap shadow-xl text-center">
-                        <div>{point.date}</div>
-                        <div className="text-primary font-mono">{point.revenue} ج.م ({point.ordersCount} طلب)</div>
-                      </div>
+              {/* Bar Chart Mode */}
+              {chartMode === "bar" && (
+                <>
+                  {svgPoints.map((pt, idx) => {
+                    const isHovered = hoveredPoint?.date === pt.data.date;
+                    const hasRevenue = pt.data.revenue > 0;
+                    const barWidth = Math.max(12, Math.min(32, (plotWidth / svgPoints.length) * 0.65));
+                    const barX = pt.x - barWidth / 2;
+                    const barHeight = Math.max(4, y0 - pt.y);
 
-                      {/* Bar */}
-                      <div className="w-full bg-foreground/5 rounded-t-xl overflow-hidden h-full flex items-end">
-                        <div
-                          style={{ height: `${heightPercent}%` }}
-                          className="w-full bg-gradient-to-t from-primary/70 to-primary rounded-t-xl transition-all duration-500 group-hover:brightness-125 group-hover:shadow-lg"
+                    return (
+                      <g
+                        key={idx}
+                        className="cursor-pointer group"
+                        onMouseEnter={() => setHoveredPoint(pt.data)}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                      >
+                        <rect
+                          x={barX}
+                          y={pt.y}
+                          width={barWidth}
+                          height={barHeight}
+                          rx="6"
+                          fill="url(#chartGoldGradient)"
+                          stroke="#d4af37"
+                          strokeWidth={isHovered ? "2.5" : "1.5"}
+                          className="transition-all duration-300 hover:brightness-125"
                         />
-                      </div>
 
-                      <span className="text-[9px] font-mono text-foreground/50 truncate w-full text-center group-hover:text-primary transition-colors">
-                        {point.label}
-                      </span>
-                    </div>
-                  );
-                })}
+                        {/* Revenue Value Badge over Bar */}
+                        {hasRevenue && (
+                          <text
+                            x={pt.x}
+                            y={pt.y - 8}
+                            textAnchor="middle"
+                            className="fill-primary font-black text-[11px] font-mono"
+                          >
+                            {pt.data.revenue} ج.م
+                          </text>
+                        )}
+
+                        {/* High Contrast Date Label on X-Axis */}
+                        <text
+                          x={pt.x}
+                          y={svgHeight - 12}
+                          textAnchor="middle"
+                          className={`text-[11px] font-mono font-bold transition-colors ${
+                            isHovered ? "fill-primary font-black" : "fill-foreground/90"
+                          }`}
+                        >
+                          {pt.data.label}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </>
+              )}
+            </svg>
+
+            {/* Floating Interactive Tooltip */}
+            {hoveredPoint && (
+              <div className="absolute top-2 right-1/2 translate-x-1/2 bg-black/90 text-white text-xs font-bold px-4 py-2 rounded-2xl border border-primary/40 shadow-2xl backdrop-blur-md z-30 animate-fadeIn text-center space-y-0.5">
+                <div className="text-primary font-mono text-[11px]">{hoveredPoint.date}</div>
+                <div className="text-sm font-black">{hoveredPoint.revenue} ج.م إيرادات</div>
+                <div className="text-[11px] text-emerald-400 font-medium">أرباح: +{hoveredPoint.profit} ج.م ({hoveredPoint.ordersCount} طلب)</div>
               </div>
             )}
           </div>
