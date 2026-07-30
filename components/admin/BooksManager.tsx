@@ -2040,30 +2040,30 @@ export default function BooksManager() {
               <div className="space-y-2">
                 <h4 className="font-bold text-xs text-primary uppercase">أسعار البيع والهامش</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-right">
-                    <span className="text-[11px] text-amber-600 font-bold block">بالجنيه المصري (EGP)</span>
-                    <span className="text-base sm:text-lg font-black text-amber-700 font-mono mt-0.5 block">
+                  <div className="p-3.5 rounded-2xl bg-foreground/[0.03] border border-border-color/30 text-right space-y-1 transition-all hover:border-primary/40">
+                    <span className="text-[11px] text-foreground/70 font-bold block">بالجنيه المصري (EGP)</span>
+                    <span className="text-base sm:text-xl font-black text-primary font-mono block">
                       {viewingBook.prices?.egp !== undefined ? `${viewingBook.prices.egp} ج.م` : "—"}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-right">
-                    <span className="text-[11px] text-blue-600 font-bold block">بالدينار الليبي (LYD)</span>
-                    <span className="text-base sm:text-lg font-black text-blue-700 font-mono mt-0.5 block">
+                  <div className="p-3.5 rounded-2xl bg-foreground/[0.03] border border-border-color/30 text-right space-y-1 transition-all hover:border-primary/40">
+                    <span className="text-[11px] text-foreground/70 font-bold block">بالدينار الليبي (LYD)</span>
+                    <span className="text-base sm:text-xl font-black text-primary font-mono block">
                       {viewingBook.prices?.lyd !== undefined ? `${viewingBook.prices.lyd} د.ل` : "—"}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-right">
-                    <span className="text-[11px] text-emerald-600 font-bold block">بالدولار (USD)</span>
-                    <span className="text-base sm:text-lg font-black text-emerald-700 font-mono mt-0.5 block">
+                  <div className="p-3.5 rounded-2xl bg-foreground/[0.03] border border-border-color/30 text-right space-y-1 transition-all hover:border-primary/40">
+                    <span className="text-[11px] text-foreground/70 font-bold block">بالدولار (USD)</span>
+                    <span className="text-base sm:text-xl font-black text-primary font-mono block">
                       {viewingBook.prices?.usd !== undefined ? `$${viewingBook.prices.usd}` : "—"}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-right">
-                    <span className="text-[11px] text-purple-600 font-bold block">سعر الجملة</span>
-                    <span className="text-base sm:text-lg font-black text-purple-700 font-mono mt-0.5 block">
+                  <div className="p-3.5 rounded-2xl bg-foreground/[0.03] border border-border-color/30 text-right space-y-1 transition-all hover:border-primary/40">
+                    <span className="text-[11px] text-foreground/70 font-bold block">سعر الجملة</span>
+                    <span className="text-base sm:text-xl font-black text-primary font-mono block">
                       {viewingBook.prices?.wholesale !== undefined ? `${viewingBook.prices.wholesale} ج.م` : "—"}
                     </span>
                   </div>
