@@ -401,7 +401,8 @@ export default function AnalyticsPage() {
                       x={paddingX - 10}
                       y={gridY + 4}
                       textAnchor="end"
-                      className="fill-foreground font-black text-[12px] font-mono"
+                      fill="currentColor"
+                      className="text-slate-800 dark:text-slate-100 font-black text-[12px] font-mono"
                     >
                       {valueLabel} ج.م
                     </text>
@@ -458,8 +459,9 @@ export default function AnalyticsPage() {
                           x={pt.x}
                           y={svgHeight - 12}
                           textAnchor="middle"
+                          fill="currentColor"
                           className={`text-[11px] font-mono font-bold transition-colors ${
-                            isHovered ? "fill-primary font-black" : "fill-foreground/90"
+                            isHovered ? "text-primary font-black" : "text-slate-700 dark:text-slate-200 font-bold"
                           }`}
                         >
                           {pt.data.label}
@@ -505,7 +507,8 @@ export default function AnalyticsPage() {
                             x={pt.x}
                             y={pt.y - 8}
                             textAnchor="middle"
-                            className="fill-primary font-black text-[11px] font-mono"
+                            fill="currentColor"
+                            className="text-amber-500 dark:text-amber-400 font-black text-[11px] font-mono"
                           >
                             {pt.data.revenue} ج.م
                           </text>
@@ -516,8 +519,9 @@ export default function AnalyticsPage() {
                           x={pt.x}
                           y={svgHeight - 12}
                           textAnchor="middle"
+                          fill="currentColor"
                           className={`text-[11px] font-mono font-bold transition-colors ${
-                            isHovered ? "fill-primary font-black" : "fill-foreground/90"
+                            isHovered ? "text-primary font-black" : "text-slate-700 dark:text-slate-200 font-bold"
                           }`}
                         >
                           {pt.data.label}
