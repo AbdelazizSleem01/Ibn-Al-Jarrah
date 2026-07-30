@@ -314,7 +314,6 @@ export default function AnalyticsPage() {
             <h1 className="text-xl md:text-2xl font-black text-foreground flex items-center gap-2">
               لوحة الإحصائيات والتقارير المالية الشاملة
             </h1>
-            <p className="text-xs text-foreground/60 mt-0.5">تحليل شامل للمبيعات، الإيرادات، وسلوك طلبات العملاء</p>
           </div>
         </div>
 

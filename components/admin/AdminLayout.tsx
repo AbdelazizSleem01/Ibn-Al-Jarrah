@@ -29,11 +29,11 @@ import { toggleThemeWithNoFlash } from "@/lib/utils/theme";
 
 const menuItems = [
   { label: "نظرة عامة", href: "/admin", icon: FaChartPie },
-  { label: "التقارير والإحصائيات", href: "/admin/analytics", icon: FaChartBar },
   { label: "إدارة الكتب", href: "/admin/books", icon: FaBook },
   { label: "إدارة التصنيفات", href: "/admin/categories", icon: FaTags },
   { label: "إدارة الطلبات", href: "/admin/orders", icon: FaShoppingBag },
   { label: "أسعار الشحن", href: "/admin/shipping", icon: FaTruck },
+  { label: "التقارير والإحصائيات", href: "/admin/analytics", icon: FaChartBar },
   { label: "استيراد الكتب", href: "/admin/import", icon: FaFileImport },
   { label: "الإعدادات", href: "/admin/settings", icon: FaCog },
 ];
@@ -154,6 +154,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Helper to map links to breadcrumbs
   const getBreadcrumbs = () => {
     if (pathname === "/admin") return ["الرئيسية", "نظرة عامة"];
+    if (pathname.startsWith("/admin/analytics")) return ["الرئيسية", "التقارير والإحصائيات"];
     if (pathname.startsWith("/admin/books")) return ["الرئيسية", "إدارة الكتب"];
     if (pathname.startsWith("/admin/categories")) return ["الرئيسية", "إدارة التصنيفات"];
     if (pathname.startsWith("/admin/orders")) return ["الرئيسية", "إدارة الطلبات"];
