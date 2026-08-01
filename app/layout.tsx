@@ -172,9 +172,11 @@ export default async function RootLayout({
       <body className="h-dvh h-screen w-full flex flex-col bg-background text-foreground overflow-hidden">
         <CurrencyProvider>
           <PublicHeader settings={settings} />
-          <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col relative">
-            {children}
-            <PublicFooter settings={settings} />
+          <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col relative" dir="ltr">
+            <div className="flex-1 flex flex-col w-full" dir="rtl">
+              {children}
+              <PublicFooter settings={settings} />
+            </div>
           </div>
         </CurrencyProvider>
       </body>
