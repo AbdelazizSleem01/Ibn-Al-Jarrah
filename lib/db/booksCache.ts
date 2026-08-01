@@ -34,7 +34,7 @@ export const getCachedDefaultBooks = unstable_cache(
   },
   ["default-books-page-1"],
   {
-    revalidate: 60,
+    revalidate: 86400,
     tags: ["books"],
   }
 );

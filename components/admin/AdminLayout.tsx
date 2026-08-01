@@ -100,10 +100,47 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       })
       .catch(() => router.push("/login"));
 
-    // 4. Initial notifications fetch & interval polling
+    // 4. Initial notifications fetch & smart visibility-aware polling (60s active, 0s hidden)
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 20000);
-    return () => clearInterval(interval);
+    let interval: any = null;
+
+    const startPolling = () => {
+      if (!interval) {
+        interval = setInterval(() => {
+          if (typeof document !== "undefined" && document.visibilityState === "visible") {
+            fetchNotifications();
+          }
+        }, 60000);
+      }
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchNotifications();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    startPolling();
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      stopPolling();
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, [router]);
 
   const toggleSidebar = () => {

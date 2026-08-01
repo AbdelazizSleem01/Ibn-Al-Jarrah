@@ -12,7 +12,7 @@ export const getCachedCategories = unstable_cache(
   },
   ["site-categories"],
   {
-    revalidate: 300,
+    revalidate: 86400,
     tags: ["categories"],
   }
 );

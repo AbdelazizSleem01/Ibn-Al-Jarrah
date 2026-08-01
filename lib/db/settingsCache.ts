@@ -10,7 +10,7 @@ export const getCachedSettings = unstable_cache(
   },
   ["site-settings"],
   {
-    revalidate: 300,
+    revalidate: 86400,
     tags: ["settings"],
   }
 );

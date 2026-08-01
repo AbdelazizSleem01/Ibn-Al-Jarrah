@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import dbConnect from "@/lib/db/dbConnect";
 import Category from "@/models/Category";
 import { categorySchema } from "@/lib/validation/schemas";
@@ -67,6 +68,12 @@ export async function POST(request: Request) {
       displayOrder,
       booksCount: 0,
     });
+
+    try {
+      revalidateTag("categories", "max");
+      revalidatePath("/");
+      revalidatePath("/categories");
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,

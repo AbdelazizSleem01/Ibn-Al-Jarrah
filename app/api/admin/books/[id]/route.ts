@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
@@ -284,6 +285,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     book.updatedBy = user.id as any;
     await book.save();
 
+    try {
+      revalidateTag("books", "max");
+      revalidatePath("/");
+      revalidatePath("/books");
+    } catch (e) {}
+
     return NextResponse.json({
       success: true,
       message: "تم تحديث الكتاب بنجاح",
@@ -363,6 +370,12 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
       // Decrement category booksCount
       await Category.findByIdAndUpdate(book.categoryId, { $inc: { booksCount: -1 } });
+
+      try {
+        revalidateTag("books", "max");
+        revalidatePath("/");
+        revalidatePath("/books");
+      } catch (e) {}
 
       return NextResponse.json({
         success: true,

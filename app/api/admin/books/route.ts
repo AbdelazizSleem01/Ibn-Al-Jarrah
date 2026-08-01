@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
@@ -190,7 +190,11 @@ export async function POST(request: Request) {
     category.booksCount = (category.booksCount || 0) + 1;
     await category.save();
 
-    revalidatePath("/books");
+    try {
+      revalidateTag("books", "max");
+      revalidatePath("/");
+      revalidatePath("/books");
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
