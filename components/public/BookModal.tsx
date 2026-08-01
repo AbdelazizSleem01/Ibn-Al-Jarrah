@@ -177,7 +177,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
   const handleShare = () => {
     if (!book) return;
     const shareUrl = `${window.location.origin}/books?book=${book.slug}`;
-    
+
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareUrl).then(() => {
         Swal.fire({
@@ -206,7 +206,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        
+
         {/* Close Button - Positioned top-left in RTL mode */}
         <button
           ref={closeButtonRef}
@@ -259,7 +259,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
 
               return (
                 <div className="w-full md:w-5/12 p-4 sm:p-6 md:p-8 bg-gradient-to-b from-primary/5 via-foreground/[0.01] to-foreground/[0.03] border-b md:border-b-0 md:border-l border-border-color/50 flex flex-col items-center justify-start shrink-0 md:overflow-y-auto">
-                  
+
                   {/* Gallery Title */}
                   <div className="flex items-center justify-between w-full pb-3 mb-4 border-b border-border-color/40">
                     <span className="text-xs font-black text-foreground flex items-center gap-2">
@@ -275,7 +275,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
 
                   {/* Main Display Image Box */}
                   <div className="relative w-full max-w-[180px] sm:max-w-[260px] md:max-w-[340px] aspect-[3/4] rounded-2xl overflow-hidden border-2 border-border-color/80 shadow-2xl bg-card-bg flex items-center justify-center gold-glow group transition-all duration-300 hover:border-primary/50">
-                    
+
                     <img
                       src={galleryImages[activeImageIndex] || galleryImages[0] || "/images/hero-book.webp"}
                       alt={book.title}
@@ -334,11 +334,10 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
                           key={idx}
                           type="button"
                           onClick={() => setActiveImageIndex(idx)}
-                          className={`relative w-14 h-20 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer transition-all duration-200 ${
-                            activeImageIndex === idx
+                          className={`relative w-14 h-20 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer transition-all duration-200 ${activeImageIndex === idx
                               ? "border-primary scale-105 shadow-lg ring-2 ring-primary/30"
                               : "border-border-color/60 opacity-60 hover:opacity-100"
-                          }`}
+                            }`}
                         >
                           <img src={imgUrl} alt="" className="w-full h-full object-cover" />
                         </button>
@@ -376,7 +375,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
 
             {/* Left Column: Metadata Details */}
             <div className="w-full md:w-7/12 p-4 sm:p-6 md:p-8 flex flex-col gap-6 text-right shrink-0 md:shrink md:overflow-y-auto md:max-h-[88vh]">
-              
+
               {/* Category Badge & Book Title */}
               <div className="flex flex-col gap-2.5 pt-2 md:pt-0">
                 <div className="flex items-center gap-2">
@@ -415,11 +414,10 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
                     </div>
 
                     <span
-                      className={`text-xs font-black px-4 py-1.5 rounded-full self-start sm:self-auto flex items-center gap-1.5 shrink-0 ${
-                        book.availabilityStatus === "available"
+                      className={`text-xs font-black px-4 py-1.5 rounded-full self-start sm:self-auto flex items-center gap-1.5 shrink-0 ${book.availabilityStatus === "available"
                           ? "bg-green-500/10 text-green-600 border border-green-500/20"
                           : "bg-red-500/10 text-red-500 border border-red-500/20"
-                      }`}
+                        }`}
                     >
                       {book.availabilityStatus === "available" ? (
                         <>
@@ -447,7 +445,7 @@ export default function BookModal({ bookSlug, initialBook, onClose }: BookModalP
 
               {/* Book Specifications Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-border-color/50 pt-5 text-xs sm:text-sm">
-                
+
                 {book.author && (
                   <div className="flex items-center gap-3 bg-card-bg border border-border-color/60 rounded-xl p-3.5 text-foreground/80 hover:border-primary/40 transition-all shadow-sm">
                     <FaUser className="text-primary text-sm shrink-0" />
