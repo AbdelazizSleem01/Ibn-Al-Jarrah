@@ -61,7 +61,7 @@ export default function Navbar({ settings }: NavbarProps) {
   const logoUrl = settings?.logo?.secureUrl || "/images/logo.webp";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border-color bg-card-bg/95 backdrop-blur-md transition-colors duration-150">
+    <header className="w-full shrink-0 z-40 border-b border-border-color bg-card-bg/95 backdrop-blur-md transition-colors duration-150">
       <div className=" mx-auto px-8 py-4 flex items-center justify-between">
 
         {/* Brand Logo & Name */}
