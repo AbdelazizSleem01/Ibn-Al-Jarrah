@@ -1,9 +1,13 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { FaFileExcel, FaClipboardList, FaFileImport, FaCheckCircle, FaTimesCircle, FaTasks, FaChevronLeft, FaChevronRight, FaFilePdf } from "react-icons/fa";
 import Swal from "sweetalert2";
+
+const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_IMPORT_ROWS = 500;
+const ALLOWED_IMPORT_EXTENSIONS = new Set(["xlsx", "csv"]);
 
 interface BookRow {
   title?: string;
@@ -26,6 +30,85 @@ interface BookRow {
   language?: string;
   availabilityStatus?: "available" | "unavailable";
   isFeatured?: boolean;
+}
+
+function parseCsvRows(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let field = "";
+  let row: string[] = [];
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      field += '"';
+      i++;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") i++;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+
+  row.push(field);
+  rows.push(row);
+
+  const [headerRow, ...dataRows] = rows.filter((currentRow) =>
+    currentRow.some((cell) => cell.trim() !== "")
+  );
+  if (!headerRow) return [];
+
+  const headers = headerRow.map((header) => header.trim().slice(0, 120));
+  return dataRows.slice(0, MAX_IMPORT_ROWS).map((currentRow) => {
+    const item: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      if (header) item[header] = (currentRow[index] || "").trim();
+    });
+    return item;
+  });
+}
+
+async function parseImportFile(file: File, extension: string): Promise<Record<string, unknown>[]> {
+  if (extension === "csv") {
+    return parseCsvRows(await file.text());
+  }
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await file.arrayBuffer());
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) return [];
+
+  const headerRow = worksheet.getRow(1);
+  const headers: string[] = [];
+  headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+    const header = cell.text.trim().slice(0, 120);
+    if (header) headers[colNumber] = header;
+  });
+
+  const rows: Record<string, unknown>[] = [];
+  worksheet.eachRow({ includeEmpty: false }, (currentRow, rowNumber) => {
+    if (rowNumber === 1 || rows.length >= MAX_IMPORT_ROWS) return;
+    const item: Record<string, unknown> = {};
+    headers.forEach((header, colNumber) => {
+      if (!header) return;
+      const cell = currentRow.getCell(colNumber);
+      item[header] = cell.text || cell.value || "";
+    });
+    rows.push(item);
+  });
+
+  return rows;
 }
 
 export default function BooksImporter() {
@@ -247,52 +330,50 @@ export default function BooksImporter() {
     setMappings(newMappings);
   };
 
-  // Handle Excel File Upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Excel/CSV File Upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const extension = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!ALLOWED_IMPORT_EXTENSIONS.has(extension) || file.size > MAX_IMPORT_FILE_BYTES) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid file",
+        text: "Please upload a CSV/XLSX file up to 5MB.",
+      });
+      e.target.value = "";
+      return;
+    }
+
     setFileName(file.name);
-    const reader = new FileReader();
 
-    reader.onload = (evt) => {
-      try {
-        const data = evt.target?.result;
-        const workbook = XLSX.read(data, { type: "binary" });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-
-        // Convert sheet to json row objects
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-        if (jsonData.length === 0) {
-          throw new Error("الملف فارغ أو غير صالح");
-        }
-
-        // Get unique headers
-        const extractedHeaders = Array.from(
-          new Set(jsonData.flatMap((row: any) => Object.keys(row)))
-        ) as string[];
-
-        setHeaders(extractedHeaders);
-        setParsedData(jsonData);
-        autoMatchHeaders(extractedHeaders);
-        setReport(null);
-        setPreviewPage(1);
-      } catch (err: any) {
-        Swal.fire({
-          icon: "error",
-          title: "فشل قراءة الملف",
-          text: err.message || "يرجى التأكد من اختيار ملف إكسيل صالح",
-          confirmButtonText: "موافق",
-          confirmButtonColor: "#d4af37",
-        });
+    try {
+      const jsonData = await parseImportFile(file, extension);
+      if (jsonData.length === 0) {
+        throw new Error("Import file is empty or invalid.");
       }
-    };
 
-    reader.readAsBinaryString(file);
+      const extractedHeaders = Array.from(
+        new Set(jsonData.flatMap((row) => Object.keys(row).map((key) => key.slice(0, 120))))
+      ) as string[];
+
+      setHeaders(extractedHeaders);
+      setParsedData(jsonData);
+      autoMatchHeaders(extractedHeaders);
+      setReport(null);
+      setPreviewPage(1);
+    } catch (err: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to read file",
+        text: err.message || "Please choose a valid CSV/XLSX file.",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#d4af37",
+      });
+      e.target.value = "";
+    }
   };
-
   // Handle Pasted JSON/text import
   const handlePasteSubmit = () => {
     if (!pastedText.trim()) return;
@@ -530,7 +611,7 @@ export default function BooksImporter() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx, .xls, .csv"
+                accept=".xlsx, .csv"
                 onChange={handleFileUpload}
                 className="hidden"
               />

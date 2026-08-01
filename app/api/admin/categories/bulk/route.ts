@@ -1,35 +1,35 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import dbConnect from "@/lib/db/dbConnect";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 import Category from "@/models/Category";
 import Book from "@/models/Book";
-import { getAuthUser } from "@/lib/auth/token";
+import { escapeRegex, readJsonBody, validateAllowedIds } from "@/lib/security/request";
+import { requireAdmin } from "@/lib/security/request";
 
 export async function POST(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
-    const body = await request.json();
+await dbConnect();
+    const body = await readJsonBody<any>(request);
     const { ids, selectAllMatching, search } = body;
 
-    let targetIds: string[] = Array.isArray(ids) ? ids : [];
+    let targetIds: string[] = validateAllowedIds(ids);
 
     if (selectAllMatching) {
       const query: any = {};
       if (search && typeof search === "string" && search.trim()) {
         const searchTrim = search.trim();
-        const regex = new RegExp(searchTrim, "i");
+        const regex = new RegExp(escapeRegex(searchTrim.slice(0, 80)), "i");
         query.$or = [{ name: regex }, { description: regex }];
       }
       const matchingCats = await Category.find(query, { _id: 1 }).lean();
-      targetIds = matchingCats.map((c: any) => c._id.toString());
+      targetIds = matchingCats.map((c: any) => c._id.toString()).slice(0, 500);
     }
 
     if (!targetIds || targetIds.length === 0) {

@@ -37,7 +37,8 @@ interface OrderData {
   customerName: string;
   customerPhone: string;
   governorate: string;
-  detailedAddress: string;
+  cityOrArea?: string;
+  detailedAddress?: string;
   items: OrderItem[];
   subtotal: number;
   shippingCost: number;
@@ -47,6 +48,12 @@ interface OrderData {
   orderStatus: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled";
   createdAt: string;
   updatedAt: string;
+}
+
+function formatSafeAddress(order: Pick<OrderData, "governorate" | "cityOrArea" | "detailedAddress">) {
+  return [order.governorate, order.cityOrArea || order.detailedAddress]
+    .filter(Boolean)
+    .join(" — ");
 }
 
 const STATUS_INDEXES = {
@@ -72,6 +79,7 @@ function TrackerContent() {
   const router = useRouter();
 
   const [orderNumberInput, setOrderNumberInput] = useState("");
+  const [phoneLast4Input, setPhoneLast4Input] = useState("");
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,18 +88,24 @@ function TrackerContent() {
   // Auto-fetch if orderNumber query param is present
   useEffect(() => {
     const urlOrderNum = searchParams.get("orderNumber");
-    if (urlOrderNum) {
+    const urlPhoneLast4 = searchParams.get("phoneLast4") || "";
+    if (urlOrderNum && /^\d{4}$/.test(urlPhoneLast4)) {
       setOrderNumberInput(urlOrderNum);
-      handleTrack(urlOrderNum);
+      setPhoneLast4Input(urlPhoneLast4);
+      handleTrack(urlOrderNum, urlPhoneLast4);
     }
   }, [searchParams]);
 
-  const handleTrack = async (num: string) => {
-    if (!num.trim()) return;
+  const handleTrack = async (num: string, phoneLast4: string) => {
+    if (!num.trim() || !/^\d{4}$/.test(phoneLast4)) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(num.trim())}`);
+      const params = new URLSearchParams({
+        orderNumber: num.trim(),
+        phoneLast4,
+      });
+      const res = await fetch(`/api/orders/track?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setOrder(data.data);
@@ -109,13 +123,14 @@ function TrackerContent() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orderNumberInput.trim()) return;
+    if (!orderNumberInput.trim() || !/^\d{4}$/.test(phoneLast4Input)) return;
 
     // Update query param without full page reload
     const params = new URLSearchParams(window.location.search);
     params.set("orderNumber", orderNumberInput.trim());
+    params.set("phoneLast4", phoneLast4Input);
     router.replace(`${window.location.pathname}?${params.toString()}`);
-    handleTrack(orderNumberInput);
+    handleTrack(orderNumberInput, phoneLast4Input);
   };
 
   const handleCopy = () => {
@@ -133,6 +148,7 @@ function TrackerContent() {
       order.paymentMethod === "cash_on_delivery" ? "الدفع عند الاستلام" : "تحويل بنكي";
     const total = `${order.grandTotal} ${order.currency || siteCurrency}`;
     const now = new Date(order.createdAt).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+    const safeAddress = formatSafeAddress(order);
 
     const rowsHtml = order.items.map((item, i) => `
       <tr style="background:${i % 2 === 0 ? "#fffdf7" : "#fff9ee"}">
@@ -143,7 +159,7 @@ function TrackerContent() {
     const extraRows = [
       `<tr><td style="padding:13px 22px;color:#8a7455;font-size:13px;font-weight:600;border-bottom:1px solid #f0e6cc">اسم العميل</td><td style="padding:13px 22px;color:#1e1608;font-size:13px;font-weight:700;border-bottom:1px solid #f0e6cc">${order.customerName}</td></tr>`,
       `<tr><td style="padding:13px 22px;color:#8a7455;font-size:13px;font-weight:600;border-bottom:1px solid #f0e6cc">رقم الهاتف</td><td style="padding:13px 22px;color:#1e1608;font-size:13px;font-weight:700;border-bottom:1px solid #f0e6cc">${order.customerPhone}</td></tr>`,
-      `<tr><td style="padding:13px 22px;color:#8a7455;font-size:13px;font-weight:600;border-bottom:1px solid #f0e6cc">المحافظة والعنوان</td><td style="padding:13px 22px;color:#1e1608;font-size:13px;font-weight:700;border-bottom:1px solid #f0e6cc">${order.governorate} — ${order.detailedAddress}</td></tr>`,
+      `<tr><td style="padding:13px 22px;color:#8a7455;font-size:13px;font-weight:600;border-bottom:1px solid #f0e6cc">المحافظة والعنوان</td><td style="padding:13px 22px;color:#1e1608;font-size:13px;font-weight:700;border-bottom:1px solid #f0e6cc">${safeAddress}</td></tr>`,
       `<tr><td style="padding:13px 22px;color:#8a7455;font-size:13px;font-weight:600;border-bottom:1px solid #f0e6cc">طريقة الدفع</td><td style="padding:13px 22px;color:#1e1608;font-size:13px;font-weight:700;border-bottom:1px solid #f0e6cc">${payLabel}</td></tr>`
     ].join("");
 
@@ -239,8 +255,8 @@ table{width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;bor
       </div>
 
       {/* Search Input Bar */}
-      <form onSubmit={onSubmit} className="max-w-xl mx-auto mb-12">
-        <div className="relative flex items-center p-1.5 rounded-3xl bg-card-bg border border-border-color shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200">
+      <form onSubmit={onSubmit} className="max-w-2xl mx-auto mb-12">
+        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_200px_auto] gap-2 items-center p-1.5 rounded-3xl bg-card-bg border border-border-color shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200">
           <FaSearch className="absolute right-5 text-foreground/40 w-4 h-4" />
           <input
             type="text"
@@ -249,6 +265,17 @@ table{width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;bor
             onChange={(e) => setOrderNumberInput(e.target.value)}
             placeholder="أدخل رقم الطلب (مثال: IJ-14299)"
             className="w-full pr-12 pl-4 py-3.5 text-xs md:text-sm bg-transparent outline-none font-bold text-foreground"
+          />
+          <input
+            type="text"
+            required
+            inputMode="numeric"
+            pattern="\d{4}"
+            maxLength={4}
+            value={phoneLast4Input}
+            onChange={(e) => setPhoneLast4Input(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            placeholder="آخر 4 أرقام من رقم الهاتف"
+            className="w-full px-4 py-3.5 text-xs md:text-sm bg-transparent outline-none font-bold text-foreground border-t md:border-t-0 md:border-r border-border-color/60"
           />
           <button
             type="submit"
@@ -439,7 +466,7 @@ table{width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;bor
                 <div className="flex justify-between items-start py-1">
                   <span className="text-foreground/60 shrink-0">العنوان بالتفصيل:</span>
                   <span className="font-bold text-foreground text-left max-w-[180px]">
-                    {order.governorate} — {order.detailedAddress}
+                    {formatSafeAddress(order)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-1">

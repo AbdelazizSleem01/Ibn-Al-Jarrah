@@ -3,11 +3,28 @@ import dbConnect from "@/lib/db/dbConnect";
 import Order from "@/models/Order";
 import Book from "@/models/Book";
 import { uploadImage } from "@/lib/cloudinary/upload";
+import {
+  isValidObjectId,
+  readJsonBody,
+  safeCloudinaryImage,
+  validateDataImage,
+} from "@/lib/security/request";
+import { requireCsrf } from "@/lib/security/csrf";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
+
+const ALLOWED_CURRENCIES = new Set(["EGP", "LYD", "USD"]);
+const ALLOWED_PAYMENT_METHODS = new Set(["vodafone_cash", "instapay", "cash_on_delivery", "bank_transfer"]);
 
 export async function POST(request: Request) {
   try {
+    const csrf = requireCsrf(request);
+    if (csrf) return csrf;
+
+    const rateLimit = await checkRateLimit(request, ratePolicies.checkout);
+    if (rateLimit) return rateLimit;
+
     await dbConnect();
-    const body = await request.json();
+    const body = await readJsonBody<any>(request, 2 * 1024 * 1024);
 
     const {
       customerName,
@@ -22,8 +39,13 @@ export async function POST(request: Request) {
       paymentSenderInfo,
       paymentReceiptImage,
       currency = "EGP",
-      shippingCost = 0,
     } = body;
+    const safeCurrency = ALLOWED_CURRENCIES.has(String(currency).toUpperCase())
+      ? String(currency).toUpperCase()
+      : "EGP";
+    const safePaymentMethod = ALLOWED_PAYMENT_METHODS.has(paymentMethod)
+      ? paymentMethod
+      : "vodafone_cash";
 
     // Validation
     if (!customerName || !customerPhone || !governorate || !detailedAddress) {
@@ -33,7 +55,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0 || items.length > 50) {
       return NextResponse.json(
         { success: false, message: "يجب اختيار كتاب واحد على الأقل للطلب" },
         { status: 400 }
@@ -47,6 +69,12 @@ export async function POST(request: Request) {
     let totalWeightKg = 0;
 
     for (const item of items) {
+      if (!isValidObjectId(item?.bookId)) {
+        return NextResponse.json(
+          { success: false, message: "Ø£Ø­Ø¯ Ø¹Ù†Ø§ØµØ± Ø§Ù„Ø·Ù„Ø¨ ØºÙŠØ± ØµØ§Ù„Ø­" },
+          { status: 400 }
+        );
+      }
       const book = await Book.findById(item.bookId);
       if (!book || book.isDeleted) {
         return NextResponse.json(
@@ -55,16 +83,16 @@ export async function POST(request: Request) {
         );
       }
 
-      const qty = Math.max(1, parseInt(item.quantity || 1));
+      const qty = Math.min(99, Math.max(1, Number.parseInt(String(item.quantity || "1"), 10) || 1));
       const volumes = Math.max(1, Number(book.volumesCount) || 1);
       const itemWeight = qty * volumes;
       totalWeightKg += itemWeight;
       
       // Determine unit price based on currency
       let unitPrice = 0;
-      if (currency === "LYD") {
+      if (safeCurrency === "LYD") {
         unitPrice = book.prices?.lyd || 0;
-      } else if (currency === "USD") {
+      } else if (safeCurrency === "USD") {
         unitPrice = book.prices?.usd || 0;
       } else {
         unitPrice = book.prices?.egp || 0;
@@ -88,13 +116,13 @@ export async function POST(request: Request) {
         wholesalePrice: wholesalePrice,
         quantity: qty,
         totalPrice: itemTotalPrice,
-        currency,
+        currency: safeCurrency,
       });
     }
 
     // Calculate smart shipping cost based on governorate & total weight
-    let computedShipping = Math.max(0, Number(shippingCost) || 0);
-    if (currency === "EGP" && governorate) {
+    let computedShipping = 0;
+    if (safeCurrency === "EGP" && governorate) {
       try {
         const { default: ShippingRate } = await import("@/models/ShippingRate");
         const govRate = await ShippingRate.findOne({ governorate: governorate.trim(), isActive: true });
@@ -115,11 +143,11 @@ export async function POST(request: Request) {
     let finalReceiptImage = "";
     let pendingBase64Receipt = "";
     
-    if (paymentReceiptImage && paymentReceiptImage.startsWith("data:image/")) {
+    if (paymentReceiptImage && validateDataImage(paymentReceiptImage)) {
       // Store for async upload after order is saved
       pendingBase64Receipt = paymentReceiptImage;
     } else if (paymentReceiptImage) {
-      finalReceiptImage = paymentReceiptImage;
+      finalReceiptImage = safeCloudinaryImage(paymentReceiptImage);
     }
 
     // Generate Order Code (e.g. IJ-84291)
@@ -140,9 +168,9 @@ export async function POST(request: Request) {
       shippingCost: numericShipping,
       grandTotal,
       totalProfit,
-      currency,
-      paymentMethod: paymentMethod || "vodafone_cash",
-      paymentStatus: paymentMethod === "cash_on_delivery" ? "pending" : "pending",
+      currency: safeCurrency,
+      paymentMethod: safePaymentMethod,
+      paymentStatus: "pending",
       paymentSenderInfo: paymentSenderInfo || "",
       paymentReceiptImage: finalReceiptImage,
       orderStatus: "pending",

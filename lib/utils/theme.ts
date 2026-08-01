@@ -34,7 +34,7 @@ export function toggleThemeWithNoFlash(
   }
 
   // 3. Force synchronous DOM reflow
-  window.getComputedStyle(document.body).opacity;
+  void window.getComputedStyle(document.body).opacity;
 
   // 4. Remove transition freeze style tag after 2 paint frames
   requestAnimationFrame(() => {

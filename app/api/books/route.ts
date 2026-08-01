@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
 import { normalizeArabic } from "@/lib/utils/normalize";
+import { boundedInt, boundedNumber, escapeRegex, isValidObjectId } from "@/lib/security/request";
 
 export async function GET(request: Request) {
   try {
@@ -10,8 +11,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     // Parsing pagination params
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "10")));
+    const page = boundedInt(searchParams.get("page"), 1, 1, 10000);
+    const limit = boundedInt(searchParams.get("limit"), 10, 1, 50);
     const skip = (page - 1) * limit;
 
     // Filters
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
     // 1. Search filter (using Arabic normalization)
     const search = searchParams.get("search");
     if (search) {
-      const normalizedSearch = normalizeArabic(search);
+      const normalizedSearch = escapeRegex(normalizeArabic(search.slice(0, 80)));
       query.$or = [
         { normalizedTitle: { $regex: normalizedSearch, $options: "i" } },
         { author: { $regex: normalizedSearch, $options: "i" } },
@@ -34,12 +35,13 @@ export async function GET(request: Request) {
     const categoryParam = searchParams.get("category");
     if (categoryParam) {
       // Find category by slug or ID
+      const categoryValue = categoryParam.slice(0, 120);
       const cat = await Category.findOne({
-        $or: [{ slug: categoryParam }, { name: categoryParam }],
+        $or: [{ slug: categoryValue }, { name: categoryValue }],
       });
       if (cat) {
         query.categoryId = cat._id;
-      } else if (categoryParam.match(/^[0-9a-fA-F]{24}$/)) {
+      } else if (isValidObjectId(categoryParam)) {
         query.categoryId = categoryParam;
       }
     }
@@ -47,13 +49,13 @@ export async function GET(request: Request) {
     // 3. Author filter
     const author = searchParams.get("author");
     if (author) {
-      query.author = { $regex: author, $options: "i" };
+      query.author = { $regex: escapeRegex(author.slice(0, 80)), $options: "i" };
     }
 
     // 4. Publisher filter
     const publisher = searchParams.get("publisher");
     if (publisher) {
-      query.publisher = { $regex: publisher, $options: "i" };
+      query.publisher = { $regex: escapeRegex(publisher.slice(0, 80)), $options: "i" };
     }
 
     // 5. Featured filter
@@ -81,18 +83,19 @@ export async function GET(request: Request) {
     }
 
     // 8. Price filters (EGP, LYD, or USD)
-    const currency = (searchParams.get("currency") || "egp").toLowerCase();
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
+    const currencyParam = (searchParams.get("currency") || "egp").toLowerCase();
+    const currency = ["egp", "lyd", "usd"].includes(currencyParam) ? currencyParam : "egp";
+    const minPrice = boundedNumber(searchParams.get("minPrice"), 0, 1000000);
+    const maxPrice = boundedNumber(searchParams.get("maxPrice"), 0, 1000000);
 
-    if (minPrice || maxPrice) {
+    if (minPrice !== undefined || maxPrice !== undefined) {
       const priceField = currency === "usd" ? "prices.usd" : currency === "lyd" ? "prices.lyd" : "prices.egp";
       query[priceField] = {};
-      if (minPrice) {
-        query[priceField].$gte = parseFloat(minPrice);
+      if (minPrice !== undefined) {
+        query[priceField].$gte = minPrice;
       }
-      if (maxPrice) {
-        query[priceField].$lte = parseFloat(maxPrice);
+      if (maxPrice !== undefined) {
+        query[priceField].$lte = maxPrice;
       }
     }
 

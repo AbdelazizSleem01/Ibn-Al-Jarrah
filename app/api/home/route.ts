@@ -10,7 +10,7 @@ export async function GET() {
     await dbConnect();
 
     // Fetch settings, categories, featured, and latest books in parallel (cached settings)
-    let [settings, categories, featuredBooks, latestBooks] = await Promise.all([
+    const [cachedSettings, categories, featuredBooks, latestBooks] = await Promise.all([
       getCachedSettings(),
       Category.find({ isVisible: true }).sort({ displayOrder: 1 }).lean(),
       Book.find({ isFeatured: true, isDeleted: false })
@@ -25,6 +25,7 @@ export async function GET() {
         .lean(),
     ]);
 
+    let settings = cachedSettings;
     if (!settings) {
       // Return defaults if not initialized yet
       settings = new SiteSettings({ key: "main_settings" }).toObject();

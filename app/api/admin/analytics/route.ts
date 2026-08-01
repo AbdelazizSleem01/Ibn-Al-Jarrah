@@ -3,22 +3,18 @@ import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
 import Order from "@/models/Order";
-import { getAuthUser } from "@/lib/auth/token";
+import { requireAdmin } from "@/lib/security/request";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+    const user = auth.user;
 
-    const { searchParams } = new URL(request.url);
+const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "30d";
 
     await dbConnect();

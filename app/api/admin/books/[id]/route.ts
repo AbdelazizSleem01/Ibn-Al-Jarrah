@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { revalidateTag, revalidatePath } from "next/cache";
 import dbConnect from "@/lib/db/dbConnect";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
 import { bookSchema } from "@/lib/validation/schemas";
 import { generateSlug, normalizeArabic } from "@/lib/utils/normalize";
 import { uploadImage, deleteImage } from "@/lib/cloudinary/upload";
-import { getAuthUser } from "@/lib/auth/token";
+import { isValidObjectId, readJsonBody, safeCloudinaryImage } from "@/lib/security/request";
+import { requireAdmin } from "@/lib/security/request";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -15,6 +17,15 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
+if (!isValidObjectId(id)) {
+      return NextResponse.json({ success: false, message: "Invalid book id" }, { status: 400 });
+    }
     await dbConnect();
 
     const book = await Book.findById(id).populate("categoryId", "name slug");
@@ -42,16 +53,17 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ success: false, message: "Invalid book id" }, { status: 400 });
     }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
-    const body = await request.json();
+await dbConnect();
+    const body = await readJsonBody<any>(request, 2 * 1024 * 1024);
 
     // Check if book exists
     const book = await Book.findById(id);
@@ -158,7 +170,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           }
           if (item.publicId || item.secureUrl) {
             return {
-              secureUrl: item.secureUrl,
+              secureUrl: safeCloudinaryImage(item.secureUrl),
               publicId: item.publicId,
               width: item.width,
               height: item.height,
@@ -204,9 +216,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         }
       }
 
-      const finalImages = [...retainedImages, ...uploadedNewImages];
-      book.images = finalImages;
-      book.coverImage = finalImages[0] || undefined;
+      const safeRetainedImages = retainedImages.map((item) => ({
+        secureUrl: safeCloudinaryImage(item.secureUrl),
+        publicId: item.publicId,
+        width: item.width,
+        height: item.height,
+      })).filter((item) => item.secureUrl || item.publicId);
+      const finalSafeImages = [...safeRetainedImages, ...uploadedNewImages];
+      book.images = finalSafeImages;
+      book.coverImage = finalSafeImages[0] || undefined;
       book.markModified("images");
       book.markModified("coverImage");
 
@@ -308,15 +326,16 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ success: false, message: "Invalid book id" }, { status: 400 });
     }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
+await dbConnect();
     const { searchParams } = new URL(request.url);
     const permanent = searchParams.get("permanent") === "true";
 

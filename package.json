@@ -7,26 +7,27 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.10.0",
     "cookie": "^1.1.1",
+    "exceljs": "^4.4.0",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.14.0",
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",
     "mongoose": "^9.7.4",
-    "next": "16.2.10",
+    "next": "^16.2.12",
     "pdf-parse": "^1.1.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-icons": "^5.7.0",
     "sharp": "^0.35.3",
     "sweetalert2": "^11.26.25",
-    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -39,8 +40,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "^16.2.12",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "postcss": "^8.5.18",
+    "sharp": "^0.35.3",
+    "uuid": "^11.1.1"
   }
 }

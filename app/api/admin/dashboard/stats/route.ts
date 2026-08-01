@@ -3,22 +3,18 @@ import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
 import Order from "@/models/Order";
-import { getAuthUser } from "@/lib/auth/token";
+import { requireAdmin } from "@/lib/security/request";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+    const user = auth.user;
 
-    await dbConnect();
+await dbConnect();
 
     // Execute ALL 6 queries concurrently in parallel with projection for maximum performance
     const [

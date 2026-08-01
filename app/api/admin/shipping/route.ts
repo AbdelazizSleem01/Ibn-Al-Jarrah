@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
 import ShippingRate, { DEFAULT_GOVERNORATES_SEED } from "@/models/ShippingRate";
+import { readJsonBody, requireAdmin } from "@/lib/security/request";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 // GET: Fetch all governorate shipping rates (including inactive ones)
 export async function GET() {
   try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
     await dbConnect();
 
     let rates = await ShippingRate.find({}).sort({ displayOrder: 1, governorate: 1 });
@@ -31,18 +36,32 @@ export async function GET() {
 // POST: Add new governorate rate
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
     await dbConnect();
-    const body = await request.json();
+    const body = await readJsonBody<any>(request);
     const { governorate, baseCost, extraKgCost, isActive = true } = body;
 
-    if (!governorate || baseCost === undefined || extraKgCost === undefined) {
+    if (typeof governorate !== "string" || !governorate.trim() || baseCost === undefined || extraKgCost === undefined) {
       return NextResponse.json(
         { success: false, message: "جميع البيانات مطلوبة (اسم المحافظة، سعر الكيلو الأول، سعر الكيلو الزائد)" },
         { status: 400 }
       );
     }
 
-    const existing = await ShippingRate.findOne({ governorate: governorate.trim() });
+    const base = Number(baseCost);
+    const extra = Number(extraKgCost);
+    if (!Number.isFinite(base) || !Number.isFinite(extra) || base < 0 || extra < 0) {
+      return NextResponse.json(
+        { success: false, message: "Invalid shipping cost" },
+        { status: 400 }
+      );
+    }
+
+    const existing = await ShippingRate.findOne({ governorate: governorate.trim().slice(0, 80) });
     if (existing) {
       return NextResponse.json(
         { success: false, message: "أسعار هذه المحافظة مسجلة بالفعل" },
@@ -51,9 +70,9 @@ export async function POST(request: Request) {
     }
 
     const newRate = await ShippingRate.create({
-      governorate: governorate.trim(),
-      baseCost: Number(baseCost),
-      extraKgCost: Number(extraKgCost),
+      governorate: governorate.trim().slice(0, 80),
+      baseCost: base,
+      extraKgCost: extra,
       isActive: Boolean(isActive),
     });
 

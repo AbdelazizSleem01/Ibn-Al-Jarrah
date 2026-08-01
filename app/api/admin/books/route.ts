@@ -6,15 +6,19 @@ import Category from "@/models/Category";
 import { bookSchema } from "@/lib/validation/schemas";
 import { generateSlug, normalizeArabic } from "@/lib/utils/normalize";
 import { uploadImage } from "@/lib/cloudinary/upload";
-import { getAuthUser } from "@/lib/auth/token";
+import { boundedInt, escapeRegex, isValidObjectId, readJsonBody, requireAdmin, safeCloudinaryImage } from "@/lib/security/request";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
     await dbConnect();
     const { searchParams } = new URL(request.url);
 
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "10")));
+    const page = boundedInt(searchParams.get("page"), 1, 1, 10000);
+    const limit = boundedInt(searchParams.get("limit"), 10, 1, 50);
     const skip = (page - 1) * limit;
 
     // Filters
@@ -27,7 +31,7 @@ export async function GET(request: Request) {
     // Search filter
     const search = searchParams.get("search");
     if (search) {
-      const normalizedSearch = normalizeArabic(search);
+      const normalizedSearch = escapeRegex(normalizeArabic(search.slice(0, 80)));
       query.$or = [
         { normalizedTitle: { $regex: normalizedSearch, $options: "i" } },
         { author: { $regex: normalizedSearch, $options: "i" } },
@@ -39,6 +43,9 @@ export async function GET(request: Request) {
     // Category filter
     const categoryId = searchParams.get("categoryId");
     if (categoryId) {
+      if (!isValidObjectId(categoryId)) {
+        return NextResponse.json({ success: false, message: "Invalid category id" }, { status: 400 });
+      }
       query.categoryId = categoryId;
     }
 
@@ -50,7 +57,7 @@ export async function GET(request: Request) {
 
     // Availability filter
     const availability = searchParams.get("availability");
-    if (availability) {
+    if (availability === "available" || availability === "unavailable") {
       query.availabilityStatus = availability;
     }
 
@@ -89,16 +96,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
-    const body = await request.json();
+await dbConnect();
+    const body = await readJsonBody<any>(request, 2 * 1024 * 1024);
 
     // Validate using Zod
     const result = bookSchema.safeParse(body);
@@ -151,9 +156,14 @@ export async function POST(request: Request) {
           if (item.base64) {
             return await uploadImage(item.base64);
           }
-          return item;
+          return {
+            secureUrl: safeCloudinaryImage(item.secureUrl),
+            publicId: item.publicId,
+            width: item.width,
+            height: item.height,
+          };
         });
-        images = await Promise.all(uploadPromises);
+        images = (await Promise.all(uploadPromises)).filter((item) => item.secureUrl || item.publicId);
         coverImage = images[0];
       } catch (err: any) {
         return NextResponse.json(

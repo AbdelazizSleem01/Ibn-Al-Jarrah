@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
 import Order from "@/models/Order";
-import { getAuthUser } from "@/lib/auth/token";
+import { boundedInt, escapeRegex } from "@/lib/security/request";
+import { requireAdmin } from "@/lib/security/request";
 
 export async function GET(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json({ success: false, message: "غير غير مسرح له" }, { status: 401 });
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
 
-    await dbConnect();
+await dbConnect();
     const { searchParams } = new URL(request.url);
 
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "15")));
+    const page = boundedInt(searchParams.get("page"), 1, 1, 10000);
+    const limit = boundedInt(searchParams.get("limit"), 15, 1, 50);
     const skip = (page - 1) * limit;
 
     const orderStatus = searchParams.get("orderStatus");
@@ -32,11 +32,12 @@ export async function GET(request: Request) {
     }
 
     if (search) {
+      const safeSearch = escapeRegex(search.slice(0, 80));
       query.$or = [
-        { orderNumber: { $regex: search, $options: "i" } },
-        { customerName: { $regex: search, $options: "i" } },
-        { customerPhone: { $regex: search, $options: "i" } },
-        { governorate: { $regex: search, $options: "i" } },
+        { orderNumber: { $regex: safeSearch, $options: "i" } },
+        { customerName: { $regex: safeSearch, $options: "i" } },
+        { customerPhone: { $regex: safeSearch, $options: "i" } },
+        { governorate: { $regex: safeSearch, $options: "i" } },
       ];
     }
 

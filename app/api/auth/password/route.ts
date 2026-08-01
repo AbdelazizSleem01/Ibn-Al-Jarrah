@@ -4,9 +4,18 @@ import Admin from "@/models/Admin";
 import bcrypt from "bcrypt";
 import { getAuthUser, signToken, setAuthCookie } from "@/lib/auth/token";
 import { adminPasswordSchema } from "@/lib/validation/schemas";
+import { readJsonBody } from "@/lib/security/request";
+import { requireCsrf } from "@/lib/security/csrf";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 export async function PATCH(request: Request) {
   try {
+    const csrf = requireCsrf(request);
+    if (csrf) return csrf;
+
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
     const user = await getAuthUser();
     if (!user) {
       return NextResponse.json(
@@ -16,7 +25,7 @@ export async function PATCH(request: Request) {
     }
 
     await dbConnect();
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const result = adminPasswordSchema.safeParse(body);
 
     if (!result.success) {

@@ -4,9 +4,14 @@ import Admin from "@/models/Admin";
 import bcrypt from "bcrypt";
 import { getAuthUser, signToken, setAuthCookie } from "@/lib/auth/token";
 import { adminProfileSchema } from "@/lib/validation/schemas";
+import { readJsonBody } from "@/lib/security/request";
+import { requireCsrf } from "@/lib/security/csrf";
 
 export async function PATCH(request: Request) {
   try {
+    const csrf = requireCsrf(request);
+    if (csrf) return csrf;
+
     const user = await getAuthUser();
     if (!user) {
       return NextResponse.json(
@@ -16,7 +21,7 @@ export async function PATCH(request: Request) {
     }
 
     await dbConnect();
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const result = adminProfileSchema.safeParse(body);
 
     if (!result.success) {

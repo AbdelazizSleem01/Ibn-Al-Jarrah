@@ -35,7 +35,7 @@ export default function ScrollReveal({
       ([entry]) => {
         if (entry.isIntersecting) {
           el.classList.add("is-visible");
-          observer.unobserve(el); // fire once only
+          observer.unobserve(el);
         }
       },
       { threshold }
@@ -49,6 +49,9 @@ export default function ScrollReveal({
     .filter(Boolean)
     .join(" ");
 
-  // @ts-ignore – polymorphic tag is fine here
-  return <Tag ref={ref} className={classes}>{children}</Tag>;
+  return (
+    <Tag ref={ref} className={classes}>
+      {children}
+    </Tag>
+  );
 }

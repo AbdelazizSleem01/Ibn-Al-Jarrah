@@ -4,6 +4,8 @@ import Category from "@/models/Category";
 import Book from "@/models/Book";
 import { categorySchema } from "@/lib/validation/schemas";
 import { generateSlug } from "@/lib/utils/normalize";
+import { escapeRegex, isValidObjectId, readJsonBody, requireAdmin } from "@/lib/security/request";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -11,9 +13,17 @@ interface RouteParams {
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
     const { id } = await params;
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ success: false, message: "Invalid category id" }, { status: 400 });
+    }
     await dbConnect();
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const result = categorySchema.safeParse(body);
 
     if (!result.success) {
@@ -38,7 +48,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     if (name.toLowerCase() !== category.name.toLowerCase()) {
       const exists = await Category.findOne({
         _id: { $ne: id },
-        name: { $regex: new RegExp(`^${name}$`, "i") },
+        name: { $regex: new RegExp(`^${escapeRegex(name)}$`, "i") },
       });
       if (exists) {
         return NextResponse.json(
@@ -82,7 +92,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
     const { id } = await params;
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ success: false, message: "Invalid category id" }, { status: 400 });
+    }
     await dbConnect();
 
     // Check if category exists

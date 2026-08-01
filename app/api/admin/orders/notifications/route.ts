@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 import Order from "@/models/Order";
-import { getAuthUser } from "@/lib/auth/token";
+import { requireAdmin } from "@/lib/security/request";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json({ success: false, message: "غير غير مسرح له" }, { status: 401 });
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
+await dbConnect();
 
     // Count unread pending orders
     const pendingCount = await Order.countDocuments({ orderStatus: "pending" });
@@ -37,14 +39,15 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json({ success: false, message: "غير مسرح له" }, { status: 401 });
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
+await dbConnect();
 
     // Mark all as read
     await Order.updateMany({ isReadByAdmin: false }, { isReadByAdmin: true });

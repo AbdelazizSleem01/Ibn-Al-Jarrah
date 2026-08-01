@@ -1,27 +1,27 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import dbConnect from "@/lib/db/dbConnect";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
-import { getAuthUser } from "@/lib/auth/token";
 import { deleteImage } from "@/lib/cloudinary/upload";
 import { normalizeArabic } from "@/lib/utils/normalize";
+import { escapeRegex, isValidObjectId, readJsonBody, validateAllowedIds } from "@/lib/security/request";
+import { requireAdmin } from "@/lib/security/request";
 
 export async function POST(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
-    const body = await request.json();
+await dbConnect();
+    const body = await readJsonBody<any>(request);
     const { ids, action, selectAllMatching, filters, categoryId, availabilityStatus, isFeatured } = body;
 
-    let targetIds: string[] = Array.isArray(ids) ? ids : [];
+    let targetIds: string[] = validateAllowedIds(ids);
 
     // If database-wide select all matching is enabled, query matching documents from DB
     if (selectAllMatching && filters) {
@@ -30,8 +30,8 @@ export async function POST(request: Request) {
       if (filters.search && filters.search.trim()) {
         const searchTrim = filters.search.trim();
         const normalized = normalizeArabic(searchTrim);
-        const regex = new RegExp(searchTrim, "i");
-        const normRegex = new RegExp(normalized, "i");
+        const regex = new RegExp(escapeRegex(searchTrim.slice(0, 80)), "i");
+        const normRegex = new RegExp(escapeRegex(normalized.slice(0, 80)), "i");
 
         query.$or = [
           { title: regex },
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         ];
       }
 
-      if (filters.categoryId) {
+      if (filters.categoryId && isValidObjectId(filters.categoryId)) {
         query.categoryId = filters.categoryId;
       }
       if (filters.availability) {
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       }
 
       const matchingBooks = await Book.find(query, { _id: 1 }).lean();
-      targetIds = matchingBooks.map((b: any) => b._id.toString());
+      targetIds = matchingBooks.map((b: any) => b._id.toString()).slice(0, 500);
     }
 
     if (!targetIds || targetIds.length === 0) {
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const objectIds = targetIds.map((id) => new mongoose.Types.ObjectId(id));
+    const objectIds = validateAllowedIds(targetIds).map((id) => new mongoose.Types.ObjectId(id));
 
     if (action === "delete") {
       // Fast Aggregation to count books per category before soft-deleting
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "updateCategory") {
-      if (!categoryId) {
+      if (!isValidObjectId(categoryId)) {
         return NextResponse.json(
           { success: false, message: "يجب تحديد التصنيف الجديد" },
           { status: 400 }

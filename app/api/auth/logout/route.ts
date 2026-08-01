@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { removeAuthCookie } from "@/lib/auth/token";
+import { requireCsrf } from "@/lib/security/csrf";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const csrf = requireCsrf(request);
+    if (csrf) return csrf;
+
     await removeAuthCookie();
     return NextResponse.json({
       success: true,

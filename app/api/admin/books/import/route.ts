@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 import Book from "@/models/Book";
 import Category from "@/models/Category";
-import { getAuthUser } from "@/lib/auth/token";
 import { normalizeArabic, generateSlug } from "@/lib/utils/normalize";
+import { escapeRegex, isValidObjectId, readJsonBody } from "@/lib/security/request";
+import { requireAdmin } from "@/lib/security/request";
 
 /**
  * Helper function to safely parse numeric values (prices, years, pages, volumes)
@@ -24,26 +26,26 @@ function parseSafeNumber(val: any): number | undefined {
 
 export async function POST(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.fileUpload);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
-    const body = await request.json();
+await dbConnect();
+    const body = await readJsonBody<any>(request, 2 * 1024 * 1024);
     const { books, duplicateStrategy, defaultCategoryId } = body; // duplicateStrategy: 'ignore' | 'update' | 'create_copy'
 
-    if (!books || !Array.isArray(books) || books.length === 0) {
+    if (!books || !Array.isArray(books) || books.length === 0 || books.length > 500) {
       return NextResponse.json(
         { success: false, message: "لا توجد بيانات كتب للاستيراد" },
         { status: 400 }
       );
     }
 
-    const strategy = duplicateStrategy || "ignore";
+    const strategy = ["ignore", "update", "create_copy"].includes(duplicateStrategy)
+      ? duplicateStrategy
+      : "ignore";
     const report = {
       total: books.length,
       imported: 0,
@@ -61,12 +63,14 @@ export async function POST(request: Request) {
       }
 
       let category = null;
-      if (catIdOrName.match(/^[0-9a-fA-F]{24}$/)) {
+      if (isValidObjectId(catIdOrName)) {
         category = await Category.findById(catIdOrName);
       }
       if (!category) {
         // Find by name
-        category = await Category.findOne({ name: { $regex: new RegExp(`^${catIdOrName.trim()}$`, "i") } });
+        category = await Category.findOne({
+          name: { $regex: new RegExp(`^${escapeRegex(catIdOrName.trim().slice(0, 120))}$`, "i") },
+        });
       }
 
       if (category) {

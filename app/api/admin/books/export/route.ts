@@ -1,19 +1,16 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
 import Book from "@/models/Book";
-import { getAuthUser } from "@/lib/auth/token";
+import { isValidObjectId } from "@/lib/security/request";
+import { requireAdmin } from "@/lib/security/request";
 
 export async function GET(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+    const user = auth.user;
 
-    await dbConnect();
+await dbConnect();
     const { searchParams } = new URL(request.url);
 
     const query: any = { isDeleted: false };
@@ -21,6 +18,9 @@ export async function GET(request: Request) {
     // Apply category filter if specified
     const categoryId = searchParams.get("categoryId");
     if (categoryId) {
+      if (!isValidObjectId(categoryId)) {
+        return NextResponse.json({ success: false, message: "Invalid category id" }, { status: 400 });
+      }
       query.categoryId = categoryId;
     }
 
@@ -34,6 +34,7 @@ export async function GET(request: Request) {
     const books = await Book.find(query)
       .populate("categoryId", "name slug")
       .sort({ createdAt: -1 })
+      .limit(5000)
       .lean();
 
     // Format fields for export

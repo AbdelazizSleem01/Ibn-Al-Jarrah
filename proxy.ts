@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "dar_aljarrah_token";
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_123456";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Rate limit configuration
 const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
@@ -40,6 +40,13 @@ export default async function proxy(request: NextRequest) {
   const isAdminApiPath = pathname.startsWith("/api/admin");
 
   if (isAdminPath || isAdminApiPath) {
+    if (!JWT_SECRET || JWT_SECRET.length < 32) {
+      return NextResponse.json(
+        { success: false, message: "Server authentication is not configured." },
+        { status: 500 }
+      );
+    }
+
     if (!token) {
       if (isAdminApiPath) {
         return NextResponse.json(
@@ -56,7 +63,7 @@ export default async function proxy(request: NextRequest) {
 
     try {
       const secretKey = new TextEncoder().encode(JWT_SECRET);
-      await jwtVerify(token, secretKey);
+      await jwtVerify(token, secretKey, { algorithms: ["HS256"] });
     } catch (error) {
       if (isAdminApiPath) {
         return NextResponse.json(
@@ -73,8 +80,11 @@ export default async function proxy(request: NextRequest) {
   // Redirect logged-in admin away from login page
   if (pathname === "/login" && token) {
     try {
+      if (!JWT_SECRET || JWT_SECRET.length < 32) {
+        throw new Error("JWT secret is not configured");
+      }
       const secretKey = new TextEncoder().encode(JWT_SECRET);
-      await jwtVerify(token, secretKey);
+      await jwtVerify(token, secretKey, { algorithms: ["HS256"] });
       return NextResponse.redirect(new URL("/admin", request.url));
     } catch (error) {
       // Invalid token, delete it

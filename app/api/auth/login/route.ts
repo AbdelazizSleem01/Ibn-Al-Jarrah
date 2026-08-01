@@ -4,79 +4,43 @@ import Admin from "@/models/Admin";
 import bcrypt from "bcrypt";
 import { signToken, setAuthCookie } from "@/lib/auth/token";
 import { loginSchema } from "@/lib/validation/schemas";
-
-// Simple in-memory rate limiting map
-const loginAttempts = new Map<string, { count: number; lockUntil: number }>();
+import { readJsonBody } from "@/lib/security/request";
+import { requireCsrf } from "@/lib/security/csrf";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 export async function POST(request: Request) {
   try {
+    const csrf = requireCsrf(request);
+    if (csrf) return csrf;
+
+    const rateLimit = await checkRateLimit(request, ratePolicies.login);
+    if (rateLimit) return rateLimit;
+
     await dbConnect();
-
-    // Rate Limiting Check
-    const ip = request.headers.get("x-forwarded-for") || "local";
-    const now = Date.now();
-    const attempt = loginAttempts.get(ip);
-
-    if (attempt && attempt.lockUntil > now) {
-      const minutesLeft = Math.ceil((attempt.lockUntil - now) / 60000);
-      return NextResponse.json(
-        {
-          success: false,
-          message: `محاولات تسجيل دخول كثيرة خاطئة. تم قفل الحساب مؤقتاً، يرجى المحاولة بعد ${minutesLeft} دقيقة.`,
-        },
-        { status: 429 }
-      );
-    }
-
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const result = loginSchema.safeParse(body);
 
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;
       return NextResponse.json(
-        { success: false, message: "بيانات الإدخال غير صحيحة", errors },
+        { success: false, message: "Invalid input", errors },
         { status: 400 }
       );
     }
 
     const { email, password } = result.data;
-
-    // Generic error message to prevent account enumeration
-    const invalidCredsResponse = () => {
-      // Increment rate limit attempts
-      const currentCount = attempt ? attempt.count + 1 : 1;
-      if (currentCount >= 5) {
-        loginAttempts.set(ip, {
-          count: 0,
-          lockUntil: now + 15 * 60 * 1000, // 15 mins lock
-        });
-      } else {
-        loginAttempts.set(ip, {
-          count: currentCount,
-          lockUntil: 0,
-        });
-      }
-
-      return NextResponse.json(
-        { success: false, message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" },
+    const invalidCredsResponse = () =>
+      NextResponse.json(
+        { success: false, message: "Invalid email or password" },
         { status: 401 }
       );
-    };
 
     const admin = await Admin.findOne({ email });
-    if (!admin) {
-      return invalidCredsResponse();
-    }
+    if (!admin) return invalidCredsResponse();
 
     const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) {
-      return invalidCredsResponse();
-    }
+    if (!isMatch) return invalidCredsResponse();
 
-    // Success - Clear rate limit attempts
-    loginAttempts.delete(ip);
-
-    // Sign Token and set HttpOnly Cookie
     const token = signToken({
       id: admin._id.toString(),
       email: admin.email,
@@ -87,16 +51,28 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "تم تسجيل الدخول بنجاح",
+      message: "Login successful",
       data: {
         name: admin.name,
         email: admin.email,
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_CONTENT_TYPE") {
+      return NextResponse.json(
+        { success: false, message: "Content-Type must be application/json" },
+        { status: 415 }
+      );
+    }
+    if (error instanceof Error && error.message === "BODY_TOO_LARGE") {
+      return NextResponse.json(
+        { success: false, message: "Request body is too large" },
+        { status: 413 }
+      );
+    }
     console.error("Login API Error:", error);
     return NextResponse.json(
-      { success: false, message: "حدث خطأ غير متوقع في الخادم" },
+      { success: false, message: "Unexpected server error" },
       { status: 500 }
     );
   }

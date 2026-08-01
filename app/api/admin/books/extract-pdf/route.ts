@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth/token";
 import { extractBookDataFromPDF } from "@/lib/utils/pdfExtractor";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
+import { MAX_PDF_BYTES } from "@/lib/security/request";
+import { requireAdmin } from "@/lib/security/request";
 
 export async function POST(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.fileUpload);
+    if (rateLimit) return rateLimit;
 
-    const formData = await request.formData();
+const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
     if (!file) {
@@ -22,15 +22,28 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!file.name.toLowerCase().endsWith(".pdf")) {
+    if (!file.name.toLowerCase().endsWith(".pdf") || file.type !== "application/pdf") {
       return NextResponse.json(
         { success: false, message: "نوع الملف يجب أن يكون PDF فقط" },
         { status: 400 }
       );
     }
 
+    if (file.size > MAX_PDF_BYTES) {
+      return NextResponse.json(
+        { success: false, message: "PDF file is too large" },
+        { status: 413 }
+      );
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-") {
+      return NextResponse.json(
+        { success: false, message: "Invalid PDF file" },
+        { status: 400 }
+      );
+    }
 
     const encoder = new TextEncoder();
 

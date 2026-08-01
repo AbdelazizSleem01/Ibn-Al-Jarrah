@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/dbConnect";
 import ShippingRate from "@/models/ShippingRate";
+import { isValidObjectId, readJsonBody, requireAdmin } from "@/lib/security/request";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 // PATCH: Update a governorate shipping rate or active state
 export async function PATCH(
@@ -8,9 +10,17 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
     await dbConnect();
     const { id } = await params;
-    const body = await request.json();
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ success: false, message: "Invalid shipping rate id" }, { status: 400 });
+    }
+    const body = await readJsonBody<any>(request);
 
     const rate = await ShippingRate.findById(id);
     if (!rate) {
@@ -20,10 +30,22 @@ export async function PATCH(
       );
     }
 
-    if (body.baseCost !== undefined) rate.baseCost = Number(body.baseCost);
-    if (body.extraKgCost !== undefined) rate.extraKgCost = Number(body.extraKgCost);
+    if (body.baseCost !== undefined) {
+      const baseCost = Number(body.baseCost);
+      if (!Number.isFinite(baseCost) || baseCost < 0) {
+        return NextResponse.json({ success: false, message: "Invalid base cost" }, { status: 400 });
+      }
+      rate.baseCost = baseCost;
+    }
+    if (body.extraKgCost !== undefined) {
+      const extraKgCost = Number(body.extraKgCost);
+      if (!Number.isFinite(extraKgCost) || extraKgCost < 0) {
+        return NextResponse.json({ success: false, message: "Invalid extra kg cost" }, { status: 400 });
+      }
+      rate.extraKgCost = extraKgCost;
+    }
     if (body.isActive !== undefined) rate.isActive = Boolean(body.isActive);
-    if (body.governorate) rate.governorate = body.governorate.trim();
+    if (body.governorate && typeof body.governorate === "string") rate.governorate = body.governorate.trim().slice(0, 80);
 
     await rate.save();
 
@@ -47,8 +69,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
     await dbConnect();
     const { id } = await params;
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ success: false, message: "Invalid shipping rate id" }, { status: 400 });
+    }
 
     const rate = await ShippingRate.findByIdAndDelete(id);
     if (!rate) {

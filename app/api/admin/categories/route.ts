@@ -4,9 +4,14 @@ import dbConnect from "@/lib/db/dbConnect";
 import Category from "@/models/Category";
 import { categorySchema } from "@/lib/validation/schemas";
 import { generateSlug } from "@/lib/utils/normalize";
+import { escapeRegex, requireAdmin, readJsonBody } from "@/lib/security/request";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 export async function GET() {
   try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
     await dbConnect();
     // Get all categories, sorted by displayOrder
     const categories = await Category.find().sort({ displayOrder: 1 }).lean();
@@ -27,8 +32,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
+
     await dbConnect();
-    const body = await request.json();
+    const body = await readJsonBody(request);
     const result = categorySchema.safeParse(body);
 
     if (!result.success) {
@@ -42,7 +52,7 @@ export async function POST(request: Request) {
     const { name, description, icon, isVisible, displayOrder } = result.data;
 
     // Check if category name exists
-    const exists = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, "i") } });
+    const exists = await Category.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, "i") } });
     if (exists) {
       return NextResponse.json(
         { success: false, message: "اسم التصنيف موجود بالفعل", errors: { name: ["اسم التصنيف موجود بالفعل"] } },

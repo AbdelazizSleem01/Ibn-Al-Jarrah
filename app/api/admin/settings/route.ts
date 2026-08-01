@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import dbConnect from "@/lib/db/dbConnect";
 import SiteSettings from "@/models/SiteSettings";
-import { getAuthUser } from "@/lib/auth/token";
 import { settingsSchema } from "@/lib/validation/schemas";
 import { uploadImage, deleteImage } from "@/lib/cloudinary/upload";
+import { readJsonBody, requireAdmin } from "@/lib/security/request";
+import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
 export async function GET() {
   try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
     await dbConnect();
     let settings = await SiteSettings.findOne({ key: "main_settings" });
     if (!settings) {
@@ -31,16 +35,14 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "غير مصرح بالدخول" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin(request, { csrf: true });
+    if (auth.response) return auth.response;
+    const user = auth.user;
+    const rateLimit = await checkRateLimit(request, ratePolicies.adminSensitive);
+    if (rateLimit) return rateLimit;
 
-    await dbConnect();
-    const body = await request.json();
+await dbConnect();
+    const body = await readJsonBody<any>(request, 2 * 1024 * 1024);
     const result = settingsSchema.safeParse(body);
 
     if (!result.success) {

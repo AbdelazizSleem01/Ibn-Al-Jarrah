@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { validateDataImage } from "@/lib/security/request";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -20,8 +21,15 @@ export interface UploadResult {
  */
 export async function uploadImage(base64Str: string, folderName = "dar_aljarrah/covers"): Promise<UploadResult> {
   try {
-    const uploadResponse = await cloudinary.uploader.upload(base64Str, {
+    const safeImage = validateDataImage(base64Str);
+    if (!safeImage) {
+      throw new Error("INVALID_IMAGE");
+    }
+
+    const uploadResponse = await cloudinary.uploader.upload(safeImage, {
       folder: folderName,
+      resource_type: "image",
+      allowed_formats: ["jpg", "jpeg", "png", "webp"],
       fetch_format: "auto",
       quality: "auto",
       // Apply resizing if needed, but keeping it flexible

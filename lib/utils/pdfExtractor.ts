@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse/lib/pdf-parse.js");
 
 export interface ExtractedBookData {
@@ -173,7 +172,7 @@ function extractLocalRegex(lines: string[], fullText: string, result: ExtractedB
       !result.publisher?.includes(line) &&
       !result.editorOrTranslator?.includes(line)
     ) {
-      let cleanTitle = line.replace(/^(كتاب|رسالة\s+في|مختصر|شرح|حاشية\s+على)\s+/, "$1 ");
+      const cleanTitle = line.replace(/^(كتاب|رسالة\s+في|مختصر|شرح|حاشية\s+على)\s+/, "$1 ");
       result.title = cleanTitle.trim();
       break;
     }
