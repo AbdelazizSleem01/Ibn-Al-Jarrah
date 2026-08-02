@@ -61,11 +61,10 @@ export async function GET(request: Request) {
       query.availabilityStatus = availability;
     }
 
-    // Execute queries in parallel with selected lightweight fields for table list
     const [totalResults, books] = await Promise.all([
       Book.countDocuments(query),
       Book.find(query)
-        .select("-description -internalNotes -images")
+        .select("title normalizedTitle slug author categoryId prices coverImage availabilityStatus isFeatured isbn isDeleted")
         .populate("categoryId", "name slug")
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -74,17 +73,24 @@ export async function GET(request: Request) {
     ]);
     const totalPages = Math.ceil(totalResults / limit);
 
-    return NextResponse.json({
-      success: true,
-      message: "تم جلب الكتب بنجاح",
-      data: books,
-      pagination: {
-        page,
-        limit,
-        totalPages,
-        totalResults,
+    return NextResponse.json(
+      {
+        success: true,
+        message: "تم جلب الكتب بنجاح",
+        data: books,
+        pagination: {
+          page,
+          limit,
+          totalPages,
+          totalResults,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Admin Books GET Error:", error);
     return NextResponse.json(

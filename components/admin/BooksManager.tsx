@@ -1255,9 +1255,11 @@ export default function BooksManager() {
                         <img
                           src={book.coverImage?.secureUrl || "/images/hero-book.webp"}
                           alt={book.title}
+                          width="32"
+                          height="40"
                           loading="lazy"
                           decoding="async"
-                          className="w-8 h-10 object-cover rounded shadow-sm border border-border-color shrink-0"
+                          className="w-8 h-10 object-cover rounded shadow-sm border border-border-color shrink-0 bg-foreground/5"
                         />
                         <div className="flex flex-col min-w-0">
                           <span className="truncate block" title={book.title}>{book.title}</span>
