@@ -1,7 +1,41 @@
 import React from "react";
-import * as FaIcons from "react-icons/fa";
-import * as GiIcons from "react-icons/gi";
-import * as BiIcons from "react-icons/bi";
+import {
+  FaBook, FaBookOpen, FaBookReader, FaBookmark, FaRegBookmark, FaLayerGroup, FaTags, FaList,
+  FaGraduationCap, FaUniversity, FaSchool, FaChalkboardTeacher, FaPen, FaPenFancy, FaPencilAlt,
+  FaFileAlt, FaFilePdf, FaFileWord, FaFolder, FaFolderOpen, FaArchive, FaAtlas,
+  FaMosque, FaQuran, FaPray, FaHands, FaStarAndCrescent, FaKaaba, FaBalanceScale, FaGavel,
+  FaQuoteRight, FaQuoteLeft,
+  FaGlobe, FaHistory, FaMicroscope, FaFlask, FaBrain, FaLightbulb, FaRegLightbulb,
+  FaCode, FaTerminal, FaDesktop, FaLaptop, FaMobileAlt, FaDatabase, FaServer, FaCloud,
+  FaMicrophone, FaPodcast, FaVideo, FaCamera, FaImage, FaImages, FaMusic, FaPlayCircle,
+  FaUser, FaUsers, FaUserGraduate, FaUserTie, FaIdCard, FaAddressCard, FaBriefcase,
+  FaChartLine, FaChartBar, FaChartPie, FaMoneyBillWave, FaCoins, FaWallet,
+  FaLeaf, FaTree, FaSeedling, FaSun, FaMoon, FaStar, FaRegStar, FaHeart, FaRegHeart,
+  FaFire, FaWater, FaWind, FaBolt, FaUmbrella, FaCrown, FaMedal, FaTrophy, FaAward,
+  FaMap, FaMapMarkedAlt, FaCompass, FaLandmark, FaBuilding, FaHome, FaPlane, FaCar,
+  FaInfoCircle, FaQuestionCircle, FaExclamationCircle, FaCheckCircle, FaTimesCircle,
+  FaSearch, FaCog, FaCogs, FaWrench, FaTools, FaShieldAlt, FaLock, FaUnlock, FaKey,
+  FaEnvelope, FaPaperPlane, FaComments, FaBug, FaClock, FaCalendarAlt, FaThumbsUp
+} from "react-icons/fa";
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  FaBook, FaBookOpen, FaBookReader, FaBookmark, FaRegBookmark, FaLayerGroup, FaTags, FaList,
+  FaGraduationCap, FaUniversity, FaSchool, FaChalkboardTeacher, FaPen, FaPenFancy, FaPencilAlt,
+  FaFileAlt, FaFilePdf, FaFileWord, FaFolder, FaFolderOpen, FaArchive, FaAtlas,
+  FaMosque, FaQuran, FaPray, FaHands, FaStarAndCrescent, FaKaaba, FaBalanceScale, FaGavel,
+  FaQuoteRight, FaQuoteLeft,
+  FaGlobe, FaHistory, FaMicroscope, FaFlask, FaBrain, FaLightbulb, FaRegLightbulb,
+  FaCode, FaTerminal, FaDesktop, FaLaptop, FaMobileAlt, FaDatabase, FaServer, FaCloud,
+  FaMicrophone, FaPodcast, FaVideo, FaCamera, FaImage, FaImages, FaMusic, FaPlayCircle,
+  FaUser, FaUsers, FaUserGraduate, FaUserTie, FaIdCard, FaAddressCard, FaBriefcase,
+  FaChartLine, FaChartBar, FaChartPie, FaMoneyBillWave, FaCoins, FaWallet,
+  FaLeaf, FaTree, FaSeedling, FaSun, FaMoon, FaStar, FaRegStar, FaHeart, FaRegHeart,
+  FaFire, FaWater, FaWind, FaBolt, FaUmbrella, FaCrown, FaMedal, FaTrophy, FaAward,
+  FaMap, FaMapMarkedAlt, FaCompass, FaLandmark, FaBuilding, FaHome, FaPlane, FaCar,
+  FaInfoCircle, FaQuestionCircle, FaExclamationCircle, FaCheckCircle, FaTimesCircle,
+  FaSearch, FaCog, FaCogs, FaWrench, FaTools, FaShieldAlt, FaLock, FaUnlock, FaKey,
+  FaEnvelope, FaPaperPlane, FaComments, FaBug, FaClock, FaCalendarAlt, FaThumbsUp
+};
 
 interface IconRendererProps {
   name?: string;
@@ -9,27 +43,10 @@ interface IconRendererProps {
 }
 
 export default function IconRenderer({ name, className = "w-5 h-5" }: IconRendererProps) {
-  if (!name) return <FaIcons.FaBook className={className} />;
-
-  // Search in FontAwesome
-  if (name.startsWith("Fa") && (FaIcons as any)[name]) {
-    const IconComponent = (FaIcons as any)[name];
-    return <IconComponent className={className} />;
+  if (!name || !iconMap[name]) {
+    return <FaBook className={className} />;
   }
-
-  // Search in GameIcons
-  if (name.startsWith("Gi") && (GiIcons as any)[name]) {
-    const IconComponent = (GiIcons as any)[name];
-    return <IconComponent className={className} />;
-  }
-
-  // Search in BoxIcons
-  if (name.startsWith("Bi") && (BiIcons as any)[name]) {
-    const IconComponent = (BiIcons as any)[name];
-    return <IconComponent className={className} />;
-  }
-
-  // Fallback icon
-  return <FaIcons.FaBook className={className} />;
+  const IconComponent = iconMap[name];
+  return <IconComponent className={className} />;
 }
-export type IconNameType = keyof typeof FaIcons | keyof typeof GiIcons | keyof typeof BiIcons;
+

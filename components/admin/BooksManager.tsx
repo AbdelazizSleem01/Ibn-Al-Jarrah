@@ -1254,7 +1254,9 @@ export default function BooksManager() {
                       <div className="flex items-center gap-3">
                         <img
                           src={book.coverImage?.secureUrl || "/images/hero-book.webp"}
-                          alt=""
+                          alt={book.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-8 h-10 object-cover rounded shadow-sm border border-border-color shrink-0"
                         />
                         <div className="flex flex-col min-w-0">

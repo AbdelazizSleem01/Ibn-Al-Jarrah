@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     const [totalResults, books] = await Promise.all([
       Book.countDocuments(query),
       Book.find(query)
-        .select("-description -internalNotes")
+        .select("-description -internalNotes -images")
         .populate("categoryId", "name slug")
         .sort({ createdAt: -1 })
         .skip(skip)

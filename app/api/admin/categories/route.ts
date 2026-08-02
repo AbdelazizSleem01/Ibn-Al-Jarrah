@@ -7,6 +7,7 @@ import { generateSlug } from "@/lib/utils/normalize";
 import { escapeRegex, requireAdmin, readJsonBody } from "@/lib/security/request";
 import { checkRateLimit, ratePolicies } from "@/lib/security/rateLimit";
 
+
 export async function GET() {
   try {
     const auth = await requireAdmin();
@@ -14,7 +15,10 @@ export async function GET() {
 
     await dbConnect();
     // Get all categories, sorted by displayOrder
-    const categories = await Category.find().sort({ displayOrder: 1 }).lean();
+    const categories = await Category.find()
+      .select("name slug description icon isVisible displayOrder booksCount")
+      .sort({ displayOrder: 1 })
+      .lean();
 
     return NextResponse.json({
       success: true,
