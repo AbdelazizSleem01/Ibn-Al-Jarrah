@@ -93,11 +93,7 @@ export async function checkRateLimit(request: Request, policy: RateLimitPolicy) 
     if (redisResult) return redisResult;
     if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) return null;
   } catch {
-    if (process.env.NODE_ENV === "production") return unavailableResponse();
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    return unavailableResponse();
+    // Fall back to memory limit if Upstash fails
   }
 
   return memoryLimit(key, policy);
