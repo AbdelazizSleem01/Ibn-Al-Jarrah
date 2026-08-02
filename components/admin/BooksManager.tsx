@@ -459,6 +459,22 @@ export default function BooksManager() {
     setModalOpen(true);
   };
 
+  // Open modal for Viewing Book details
+  const openViewModal = async (book: Book) => {
+    setViewingBook(book);
+    setViewingGalleryIndex(0);
+
+    try {
+      const res = await fetch(`/api/admin/books/${book._id}`);
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        setViewingBook(resData.data);
+      }
+    } catch (err) {
+      console.error("Error fetching full book details:", err);
+    }
+  };
+
   // Open modal for Editing Book
   const openEditModal = async (book: Book) => {
     setEditingBookId(book._id);
@@ -1318,7 +1334,7 @@ export default function BooksManager() {
                         ) : (
                           <>
                             <button
-                              onClick={() => { setViewingBook(book); setViewingGalleryIndex(0); }}
+                              onClick={() => openViewModal(book)}
                               className="p-2 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white transition-colors cursor-pointer"
                               title="معاينة تفاصيل الكتاب الكاملة"
                             >
@@ -2130,7 +2146,7 @@ export default function BooksManager() {
               {(() => {
                 const galleryList = [
                   ...(viewingBook.coverImage?.secureUrl ? [viewingBook.coverImage.secureUrl] : []),
-                  ...(viewingBook.images?.map((img) => img.secureUrl).filter(Boolean) as string[]),
+                  ...(Array.isArray(viewingBook.images) ? (viewingBook.images.map((img) => img.secureUrl).filter(Boolean) as string[]) : []),
                 ];
 
                 if (galleryList.length === 0) return null;
